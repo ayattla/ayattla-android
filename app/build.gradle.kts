@@ -44,7 +44,10 @@ android {
 
     androidResources { noCompress += "sqlite" }
 
-    testOptions { unitTests.isReturnDefaultValues = true }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        unitTests.all { it.testLogging { events("passed", "failed"); showStandardStreams = false } }
+    }
 }
 
 dependencies {

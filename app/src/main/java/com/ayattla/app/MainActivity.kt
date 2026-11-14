@@ -69,13 +69,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val app = application as AyatApp
         Recitation.connect(this)
+        // Debug builds only: open a given screen directly (used by the CI screenshots).
+        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        val startScreen = if (debuggable) intent.getStringExtra("screen") else null
         setContent {
             AyatTheme(app.prefs.themeMode) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalContent provides app.content,
                     LocalPrefs provides app.prefs,
-                ) { AppRoot() }
+                ) { AppRoot(startScreen) }
             }
         }
     }
@@ -98,8 +101,11 @@ object Routes {
 }
 
 @Composable
-fun AppRoot() {
+fun AppRoot(startScreen: String? = null) {
     val nav = rememberNavController()
+    androidx.compose.runtime.LaunchedEffect(startScreen) {
+        if (startScreen != null && startScreen != "home") runCatching { nav.navigate(startScreen) }
+    }
     val b = LocalBrand.current
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
