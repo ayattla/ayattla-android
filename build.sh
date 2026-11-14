@@ -11,6 +11,7 @@ if [ ! -f $K/upload.jks ]; then
     -storepass "$(cat $K/pass)" -keypass "$(cat $K/pass)" -dname "CN=Ayat Tutla, O=ayattla.com, C=SA" >/dev/null 2>&1
   chmod 600 $K/upload.jks; echo "new upload key created"
 fi
+export AYT_VERSION_CODE=${AYT_VERSION_CODE:-$(( $(date -u +%s) / 60 ))}
 export AYT_KS=$K/upload.jks AYT_KS_PASS="$(cat $K/pass)"
 SDK=$(ls $ANDROID_HOME/platforms | sed 's/android-//' | sort -n | tail -1)
 AGP=$(grep '^AGP:' /root/android-setup.log | awk '{print $2}')
