@@ -6,3 +6,6 @@ local.properties
 *.keystore
 __pycache__/
 out/
+app/src/main/assets/content-v1.sqlite
+app/src/main/res/font/*.ttf
+.kotlin/
