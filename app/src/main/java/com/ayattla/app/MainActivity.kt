@@ -50,6 +50,7 @@ import com.ayattla.app.screens.PlayerBar
 import com.ayattla.app.screens.PrayerTimesScreen
 import com.ayattla.app.screens.QiblaScreen
 import com.ayattla.app.screens.QuranIndexScreen
+import com.ayattla.app.screens.RadiosScreen
 import com.ayattla.app.screens.ReaderScreen
 import com.ayattla.app.screens.SavedScreen
 import com.ayattla.app.screens.SettingsScreen
@@ -164,6 +165,7 @@ fun AppRoot(startScreen: String? = null) {
             composable("saved") { SavedScreen(nav) }
             composable("settings") { SettingsScreen(nav) }
             composable("about") { AboutScreen(nav) }
+            composable("radios") { RadiosScreen(nav) }
         }
     }
 }

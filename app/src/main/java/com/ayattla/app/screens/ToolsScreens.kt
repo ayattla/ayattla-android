@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
@@ -101,6 +102,7 @@ fun MoreScreen(nav: NavHostController) {
                 ToolItem("مواقيت الصلاة", "حسب مدينتك", Icons.Filled.AccessTime) { nav.navigate("prayer") },
                 ToolItem("القبلة", "بوصلة الاتجاه", Icons.Filled.Explore) { nav.navigate("qibla") },
                 ToolItem("المسبحة", "عداد التسبيح", Icons.Filled.TouchApp) { nav.navigate("tasbih") },
+                ToolItem("الإذاعات", "177 إذاعة قرآنية", Icons.Filled.Radio) { nav.navigate("radios") },
                 ToolItem("التاريخ الهجري", "تحويل التاريخ", Icons.Filled.CalendarMonth) { nav.navigate("hijri") },
                 ToolItem("الزكاة", "حاسبة النصاب", Icons.Filled.Calculate) { nav.navigate("zakat") },
                 ToolItem("آياتي المحفوظة", "ما حفظته من آيات", Icons.Filled.Favorite) { nav.navigate("saved") },

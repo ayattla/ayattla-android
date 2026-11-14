@@ -31,6 +31,7 @@ shot 12-hijri hijri
 shot 13-zakat zakat
 shot 14-settings settings
 shot 15-about about
+shot 15b-radios radios 8
 adb shell cmd uimode night yes; sleep 2
 shot 16-home-dark home 7
 shot 17-reader-dark reader/1/1
