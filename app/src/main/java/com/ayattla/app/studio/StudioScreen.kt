@@ -82,9 +82,12 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val daily = remember { DailyAyah.pick() }
-    var surah by rememberSaveable { mutableIntStateOf(if (s0 > 0) s0 else daily.surah) }
-    var from by rememberSaveable { mutableIntStateOf(if (s0 > 0) a0 else daily.from) }
-    var to by rememberSaveable { mutableIntStateOf(if (s0 > 0) b0.coerceAtLeast(a0) else daily.to) }
+    val valid = s0 in 1..114 && a0 >= 1 && a0 <= content.surah(s0).ayahCount
+    var surah by rememberSaveable { mutableIntStateOf(if (valid) s0 else daily.surah) }
+    var from by rememberSaveable { mutableIntStateOf(if (valid) a0 else daily.from) }
+    var to by rememberSaveable {
+        mutableIntStateOf(if (valid) b0.coerceIn(a0, minOf(content.surah(s0).ayahCount, a0 + MAX_AYAT - 1)) else daily.to)
+    }
     var ratio by rememberSaveable { mutableStateOf(CardRatio.Square) }
     var style by rememberSaveable { mutableStateOf(CardStyle.Emerald) }
     var pickSurah by remember { mutableStateOf(false) }

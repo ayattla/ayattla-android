@@ -44,8 +44,10 @@ object Recitation {
 
     val active: Boolean get() = current != null
 
-    fun connect(context: Context) {
+    fun connect(ctx: Context) {
         if (controller != null) return
+        // Bound to the application so the controller survives activities being recreated.
+        val context = ctx.applicationContext
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val future = MediaController.Builder(context, token).buildAsync()
         future.addListener({
