@@ -83,8 +83,9 @@ class MainActivity : ComponentActivity() {
                     val w = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
                     val h = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
                     val audio = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
+                    val rot = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
                     r.release()
-                    android.util.Log.i("AyatSelfTest", "CLIP OK bytes=${f.length()} durationMs=$ms size=${w}x$h audio=$audio took=${System.currentTimeMillis() - t0}ms")
+                    android.util.Log.i("AyatSelfTest", "CLIP OK bytes=${f.length()} durationMs=$ms size=${w}x$h rotation=$rot audio=$audio took=${System.currentTimeMillis() - t0}ms")
                 }.onFailure { android.util.Log.e("AyatSelfTest", "CLIP FAILED", it) }
             }
         }

@@ -50,6 +50,7 @@ fun AppCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, paddin
     val b = LocalBrand.current
     Column(
         modifier
+            .fillMaxWidth()
             .shadow(if (b.dark) 0.dp else 6.dp, CardShape, ambientColor = b.primary.copy(alpha = 0.07f), spotColor = b.primary.copy(alpha = 0.10f))
             .clip(CardShape)
             .background(b.surface)
