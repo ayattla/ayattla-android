@@ -100,7 +100,7 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = quran; color = textColor
             // Opaque shadow colour: its strength follows each letter's own alpha, so hidden words cast none.
-            if (style.text.shadow) setShadowLayer(12f * k, 0f, 3f * k, Color.BLACK)
+            if (this@Composer.style.text.shadow) setShadowLayer(12f * k, 0f, 3f * k, Color.BLACK)
             if (Build.VERSION.SDK_INT >= 29) wordSpacing = 0f
         }
         val align = when (style.text.align) { Align.Center -> Layout.Alignment.ALIGN_CENTER; Align.Start -> Layout.Alignment.ALIGN_NORMAL; Align.End -> Layout.Alignment.ALIGN_OPPOSITE }
@@ -134,7 +134,7 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
 
         if (style.ref.show && part.reference.isNotBlank()) {
             val p = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = ui; color = refColor; textSize = 40f * k * style.ref.size; textAlign = Paint.Align.CENTER
+                typeface = ui; color = refColor; textSize = 40f * k * this@Composer.style.ref.size; textAlign = Paint.Align.CENTER
                 if (onMedia) setShadowLayer(8f * k, 0f, 2f * k, Color.argb(160, 0, 0, 0))
             }
             val below = y + layout.height + 70f * k
