@@ -41,7 +41,7 @@ class Prefs(context: Context) {
     var clipReciterId by mutableStateOf(sp.getString("clipReciter", "") ?: "")
         private set
 
-    fun setKhatma(raw: String?) { khatma = raw; sp.edit().putString("khatma", raw).apply() }
+    fun saveKhatma(raw: String?) { khatma = raw; sp.edit().putString("khatma", raw).apply() }
     fun setReminder(key: String, on: Boolean) {
         when (key) { "remindMorning" -> remindMorning = on; "remindEvening" -> remindEvening = on; "remindAyah" -> remindAyah = on }
         sp.edit().putBoolean(key, on).apply()

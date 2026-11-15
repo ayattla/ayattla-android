@@ -347,7 +347,7 @@ fun KhatmaScreen(nav: NavHostController) {
     var startPage by rememberSaveable { mutableIntStateOf(1) }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("خطة الختمة", onBack = { nav.popBackStack() }) {
-            if (plan != null) TextButton(onClick = { prefs.setKhatma(null) }) { Text("حذف الخطة") }
+            if (plan != null) TextButton(onClick = { prefs.saveKhatma(null) }) { Text("حذف الخطة") }
         }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (plan == null) {
@@ -363,7 +363,7 @@ fun KhatmaScreen(nav: NavHostController) {
                     val p = KhatmaPlan.create(days, startPage, LocalDate.now())
                     Text("نحو ${String.format(java.util.Locale.US, "%.1f", p.pagesPerDay)} صفحة يوميًا، من صفحة $startPage إلى 604.", style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(top = 6.dp))
                 }
-                Button(onClick = { prefs.setKhatma(KhatmaPlan.create(days, startPage, LocalDate.now()).encode()) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = b.primary)) {
+                Button(onClick = { prefs.saveKhatma(KhatmaPlan.create(days, startPage, LocalDate.now()).encode()) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = b.primary)) {
                     Text("ابدأ الخطة")
                 }
             } else {
@@ -393,7 +393,7 @@ fun KhatmaScreen(nav: NavHostController) {
                         Row(
                             Modifier.fillMaxWidth().background(if (d == today) b.tint else b.surface).clickable {
                                 val set = if (done) plan.completedDays - d else plan.completedDays + d
-                                prefs.setKhatma(plan.copy(completedDays = set).encode())
+                                prefs.saveKhatma(plan.copy(completedDays = set).encode())
                             }.padding(horizontal = 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
