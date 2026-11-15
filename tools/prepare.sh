@@ -50,6 +50,7 @@ for k in ("topics", "duas", "prayer_guide"):
 assert n == 6236, n
 PY
 if [ -s "$SRC/tanzil.txt" ]; then python3 tools/content/compare_tanzil.py app/src/main/assets/content-v1.sqlite "$SRC/tanzil.txt"; fi
+mkdir -p build && python3 tools/content/verify_pack.py app/src/main/assets/content-v1.sqlite build/content-report.md
 
 echo "== fonts (OFL 1.1)"
 GF=https://github.com/google/fonts/raw/main/ofl

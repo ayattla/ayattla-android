@@ -134,6 +134,7 @@ fun QuranIndexScreen(nav: NavHostController) {
     val q = query.trim()
     val surahHits = remember(q) { if (q.isEmpty()) content.surahs else content.surahs.filter { q in it.shortName || "${it.id}" == q } }
     val ayahHits = remember(q) { if (q.length < 2) emptyList() else content.search(q) }
+    val topicHits = remember(q) { if (q.length < 2) emptyList() else content.library.topics.filter { q in it.title || q in it.desc } }
     val last = prefs.lastRead?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }
     val lastPage = last?.let { content.pageOf(it[0], it[1]) }
 
@@ -161,8 +162,17 @@ fun QuranIndexScreen(nav: NavHostController) {
                 item { SectionHeader("السور"); Spacer(Modifier.height(8.dp)) }
                 item { SurahBlock(surahHits, nav) }
             }
+            if (topicHits.isNotEmpty()) {
+                item { Spacer(Modifier.height(20.dp)); SectionHeader("مواضيع", subtitle = "آيات مختارة عن الموضوع مع التفسير الميسر"); Spacer(Modifier.height(8.dp)) }
+                items(topicHits, key = { "t-" + it.slug }) { t ->
+                    Column(Modifier.padding(bottom = 10.dp).fillMaxWidth().pressable { nav.navigate("topic/${t.slug}") }.surface(b).padding(14.dp)) {
+                        Text(t.title, style = MaterialTheme.typography.titleMedium, color = b.ink)
+                        Text("${t.items.size} مواضع", style = MaterialTheme.typography.labelMedium, color = b.primaryInk)
+                    }
+                }
+            }
             if (ayahHits.isNotEmpty()) {
-                item { Spacer(Modifier.height(20.dp)); SectionHeader("الآيات", subtitle = "${ayahHits.size} نتيجة"); Spacer(Modifier.height(8.dp)) }
+                item { Spacer(Modifier.height(20.dp)); SectionHeader("الآيات", subtitle = "${ayahHits.size} نتيجة · كلمات متعددة تجد الآيات التي فيها كلها، والعبارة بين \"\" تطابق كما هي"); Spacer(Modifier.height(8.dp)) }
                 items(ayahHits, key = { it.key }) { a ->
                     Column(Modifier.padding(bottom = 10.dp).fillMaxWidth().pressable { nav.navigate(Routes.reader(a.surah, a.ayah)) }.surface(b).padding(14.dp)) {
                         Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -170,7 +180,7 @@ fun QuranIndexScreen(nav: NavHostController) {
                     }
                 }
             }
-            if (surahHits.isEmpty() && ayahHits.isEmpty()) item { EmptyState("لا نتائج", "جرّب كلمة أخرى من الآية، دون تشكيل.") }
+            if (surahHits.isEmpty() && ayahHits.isEmpty() && topicHits.isEmpty()) item { EmptyState("لا نتائج", "جرّب كلمة أخرى من الآية، دون تشكيل.") }
             return@LazyColumn
         }
         if (showJuz) {

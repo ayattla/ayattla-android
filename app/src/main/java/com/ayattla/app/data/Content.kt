@@ -79,12 +79,19 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
     val library: Library by lazy { Library(this) }
 
     /** Search on the clean text (no tashkeel, unified alef), same normalization as the pack. */
+    /**
+     * Searches the Quran text without marks, offline. Several words find ayat that contain all of
+     * them in any order; a phrase in quotes ("…") must appear as written.
+     */
     fun search(query: String, limit: Int = 200): List<Ayah> {
-        val q = SearchText.clean(query)
-        if (q.length < 2) return emptyList()
+        val phrase = Regex("\"([^\"]+)\"").find(query)?.groupValues?.get(1)
+        val terms = (if (phrase != null) listOf(phrase) else query.split(Regex("\\s+")))
+            .map { SearchText.clean(it) }.filter { it.length >= 2 }.distinct().take(6)
+        if (terms.isEmpty()) return emptyList()
+        val where = terms.joinToString(" AND ") { "text_clean LIKE ?" }
         return db.rawQuery(
-            "SELECT surah, ayah, text_uthmani, page, juz FROM ayah WHERE text_clean LIKE ? ORDER BY surah, ayah LIMIT $limit",
-            arrayOf("%$q%"),
+            "SELECT surah, ayah, text_uthmani, page, juz FROM ayah WHERE $where ORDER BY surah, ayah LIMIT $limit",
+            terms.map { "%$it%" }.toTypedArray(),
         ).use { it.toAyat() }
     }
 

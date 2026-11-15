@@ -259,7 +259,12 @@ fun AzkarScreen(nav: NavHostController, categoryId: Int) {
                     }
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(z.reference.orEmpty(), style = MaterialTheme.typography.labelSmall, color = b.goldInk, modifier = Modifier.weight(1f))
+                        // The data's own reference; where it has none we say so, and never write one ourselves.
+                        val ref = z.reference?.takeIf { it.isNotBlank() }
+                        Text(
+                            ref ?: "من حصن المسلم · المرجع التفصيلي غير مذكور في المصدر",
+                            style = MaterialTheme.typography.labelSmall, color = if (ref != null) b.goldInk else b.muted, modifier = Modifier.weight(1f),
+                        )
                         IconButton(onClick = { shareText(ctx, z.text + (z.reference?.let { "\n\n$it" } ?: "") + "\nayattla.com") }) {
                             Icon(Icons.Filled.Share, "مشاركة", tint = b.muted)
                         }

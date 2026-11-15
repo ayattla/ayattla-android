@@ -451,6 +451,15 @@ fun AsmaScreen(nav: NavHostController) {
             BasicTextField(q, { q = it }, singleLine = true, textStyle = MaterialTheme.typography.bodyMedium.copy(color = b.ink), cursorBrush = SolidColor(b.green), modifier = Modifier.fillMaxWidth())
         }
         Text("اضغط أي اسم لتصنع منه بطاقة", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        AppCard(level = com.ayattla.app.ui.components.Surface.Gold) {
+            Text("عن هذه القائمة", style = MaterialTheme.typography.titleMedium, color = b.goldInk)
+            Text(
+                "الثابت في الصحيحين قوله ﷺ: «إن لله تسعة وتسعين اسما، مائة إلا واحدا، من أحصاها دخل الجنة» (البخاري 2736 و7392، ومسلم 2677). " +
+                    "أما سرد الأسماء بهذا العدد والترتيب فورد في رواية الترمذي (3507)، وقد ذكر كثير من المحققين أن تعيينها فيها من إدراج بعض الرواة وليس من لفظ النبي ﷺ؛ " +
+                    "ولذلك تختلف قوائم العلماء في بعض الأسماء. القائمة هنا كما هي في موقع آيات تتلى.",
+                style = MaterialTheme.typography.bodySmall, color = b.ink, modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         shown.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { (n, name) ->

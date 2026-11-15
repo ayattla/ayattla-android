@@ -69,6 +69,16 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+      # R8 mapping (to read crash reports from the minified build) and the content check report.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mapping-and-reports-${{ github.run_number }}
+          path: |
+            app/build/outputs/mapping/release/mapping.txt
+            build/content-report.md
+          retention-days: 90
+          if-no-files-found: warn
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:

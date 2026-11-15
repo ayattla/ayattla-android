@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6–11 backups: the user's settings, progress, projects and templates; not the content
+     pack, caches, imported media or exported videos (large, and rebuilt or kept in the gallery). -->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="projects/" />
+    <include domain="file" path="templates.json" />
+    <exclude domain="file" path="media/" />
+    <exclude domain="file" path="exports/" />
+    <exclude domain="database" path="." />
+</full-backup-content>
