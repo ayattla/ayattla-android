@@ -152,9 +152,9 @@ private fun HomeBar(nav: NavHostController) {
     val b = LocalBrand.current
     val prefs = LocalPrefs.current
     Box(Modifier.fillMaxWidth().statusBarsPadding().height(52.dp).padding(horizontal = 8.dp)) {
-        BarIcon(Icons.Outlined.Settings, "الإعدادات", Modifier.align(Alignment.CenterStart)) { nav.navigate("settings") }
+        BarIcon(Icons.Outlined.Settings, "الإعدادات", Modifier.align(Alignment.CenterEnd)) { nav.navigate("settings") }
         LogoHorizontal(Modifier.align(Alignment.Center).height(30.dp))
-        BarIcon(if (b.dark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, if (b.dark) "الوضع الفاتح" else "الوضع الداكن", Modifier.align(Alignment.CenterEnd)) {
+        BarIcon(if (b.dark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, if (b.dark) "الوضع الفاتح" else "الوضع الداكن", Modifier.align(Alignment.CenterStart)) {
             prefs.setTheme(if (b.dark) ThemeMode.Light else ThemeMode.Dark)
         }
     }

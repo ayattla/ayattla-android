@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -333,7 +335,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
                 val text = buildAnnotatedString {
                     pageAyat.forEach { a ->
                         val fav = a.key in prefs.favorites
-                        withLink(LinkAnnotation.Clickable("ayah-${a.key}") { selected = a }) {
+                        withLink(LinkAnnotation.Clickable("ayah-${a.key}", TextLinkStyles(SpanStyle(textDecoration = TextDecoration.None))) { selected = a }) {
                             withStyle(SpanStyle(background = if (a.key == playingKey) highlight else Color.Transparent, color = b.ink)) {
                                 append(a.text)
                                 append(" ")

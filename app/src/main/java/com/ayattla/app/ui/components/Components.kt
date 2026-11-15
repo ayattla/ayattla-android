@@ -373,10 +373,8 @@ fun ToolTile(title: String, subtitle: String?, icon: ImageVector, modifier: Modi
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         IconTile(icon, style = if (accent != null) TileStyle.Accent(accent) else TileStyle.Gradient(index))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = b.ink, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (badge != null) Badge(badge, gold = true)
-        }
+        Text(title, style = MaterialTheme.typography.titleMedium, color = b.ink, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (badge != null) Badge(badge, gold = true)
         if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis)
     }
 }

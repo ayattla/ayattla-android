@@ -90,7 +90,12 @@ fun AzkarListScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val content = LocalContent.current
     val cats = content.azkarCategories
-    val pinned = listOf("الصباح", "المساء", "النوم", "الاستيقاظ").mapNotNull { w -> cats.firstOrNull { w in it.title } }
+    val pinned = listOfNotNull(
+        cats.firstOrNull { "الصباح" in it.title },
+        cats.firstOrNull { "المساء" in it.title },
+        cats.firstOrNull { "النوم" in it.title && "الاستيقاظ" !in it.title },
+        cats.firstOrNull { "الاستيقاظ" in it.title },
+    ).distinctBy { it.id }
     Column(Modifier.fillMaxSize()) {
         AppTopBar("الأذكار والحديث")
         Column(
