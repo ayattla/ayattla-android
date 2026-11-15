@@ -51,6 +51,9 @@ jobs:
       - name: Unit tests (prayer times, qibla, hijri, zakat match the site)
         run: gradle --no-daemon testDebugUnitTest
 
+      - name: Lint (no API newer than minSdk)
+        run: gradle --no-daemon lintDebug
+
       - name: Build bundle and APKs
         env:
           AYT_KS_PASS: ${{ secrets.AYT_KS_PASS }}
@@ -119,3 +122,31 @@ jobs:
           git config user.name "github-actions" && git config user.email "actions@github.com"
           git add -A && git commit -q -m "screens from run ${{ github.run_number }} (${{ github.sha }})"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
+
+  launch-matrix:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [26, 28, 30, 33, 35]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: ayattla-android-${{ github.run_number }}
+          path: out
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Launch the release build on Android API ${{ matrix.api }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: ${{ matrix.api >= 30 && 'google_apis' || 'default' }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash tools/launch-test.sh

@@ -141,7 +141,7 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
         private fun open(context: Context): ContentStore {
             val dir = File(context.noBackupFilesDir, "content").apply { mkdirs() }
             val file = File(dir, ASSET)
-            val version = context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
+            val version = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
             val stamp = File(dir, "version")
             if (!file.exists() || stamp.takeIf { it.exists() }?.readText() != version.toString()) {
                 val tmp = File(dir, "$ASSET.tmp")

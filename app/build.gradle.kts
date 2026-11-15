@@ -44,6 +44,13 @@ android {
 
     androidResources { noCompress += "sqlite" }
 
+    // Fail the build on any call to an API newer than minSdk (the cause of crashes on older phones).
+    lint {
+        checkOnly += setOf("NewApi", "InlinedApi")
+        abortOnError = true
+        checkReleaseBuilds = false
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
         unitTests.all { it.testLogging { events("passed", "failed"); showStandardStreams = false } }

@@ -9,6 +9,11 @@ class AyatApp : Application() {
         private set
     val content: ContentStore by lazy { ContentStore.get(this) }
 
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(base)
+        com.ayattla.app.crash.CrashReporter.install(this)
+    }
+
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
