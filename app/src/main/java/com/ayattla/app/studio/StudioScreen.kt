@@ -95,12 +95,19 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
     val maxAyat = if (video) ClipEngine.MAX_AYAT else MAX_AYAT
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     val s = content.surah(surah)
+    // Real background from the site's library (a shortcut may have chosen one already).
+    var bg by remember { mutableStateOf(PendingMedia.take()) }
+    var bgTouched by remember { mutableStateOf(bg != null) }
+    LaunchedEffect(video) {
+        if (!bgTouched || (bg?.isVideo == true && !video)) { bg = defaultMedia(ctx, video) ?: bg?.takeIf { video || !it.isVideo } }
+    }
 
-    LaunchedEffect(surah, from, to, ratio, style, video) {
+    LaunchedEffect(surah, from, to, ratio, style, video, bg) {
         bitmap = null
         val ayat = content.ayat(surah, from, if (video) from else to)
         val ref = "سورة ${s.shortName} · " + if (from == to || video) "$from" else "$from-$to"
-        bitmap = withContext(Dispatchers.Default) { CardRenderer.render(ctx, ayat, ref, ratio, style) }
+        val photo = bg?.let { m -> (if (m.isVideo) m.thumbUrl else m.still)?.let { com.ayattla.app.data.RemoteImages.load(ctx, it, 1400) } }
+        bitmap = withContext(Dispatchers.Default) { CardRenderer.render(ctx, ayat, ref, ratio, style, photo = photo) }
     }
 
     val save: () -> Unit = {
@@ -135,7 +142,12 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
             if (bmp == null) CircularProgressIndicator(color = b.accent)
             else Image(bmp.asImageBitmap(), "معاينة البطاقة", Modifier.fillMaxSize())
         }
-        if (video) ClipPanel(surah, from, to.coerceAtMost(from + maxAyat - 1), ratio, style)
+        AppCard {
+            Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Spacer(Modifier.height(8.dp))
+            BackgroundPicker(bg, allowVideo = video) { bg = it; bgTouched = true }
+        }
+        if (video) ClipPanel(surah, from, to.coerceAtMost(from + maxAyat - 1), ratio, style, bg)
         else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             com.ayattla.app.ui.components.BrandButton("مشاركة", Modifier.weight(1f), icon = Icons.Filled.Share, enabled = bitmap != null) {
                 val bmp = bitmap ?: return@BrandButton
@@ -168,10 +180,12 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                 CardRatio.entries.filter { it != CardRatio.Wide && (!video || it != CardRatio.Portrait) }.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
             }
-            Spacer(Modifier.height(12.dp))
-            Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                CardStyle.entries.forEach { st -> Chip(st.label, st == style, { style = st }) }
+            if (bg == null) {
+                Spacer(Modifier.height(12.dp))
+                Text("اللون", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    CardStyle.entries.forEach { st -> Chip(st.label, st == style, { style = st }) }
+                }
             }
         }
         if (!video) Text("نص الآيات من المصحف كما هو دون أي تعديل. حد البطاقة $MAX_AYAT آيات.", style = MaterialTheme.typography.bodySmall, color = b.muted)

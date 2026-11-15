@@ -11,7 +11,14 @@ import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.BitmapOverlay
+import androidx.media3.effect.OverlayEffect
+import androidx.media3.effect.Presentation
+import androidx.media3.effect.TextureOverlay
 import androidx.media3.transformer.Composition
+import androidx.media3.transformer.Effects
+import com.ayattla.app.data.SiteMedia
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.ExportException
@@ -44,6 +51,7 @@ class ClipEngine(private val context: Context, private val content: ContentStore
     sealed interface Stage {
         data class Downloading(val done: Int, val total: Int) : Stage
         data object Drawing : Stage
+        data object Background : Stage
         data class Encoding(val percent: Int) : Stage
     }
 
@@ -51,7 +59,7 @@ class ClipEngine(private val context: Context, private val content: ContentStore
 
     suspend fun make(
         reciter: Reciter, surah: Int, from: Int, to: Int,
-        ratio: CardRatio, style: CardStyle, onStage: (Stage) -> Unit,
+        ratio: CardRatio, style: CardStyle, background: SiteMedia? = null, onStage: (Stage) -> Unit,
     ): File {
         val s = content.surah(surah)
         // Parts in order: the basmala first when the clip starts at ayah 1 (not Al-Fatiha or At-Tawbah).
@@ -76,15 +84,33 @@ class ClipEngine(private val context: Context, private val content: ContentStore
         onStage(Stage.Downloading(parts.size, parts.size))
         val durations = files.map { durationMs(it) }
 
-        // 2. One frame per part.
+        // 1b. The real background from the site's library: a looping video or a photo.
+        val bgVideo: File? = if (background?.isVideo == true) background.previewUrl?.let { url ->
+            onStage(Stage.Background)
+            val f = File(File(root, "bg").apply { mkdirs() }, "v-" + url.hashCode().toUInt().toString(16) + ".mp4")
+            runCatching { if (!f.exists() || f.length() < 10_000) download(url, f) }.getOrNull()
+            f.takeIf { it.exists() && it.length() >= 10_000 }
+        } else null
+        val photo: Bitmap? = if (background != null && !background.isVideo) background.still?.let { url ->
+            onStage(Stage.Background)
+            com.ayattla.app.data.RemoteImages.load(context, url, 1600)
+        } else null
+
+        // 2. One frame per part (over a video: text and veil only, on a transparent frame).
         onStage(Stage.Drawing)
         val frameDir = File(root, "frames").apply { deleteRecursively(); mkdirs() }
+        val overlay = bgVideo != null
         val frames = withContext(Dispatchers.Default) {
             parts.mapIndexed { i, p ->
-                val bmp = if (p.text.first().ayah == 0) CardRenderer.renderText(context, p.text.first().text, "سورة ${s.shortName}", ratio, style)
-                else CardRenderer.render(context, p.text, p.label, ratio, style)
+                val bmp = if (p.text.first().ayah == 0) CardRenderer.renderText(context, p.text.first().text, "سورة ${s.shortName}", ratio, style, photo = photo, overlay = overlay)
+                else CardRenderer.render(context, p.text, p.label, ratio, style, photo = photo, overlay = overlay)
                 File(frameDir, "f$i.png").also { f -> f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }; bmp.recycle() }
             }
+        }
+        if (bgVideo != null) {
+            val out = File(File(root, "out").apply { mkdirs() }, "ayattla-$surah-$from-$to.mp4").apply { delete() }
+            encode(videoComposition(bgVideo, frames, durations, files, ratio), out, onStage)
+            return out
         }
 
         // 3. Encode.
@@ -128,6 +154,40 @@ class ClipEngine(private val context: Context, private val content: ContentStore
                     transformer.start(composition, out.path)
                 }
             } finally { poll.cancel() }
+        }
+    }
+
+    /**
+     * The background video loops under the recitation; each ayah's frame is laid over it for exactly
+     * that ayah's recitation (a timed bitmap overlay), and the video's own sound is removed.
+     */
+    private fun videoComposition(bg: File, frames: List<File>, durations: List<Long>, audioFiles: List<File>, ratio: CardRatio): Composition {
+        val ends = durations.runningReduce { a, b -> a + b }.map { it * 1000 }
+        val overlay = TimedFrames(frames, ends)
+        val bgItem = EditedMediaItem.Builder(MediaItem.fromUri(Uri.fromFile(bg)))
+            .setRemoveAudio(true)
+            .setEffects(Effects(listOf(), listOf(Presentation.createForWidthAndHeight(ratio.w, ratio.h, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP))))
+            .build()
+        val audio = audioFiles.map { EditedMediaItem.Builder(MediaItem.fromUri(Uri.fromFile(it))).build() }
+        return Composition.Builder(
+            EditedMediaItemSequence.Builder(listOf(bgItem)).setIsLooping(true).build(),
+            EditedMediaItemSequence.Builder(audio).build(),
+        ).setEffects(Effects(listOf(), listOf(OverlayEffect(com.google.common.collect.ImmutableList.of<TextureOverlay>(overlay))))).build()
+    }
+
+    /** Shows frame i until ends[i] (microseconds from the start of the clip). */
+    private class TimedFrames(private val frames: List<File>, private val ends: List<Long>) : BitmapOverlay() {
+        private var index = -1
+        private var bitmap: Bitmap? = null
+        override fun getBitmap(presentationTimeUs: Long): Bitmap {
+            var i = ends.indexOfFirst { presentationTimeUs < it }
+            if (i < 0) i = frames.lastIndex
+            if (i != index || bitmap == null) {
+                bitmap?.recycle()
+                bitmap = android.graphics.BitmapFactory.decodeFile(frames[i].path)
+                index = i
+            }
+            return bitmap!!
         }
     }
 

@@ -84,15 +84,17 @@ val LocalPrefs = staticCompositionLocalOf<Prefs> { error("prefs") }
 
 class MainActivity : ComponentActivity() {
     /** Debug only: makes a real 3-ayah clip (Al-Kawthar) and logs the result, for the CI emulator run. */
-    private fun selfTestClip() {
+    private fun selfTestClip(video: Boolean = false) {
         val app = application as AyatApp
         (this as androidx.lifecycle.LifecycleOwner).let { owner ->
             owner.lifecycleScope.launch {
                 val t0 = System.currentTimeMillis()
                 runCatching {
+                    val bg = if (video) com.ayattla.app.studio.defaultMedia(this@MainActivity, true) ?: error("no background video") else null
+                    android.util.Log.i("AyatSelfTest", "background=${bg?.previewUrl}")
                     com.ayattla.app.studio.ClipEngine(this@MainActivity, app.content).make(
                         app.content.reciters.first(), 108, 1, 3,
-                        com.ayattla.app.studio.CardRatio.Story, com.ayattla.app.studio.CardStyle.Emerald,
+                        com.ayattla.app.studio.CardRatio.Story, com.ayattla.app.studio.CardStyle.Emerald, bg,
                     ) {}
                 }.onSuccess { f ->
                     val r = android.media.MediaMetadataRetriever().apply { setDataSource(f.path) }
@@ -102,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     val audio = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
                     val rot = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
                     r.release()
-                    android.util.Log.i("AyatSelfTest", "CLIP OK bytes=${f.length()} durationMs=$ms size=${w}x$h rotation=$rot audio=$audio took=${System.currentTimeMillis() - t0}ms")
+                    android.util.Log.i("AyatSelfTest", "CLIP OK video=$video bytes=${f.length()} durationMs=$ms size=${w}x$h rotation=$rot audio=$audio took=${System.currentTimeMillis() - t0}ms")
                 }.onFailure { android.util.Log.e("AyatSelfTest", "CLIP FAILED", it) }
             }
         }
@@ -130,6 +132,7 @@ class MainActivity : ComponentActivity() {
         // Debug builds only: open a given screen directly (used by the CI screenshots).
         val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (debuggable && intent.getStringExtra("selftest") == "clip") selfTestClip()
+        if (debuggable && intent.getStringExtra("selftest") == "clipvideo") selfTestClip(video = true)
         val startScreen = openTarget(intent) ?: if (debuggable) intent.getStringExtra("screen") else null
         setContent {
             AyatTheme(app.prefs.themeMode) {
@@ -209,6 +212,20 @@ fun AppRoot(startScreen: String? = null) {
             }
             composable("azkar-all") { com.ayattla.app.screens.AzkarAllScreen(nav) }
             composable("tasbih") { TasbihScreen(nav) }
+            composable("tajweed") { com.ayattla.app.screens.TajweedScreen(nav) }
+            composable("word-by-word") { com.ayattla.app.screens.WordByWordScreen(nav) }
+            composable("hifz-test") { com.ayattla.app.screens.HifzTestScreen(nav) }
+            composable("ruqya") { com.ayattla.app.screens.RuqyaScreen(nav) }
+            composable("asma") { com.ayattla.app.screens.AsmaScreen(nav) }
+            composable("occasions") { com.ayattla.app.screens.OccasionsScreen(nav) }
+            composable("qada") { com.ayattla.app.screens.QadaScreen(nav) }
+            composable("sawm") { com.ayattla.app.screens.SawmScreen(nav) }
+            composable("mosques") { com.ayattla.app.screens.MosquesScreen(nav) }
+            composable("kids") { com.ayattla.app.screens.KidsScreen(nav) }
+            composable("kids/{n}", arguments = listOf(navArgument("n") { type = NavType.IntType })) { e -> com.ayattla.app.screens.KidsSurahScreen(nav, e.arguments!!.getInt("n")) }
+            composable("ayah-today") { com.ayattla.app.screens.AyahTodayScreen(nav) }
+            composable("text-card") { com.ayattla.app.studio.TextCardScreen(nav) }
+            composable("status") { com.ayattla.app.studio.StatusScreen(nav) }
             composable("prayer") { PrayerTimesScreen(nav) }
             composable("qibla") { QiblaScreen(nav) }
             composable("hijri") { HijriScreen(nav) }

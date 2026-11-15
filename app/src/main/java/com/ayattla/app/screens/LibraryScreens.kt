@@ -127,7 +127,7 @@ fun HadithScreen(nav: NavHostController) {
             items.isEmpty() -> EmptyState("لا نتائج", "جرّب كلمة أخرى.")
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item { Text("$total حديثًا · صحيح وحسن فقط", style = MaterialTheme.typography.labelMedium, color = b.muted) }
-                items(items, key = { it.id + it.url }) { h -> HadithCard(h) }
+                items(items, key = { it.id + it.url }) { h -> HadithCard(h, nav) }
                 if (items.size < total) item {
                     OutlinedButton(onClick = { page += 1 }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
                         if (loading) CircularProgressIndicator(Modifier.size(18.dp)) else Text("المزيد")
@@ -139,7 +139,7 @@ fun HadithScreen(nav: NavHostController) {
 }
 
 @Composable
-fun HadithCard(h: Hadith) {
+fun HadithCard(h: Hadith, nav: NavHostController? = null) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
     AppCard {
@@ -154,6 +154,12 @@ fun HadithCard(h: Hadith) {
                 Icon(Icons.Filled.Share, "مشاركة", tint = b.muted)
             }
             if (h.url.startsWith("http")) TextButton(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(h.url))) }) { Text("المصدر") }
+        }
+        if (nav != null) com.ayattla.app.ui.components.BrandButton(
+            "اصنع بطاقة حديث", Modifier.fillMaxWidth().padding(top = 6.dp), icon = Icons.Filled.Share, kind = com.ayattla.app.ui.components.BtnKind.Secondary,
+        ) {
+            com.ayattla.app.studio.PendingText.value = com.ayattla.app.studio.CardText("بطاقة حديث", h.text, listOf(h.source, h.grade).filter { it.isNotBlank() }.joinToString(" · "))
+            nav.navigate("text-card")
         }
     }
 }
@@ -185,7 +191,7 @@ fun HadithCheckScreen(nav: NavHostController) {
             error?.let { Text(it, color = b.goldInk) }
             result?.let { r ->
                 if (r.isEmpty()) EmptyState("لم نجد هذا النص", "لم نعثر عليه في المصادر المتاحة. لا يعني ذلك حكمًا عليه؛ راجع أهل العلم.")
-                else r.forEach { HadithCard(it) }
+                else r.forEach { HadithCard(it, nav) }
             }
         }
     }

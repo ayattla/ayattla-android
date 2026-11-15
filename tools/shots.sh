@@ -50,11 +50,31 @@ shot 21-guide guide
 shot 22-khatma khatma
 shot 23-mushaf-page page/50
 shot 24-mushaf-page-1 page/1
+shot 25-studio-video 'studio?v=1' 12
+shot 26-tajweed tajweed 10
+shot 27-word-by-word word-by-word 10
+shot 28-hifz hifz-test
+shot 29-ruqya ruqya
+shot 30-asma asma
+shot 31-occasions occasions
+shot 32-qada qada
+shot 33-sawm sawm
+shot 34-mosques mosques
+shot 35-kids kids
+shot 36-kids-surah kids/112
+shot 37-ayah-today ayah-today 8
+shot 38-status status
+shot 39-more-all 'more?group=Daily'
 # Real clip on the device: Al-Kawthar, 3 ayat, 9:16.
 adb logcat -c
 adb shell am start -S -n com.ayattla.app/.MainActivity --es selftest clip --es screen studio >/dev/null
 for i in $(seq 40); do sleep 5; adb logcat -d -s AyatSelfTest:* | grep -q 'CLIP' && break; done
 adb logcat -d -s AyatSelfTest:* | tee shots/selftest.txt
+# Same clip over a real background video from the site's library.
+adb logcat -c
+adb shell am start -S -n com.ayattla.app/.MainActivity --es selftest clipvideo --es screen studio >/dev/null
+for i in $(seq 60); do sleep 5; adb logcat -d -s AyatSelfTest:* | grep -q 'CLIP' && break; done
+adb logcat -d -s AyatSelfTest:* | tee -a shots/selftest.txt
 adb shell cmd uimode night yes; sleep 2
 shot 16-home-dark home 7
 shot 17-reader-dark reader/1/1

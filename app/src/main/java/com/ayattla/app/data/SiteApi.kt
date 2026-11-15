@@ -78,4 +78,80 @@ object SiteApi {
             if (h.has("match") && !h.isNull("match")) h.optDouble("match").toInt() else null,
         )
     }
+
+    // ---- Quran.com (Quran Foundation) through the site's endpoints, as the iOS app (cached; refreshed after 6 days).
+
+    data class TajweedVerse(val key: String, val html: String)
+    data class Word(val t: String, val m: String)
+    data class WordsVerse(val key: String, val n: Int, val words: List<Word>, val tafsir: String?)
+
+    private suspend fun getQf(context: Context, url: String, key: String): String = withContext(Dispatchers.IO) {
+        val f = File(File(context.cacheDir, "qf").apply { mkdirs() }, key)
+        if (f.exists() && System.currentTimeMillis() - f.lastModified() < 6L * 86_400_000) return@withContext f.readText()
+        try {
+            val c = open(url)
+            try {
+                if (c.responseCode != 200) error("HTTP ${c.responseCode}")
+                c.inputStream.bufferedReader().readText().also { f.writeText(it) }
+            } finally { c.disconnect() }
+        } catch (e: Exception) { if (f.exists()) f.readText() else throw e }
+    }
+
+    /** GET /api/qf/tajweed/{chapter}: verses with the site's tajweed HTML. */
+    suspend fun tajweed(context: Context, chapter: Int): List<TajweedVerse> {
+        val a = JSONObject(getQf(context, "$BASE/api/qf/tajweed/$chapter", "tj-$chapter")).getJSONArray("verses")
+        return List(a.length()) { a.getJSONObject(it).let { v -> TajweedVerse(v.getString("key"), v.getString("html")) } }
+    }
+
+    /** GET /api/qf/words/{chapter}?lang=&page= (all pages): word meanings and the tafsir line. */
+    suspend fun words(context: Context, chapter: Int, lang: String): List<WordsVerse> {
+        val out = ArrayList<WordsVerse>()
+        var page: Int? = 1
+        while (page != null && out.size <= 300) {
+            val o = JSONObject(getQf(context, "$BASE/api/qf/words/$chapter?lang=${enc(lang)}&page=$page", "wbw-$chapter-$lang-$page"))
+            val vs = o.getJSONArray("verses")
+            for (i in 0 until vs.length()) {
+                val v = vs.getJSONObject(i)
+                val ws = v.getJSONArray("words")
+                out += WordsVerse(
+                    v.getString("key"), v.optInt("n"),
+                    List(ws.length()) { ws.getJSONObject(it).let { w -> Word(w.optString("t"), w.optString("m")) } },
+                    v.optString("tafsir").ifBlank { null },
+                )
+            }
+            page = o.optJSONObject("pagination")?.let { p -> if (p.isNull("next_page")) null else p.optInt("next_page").takeIf { it > 0 } }
+        }
+        return out
+    }
+
+    data class Mosque(val name: String, val lat: Double, val lng: Double, val distanceM: Double)
+
+    /** Mosques around a point from OpenStreetMap (Overpass API); the search sends only the coordinates. */
+    suspend fun mosques(lat: Double, lng: Double, radiusM: Int): List<Mosque> = withContext(Dispatchers.IO) {
+        val q = "[out:json][timeout:25];(node[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng);" +
+            "way[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng););out center 80;"
+        val c = (URL("https://overpass-api.de/api/interpreter").openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; doOutput = true; connectTimeout = 15_000; readTimeout = 40_000
+            setRequestProperty("User-Agent", "AyatTutla-Android"); setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+        }
+        try {
+            c.outputStream.use { it.write(("data=" + enc(q)).toByteArray()) }
+            if (c.responseCode != 200) error("HTTP ${c.responseCode}")
+            val els = JSONObject(c.inputStream.bufferedReader().readText()).getJSONArray("elements")
+            List(els.length()) { els.getJSONObject(it) }.mapNotNull { e ->
+                val la = if (e.has("lat")) e.getDouble("lat") else e.optJSONObject("center")?.optDouble("lat") ?: return@mapNotNull null
+                val lo = if (e.has("lon")) e.getDouble("lon") else e.optJSONObject("center")?.optDouble("lon") ?: return@mapNotNull null
+                val tags = e.optJSONObject("tags")
+                val name = tags?.optString("name:ar")?.ifBlank { null } ?: tags?.optString("name")?.ifBlank { null } ?: "مسجد"
+                Mosque(name, la, lo, distance(lat, lng, la, lo))
+            }.sortedBy { it.distanceM }
+        } finally { c.disconnect() }
+    }
+
+    private fun distance(a1: Double, o1: Double, a2: Double, o2: Double): Double {
+        val r = 6_371_000.0
+        val dLat = Math.toRadians(a2 - a1); val dLon = Math.toRadians(o2 - o1)
+        val h = Math.sin(dLat / 2).let { it * it } + Math.cos(Math.toRadians(a1)) * Math.cos(Math.toRadians(a2)) * Math.sin(dLon / 2).let { it * it }
+        return 2 * r * Math.asin(Math.sqrt(h))
+    }
 }

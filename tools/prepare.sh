@@ -19,6 +19,8 @@ get https://ayattla.com/api/meta "$SRC/meta.json"
 get https://ayattla.com/tools/tasbih "$SRC/tasbih.html"
 get https://ayattla.com/tools/prayer-guide "$SRC/prayer-guide.html"
 get https://ayattla.com/api/duas "$SRC/duas.json"
+get https://ayattla.com/api/ruqya "$SRC/ruqya.json"
+get https://ayattla.com/tools/asma-ul-husna "$SRC/asma.html"
 # Ayat by topic: the list page, then one page per topic it links to (same as the iOS app).
 get https://ayattla.com/ayat/ "$SRC/ayat.html"
 rm -rf "$SRC/ayat"; mkdir -p "$SRC/ayat"
@@ -33,7 +35,7 @@ rm -f app/src/main/assets/content-v1.sqlite
 python3 tools/content/normalize_azkar.py "$SRC/azkar-db/azkar.json" --source "osamayy/azkar-db@$AZ" --out "$SRC/azkar.json"
 python3 tools/content/build_content_pack.py --version 1 --quran "$SRC/quran-uthmani.json" --azkar "$SRC/azkar.json" \
   --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" \
-  --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --out app/src/main/assets/content-v1.sqlite
+  --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --ruqya "$SRC/ruqya.json" --asma-html "$SRC/asma.html" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --out app/src/main/assets/content-v1.sqlite
 python3 - <<'PY'
 import sqlite3
 db = sqlite3.connect("app/src/main/assets/content-v1.sqlite")

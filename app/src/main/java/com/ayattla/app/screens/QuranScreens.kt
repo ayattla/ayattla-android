@@ -13,6 +13,12 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Eco
 import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.ui.draw.dropShadow
@@ -208,10 +214,16 @@ fun QuranIndexScreen(nav: NavHostController) {
             val tools = listOf(
                 Triple("الأجزاء", Icons.Outlined.FormatListNumbered) { showJuz = true },
                 Triple("آيات بالموضوع", Icons.Outlined.Eco) { nav.navigate("topics") },
-                Triple("المصحف بالصفحات", Icons.Outlined.AutoStories) { nav.navigate("page/" + (lastPage ?: 1)) },
+                Triple("التجويد الملون", Icons.Outlined.Palette) { nav.navigate("tajweed") },
+                Triple("معاني الكلمات", Icons.Outlined.Translate) { nav.navigate("word-by-word") },
+                Triple("اختبار الحفظ", Icons.Outlined.VisibilityOff) { nav.navigate("hifz-test") },
                 Triple("خطة الختمة", Icons.Outlined.CalendarMonth) { nav.navigate("khatma") },
                 Triple("الإذاعات", Icons.Outlined.Radio) { nav.navigate("radios") },
+                Triple("الرقية الشرعية", Icons.Outlined.Shield) { nav.navigate("ruqya") },
+                Triple("الأسماء الحسنى", Icons.Outlined.AutoAwesome) { nav.navigate("asma") },
+                Triple("المصحف بالصفحات", Icons.Outlined.AutoStories) { nav.navigate("page/" + (lastPage ?: 1)) },
                 Triple("آياتي المحفوظة", Icons.Outlined.StarOutline) { nav.navigate("saved") },
+                Triple("آية اليوم", Icons.Outlined.WbSunny) { nav.navigate("ayah-today") },
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 tools.chunked(3).forEach { row ->

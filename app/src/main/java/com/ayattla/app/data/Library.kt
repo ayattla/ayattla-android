@@ -69,4 +69,20 @@ class Library(private val content: ContentStore) {
         val r = a.getJSONObject(i)
         QuranRef(r.getInt("s"), r.getInt("a"), r.optInt("b", r.getInt("a")))
     }
+
+    /** /api/ruqya: Quran passages (references; the text is the pack's). */
+    val ruqya: Pair<String, List<QuranRef>>? by lazy {
+        runCatching {
+            val o = JSONObject(content.meta("ruqya")?.ifBlank { null } ?: return@lazy null)
+            o.optString("title") to refs(o.getJSONArray("items"))
+        }.getOrNull()
+    }
+
+    /** The 99 names as listed on /tools/asma-ul-husna. */
+    val asma: List<Pair<Int, String>> by lazy {
+        runCatching {
+            val a = JSONArray(content.meta("asma")?.ifBlank { null } ?: "[]")
+            List(a.length()) { i -> a.getJSONObject(i).let { it.optInt("n", i + 1) to it.getString("name") } }
+        }.getOrDefault(emptyList())
+    }
 }

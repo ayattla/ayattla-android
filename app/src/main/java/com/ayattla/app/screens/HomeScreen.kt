@@ -291,13 +291,13 @@ private fun HomeCreateBento(nav: NavHostController) {
         MediaShortcut(
             "مقطع تلاوة بالفيديو", "تظليل الكلمة مع التلاوة وأكثر من ٣٠ قارئا، بخلفية فيديو حقيقية",
             Icons.Filled.SmartDisplay, videos.firstOrNull(), 0, 210.dp, big = true, badge = "MP4",
-        ) { nav.navigate(Routes.studioMode(video = true)) }
+        ) { com.ayattla.app.studio.PendingMedia.media = videos.firstOrNull(); nav.navigate(Routes.studioMode(video = true)) }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MediaShortcut("بطاقة آية", "صورة للمنشورات والحالة", Icons.Filled.ImageIcon, images.firstOrNull(), 1, 190.dp, Modifier.weight(1f)) {
-                nav.navigate(Routes.studioMode(video = false))
+                com.ayattla.app.studio.PendingMedia.media = images.firstOrNull(); nav.navigate(Routes.studioMode(video = false))
             }
             MediaShortcut("حالة واتساب", "صورة أو فيديو أو نص متحرك", Icons.Filled.Forum, images.drop(1).firstOrNull(), 2, 190.dp, Modifier.weight(1f)) {
-                nav.navigate(Routes.studioMode(video = false))
+                nav.navigate("status")
             }
         }
         Row(
@@ -562,7 +562,7 @@ private fun HomeMediaGallery(nav: NavHostController) {
                 val tall = m.isVideo
                 Box(
                     Modifier.width(if (tall) 132.dp else 118.dp).height(if (tall) 236.dp else 158.dp)
-                        .pressable { nav.navigate(Routes.studioMode(video = m.isVideo)) }
+                        .pressable { com.ayattla.app.studio.PendingMedia.media = m; nav.navigate(Routes.studioMode(video = m.isVideo)) }
                         .clip(RoundedCornerShape(18.dp)).background(b.surface2),
                 ) {
                     RemoteImage(m.thumbUrl ?: m.previewUrl, Modifier.fillMaxSize(), maxWidth = 400)

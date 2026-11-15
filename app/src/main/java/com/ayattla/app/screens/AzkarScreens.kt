@@ -16,6 +16,10 @@ import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.CropPortrait
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material.icons.outlined.VolunteerActivism
@@ -128,13 +132,16 @@ fun AzkarListScreen(nav: NavHostController) {
                 HubRow("حصن المسلم", "أبواب الأذكار والأدعية كاملة مع العداد", Icons.Outlined.Shield, 0) { nav.navigate("azkar-all") }
                 HubRow("الأذكار", "أذكار الصباح والمساء والنوم مع العداد", Icons.Outlined.WbSunny, 1) { pinned.firstOrNull()?.let { nav.navigate(Routes.azkar(it.id)) } }
                 HubRow("أدعية من القرآن والسنة", "مصنفة حسب الحاجة مع المصدر", Icons.Outlined.VolunteerActivism, 2) { nav.navigate("duas") }
-                HubRow("المسبحة الإلكترونية", "عداد تسبيح يحفظ العدد على جهازك", Icons.Outlined.TouchApp, 4, divider = false) { nav.navigate("tasbih") }
+                HubRow("الرقية الشرعية", "آيات الرقية من القرآن تتلى متتابعة", Icons.Outlined.PlayCircle, 3) { nav.navigate("ruqya") }
+                HubRow("المسبحة الإلكترونية", "عداد تسبيح يحفظ العدد على جهازك", Icons.Outlined.TouchApp, 4) { nav.navigate("tasbih") }
+                HubRow("أسماء الله الحسنى", "بطاقة لكل اسم من الأسماء الحسنى", Icons.Outlined.AutoAwesome, 0, divider = false) { nav.navigate("asma") }
             }
             HubGroup("الحديث والتعلم", "أحاديث صحيحة وحسنة فقط، بالراوي والمصدر والحكم من الدرر السنية") {
                 HubRow("الأحاديث النبوية حسب الموضوع", "أحاديث صحيحة وحسنة بالتخريج والحكم والشرح", Icons.Outlined.Book, 1) { nav.navigate("hadith") }
                 HubRow("التحقق من حديث", "الصق حديثا وصلك لتعرف تخريجه وحكمه", Icons.Outlined.Verified, 2) { nav.navigate("hadith-check") }
                 HubRow("بطاقات الأحاديث الصحيحة", "حديث صحيح أو حسن مع الراوي والمصدر والحكم", Icons.Outlined.CropPortrait, 3) { nav.navigate("hadith") }
-                HubRow("صفة الوضوء والصلاة", "من الأحاديث الصحيحة مع الشرح", Icons.Outlined.WaterDrop, 4, divider = false) { nav.navigate("guide") }
+                HubRow("صفة الوضوء والصلاة", "من الأحاديث الصحيحة مع الشرح", Icons.Outlined.WaterDrop, 4) { nav.navigate("guide") }
+                HubRow("تحفيظ الأطفال جزء عم", "استماع وتكرار ونجوم وشهادة باسم الطفل", Icons.Outlined.ChildCare, 0, divider = false) { nav.navigate("kids") }
             }
         }
     }
@@ -256,6 +263,12 @@ fun AzkarScreen(nav: NavHostController, categoryId: Int) {
                         IconButton(onClick = { shareText(ctx, z.text + (z.reference?.let { "\n\n$it" } ?: "") + "\nayattla.com") }) {
                             Icon(Icons.Filled.Share, "مشاركة", tint = b.muted)
                         }
+                        IconButton(onClick = {
+                            com.ayattla.app.studio.PendingText.value = com.ayattla.app.studio.CardText(
+                                "اصنع حالة", z.text, z.reference ?: (cat?.title ?: ""), ratio = com.ayattla.app.studio.CardRatio.Story,
+                            )
+                            nav.navigate("text-card")
+                        }) { Icon(Icons.Outlined.PhotoLibrary, "اصنع حالة", tint = b.muted) }
                         Box(
                             Modifier.size(48.dp).clip(CircleShape).background(if (finished) b.accent else b.primary),
                             contentAlignment = Alignment.Center,

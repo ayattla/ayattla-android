@@ -93,13 +93,14 @@ object Recitation {
         String.format(Locale.US, "https://everyayah.com/data/%s/%03d%03d.mp3", folder, surah, ayah)
 
     /** Recite [surah] from [from] to [to] (inclusive). */
-    fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE) {
+    /** [repeatEach]: each ayah is heard that many times in a row (memorisation, kids' Juz Amma). */
+    fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1) {
         error = null
         val s = content.surah(surah)
         val last = minOf(to, s.ayahCount)
         val items = buildList {
             if (from == 1 && s.hasBasmala) add(item(reciter, surah, 0, "بسم الله الرحمن الرحيم", "1:1", s.shortName))
-            for (a in from..last) add(item(reciter, surah, a, "سورة ${s.shortName} - آية $a", "$surah:$a", s.shortName))
+            for (a in from..last) repeat(repeatEach.coerceIn(1, 10)) { add(item(reciter, surah, a, "سورة ${s.shortName} - آية $a", "$surah:$a", s.shortName)) }
         }
         val run = {
             controller?.run {
