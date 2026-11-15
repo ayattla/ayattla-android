@@ -17,12 +17,22 @@ rm -rf "$SRC/azkar-db"; git clone -q --depth 1 https://github.com/osamayy/azkar-
 AZ=$(git -C "$SRC/azkar-db" rev-parse HEAD)
 get https://ayattla.com/api/meta "$SRC/meta.json"
 get https://ayattla.com/tools/tasbih "$SRC/tasbih.html"
+get https://ayattla.com/tools/prayer-guide "$SRC/prayer-guide.html"
+get https://ayattla.com/api/duas "$SRC/duas.json"
+# Ayat by topic: the list page, then one page per topic it links to (same as the iOS app).
+get https://ayattla.com/ayat/ "$SRC/ayat.html"
+rm -rf "$SRC/ayat"; mkdir -p "$SRC/ayat"
+for slug in $(sed -n '/<nav class="tools"/,/<\/nav>/p' "$SRC/ayat.html" | grep -o 'href="/ayat/[a-z0-9_-]\+"' | sed 's|href="/ayat/||;s|"||' | sort -u); do
+  get "https://ayattla.com/ayat/$slug" "$SRC/ayat/$slug.html"
+done
+echo "topics: $(ls "$SRC/ayat" | wc -l)"
 get "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&tatweel=false&quranType=uthmani&outType=txt-2&agree=true" "$SRC/tanzil.txt" || echo "tanzil download failed"
 
 echo "== pack"
 python3 tools/content/normalize_azkar.py "$SRC/azkar-db/azkar.json" --source "osamayy/azkar-db@$AZ" --out "$SRC/azkar.json"
 python3 tools/content/build_content_pack.py --version 1 --quran "$SRC/quran-uthmani.json" --azkar "$SRC/azkar.json" \
-  --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" --out app/src/main/assets/content-v1.sqlite
+  --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" \
+  --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --out app/src/main/assets/content-v1.sqlite
 python3 - <<'PY'
 import sqlite3
 db = sqlite3.connect("app/src/main/assets/content-v1.sqlite")
@@ -30,6 +40,10 @@ q = lambda s: db.execute(s).fetchone()[0]
 n = q("select count(*) from ayah")
 print("surahs", q("select count(*) from surah"), "ayat", n, "reciters", q("select count(*) from reciter"),
       "azkar", q("select count(*) from azkar"), "categories", q("select count(*) from azkar_category"))
+import json
+for k in ("topics", "duas", "prayer_guide"):
+    r = db.execute("select value from meta where key=?", (k,)).fetchone()
+    print(k, "missing" if not r else len(json.loads(r[0]) if k == "topics" else r[0]))
 assert n == 6236, n
 PY
 if [ -s "$SRC/tanzil.txt" ]; then python3 tools/content/compare_tanzil.py app/src/main/assets/content-v1.sqlite "$SRC/tanzil.txt"; fi

@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -64,6 +66,43 @@ val LocalContent = staticCompositionLocalOf<ContentStore> { error("content") }
 val LocalPrefs = staticCompositionLocalOf<Prefs> { error("prefs") }
 
 class MainActivity : ComponentActivity() {
+    /** Debug only: makes a real 3-ayah clip (Al-Kawthar) and logs the result, for the CI emulator run. */
+    private fun selfTestClip() {
+        val app = application as AyatApp
+        (this as androidx.lifecycle.LifecycleOwner).let { owner ->
+            owner.lifecycleScope.launch {
+                val t0 = System.currentTimeMillis()
+                runCatching {
+                    com.ayattla.app.studio.ClipEngine(this@MainActivity, app.content).make(
+                        app.content.reciters.first(), 108, 1, 3,
+                        com.ayattla.app.studio.CardRatio.Story, com.ayattla.app.studio.CardStyle.Emerald,
+                    ) {}
+                }.onSuccess { f ->
+                    val r = android.media.MediaMetadataRetriever().apply { setDataSource(f.path) }
+                    val ms = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    val w = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                    val h = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                    val audio = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
+                    r.release()
+                    android.util.Log.i("AyatSelfTest", "CLIP OK bytes=${f.length()} durationMs=$ms size=${w}x$h audio=$audio took=${System.currentTimeMillis() - t0}ms")
+                }.onFailure { android.util.Log.e("AyatSelfTest", "CLIP FAILED", it) }
+            }
+        }
+    }
+
+    /** Notification taps: "home", "azkar:morning" or "azkar:evening". */
+    private fun openTarget(i: android.content.Intent?): String? {
+        val o = i?.getStringExtra("open") ?: return null
+        val content = (application as AyatApp).content
+        fun cat(word: String) = content.azkarCategories.firstOrNull { word in it.title }?.let { Routes.azkar(it.id) } ?: "azkar"
+        return when (o) {
+            "azkar:morning" -> cat("الصباح")
+            "azkar:evening" -> cat("المساء")
+            "home" -> "home"
+            else -> null
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
@@ -72,7 +111,8 @@ class MainActivity : ComponentActivity() {
         Recitation.connect(this)
         // Debug builds only: open a given screen directly (used by the CI screenshots).
         val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        val startScreen = if (debuggable) intent.getStringExtra("screen") else null
+        if (debuggable && intent.getStringExtra("selftest") == "clip") selfTestClip()
+        val startScreen = openTarget(intent) ?: if (debuggable) intent.getStringExtra("screen") else null
         setContent {
             AyatTheme(app.prefs.themeMode) {
                 CompositionLocalProvider(
@@ -166,6 +206,16 @@ fun AppRoot(startScreen: String? = null) {
             composable("settings") { SettingsScreen(nav) }
             composable("about") { AboutScreen(nav) }
             composable("radios") { RadiosScreen(nav) }
+            composable("hadith") { com.ayattla.app.screens.HadithScreen(nav) }
+            composable("hadith-check") { com.ayattla.app.screens.HadithCheckScreen(nav) }
+            composable("topics") { com.ayattla.app.screens.TopicsScreen(nav) }
+            composable("topic/{slug}") { e -> com.ayattla.app.screens.TopicScreen(nav, e.arguments?.getString("slug").orEmpty()) }
+            composable("duas") { com.ayattla.app.screens.DuasScreen(nav) }
+            composable("guide") { com.ayattla.app.screens.GuideScreen(nav) }
+            composable("khatma") { com.ayattla.app.screens.KhatmaScreen(nav) }
+            composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->
+                com.ayattla.app.screens.MushafScreen(nav, e.arguments!!.getInt("page"))
+            }
         }
     }
 }

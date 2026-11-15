@@ -30,6 +30,22 @@ class Prefs(context: Context) {
     var onboarded by mutableStateOf(sp.getBoolean("onboarded", false))
         private set
 
+    var khatma by mutableStateOf(sp.getString("khatma", null))
+        private set
+    var remindMorning by mutableStateOf(sp.getBoolean("remindMorning", false))
+        private set
+    var remindEvening by mutableStateOf(sp.getBoolean("remindEvening", false))
+        private set
+    var remindAyah by mutableStateOf(sp.getBoolean("remindAyah", false))
+        private set
+    var clipReciterId by mutableStateOf(sp.getString("clipReciter", "") ?: "")
+        private set
+
+    fun setKhatma(raw: String?) { khatma = raw; sp.edit().putString("khatma", raw).apply() }
+    fun setReminder(key: String, on: Boolean) {
+        when (key) { "remindMorning" -> remindMorning = on; "remindEvening" -> remindEvening = on; "remindAyah" -> remindAyah = on }
+        sp.edit().putBoolean(key, on).apply()
+    }
     fun setTheme(m: ThemeMode) { themeMode = m; sp.edit().putString("theme", m.name).apply() }
     fun setReciter(id: String) { reciterId = id; sp.edit().putString("reciter", id).apply() }
     fun setQuranFont(size: Float) { quranFontSize = size; sp.edit().putFloat("quranFont", size).apply() }

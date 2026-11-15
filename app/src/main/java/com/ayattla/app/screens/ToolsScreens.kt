@@ -35,6 +35,14 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.VolunteerActivism
+import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.Switch
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -97,6 +105,19 @@ fun MoreScreen(nav: NavHostController) {
     val b = LocalBrand.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("المزيد", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        com.ayattla.app.ui.components.SectionHeader("القرآن والسنة")
+        ToolGrid(
+            listOf(
+                ToolItem("المصحف بالصفحات", "604 صفحة", Icons.AutoMirrored.Filled.MenuBook) { nav.navigate("page/1") },
+                ToolItem("آيات بالموضوع", "مواضيع مختارة", Icons.Filled.Category) { nav.navigate("topics") },
+                ToolItem("الأحاديث", "صحيح وحسن فقط", Icons.Filled.LibraryBooks) { nav.navigate("hadith") },
+                ToolItem("التحقق من حديث", "ابحث عن درجته", Icons.Filled.FactCheck) { nav.navigate("hadith-check") },
+                ToolItem("الأدعية", "من القرآن والسنة", Icons.Filled.VolunteerActivism) { nav.navigate("duas") },
+                ToolItem("صفة الصلاة", "بالأدلة", Icons.Filled.SelfImprovement) { nav.navigate("guide") },
+                ToolItem("خطة الختمة", "ورد يومي", Icons.Filled.EventNote) { nav.navigate("khatma") },
+            )
+        )
+        com.ayattla.app.ui.components.SectionHeader("أدوات")
         ToolGrid(
             listOf(
                 ToolItem("مواقيت الصلاة", "حسب مدينتك", Icons.Filled.AccessTime) { nav.navigate("prayer") },
@@ -409,6 +430,30 @@ fun SettingsScreen(nav: NavHostController) {
                 Chip("تلقائي", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
                 Chip("فاتح", prefs.themeMode == ThemeMode.Light, { prefs.setTheme(ThemeMode.Light) })
                 Chip("داكن", prefs.themeMode == ThemeMode.Dark, { prefs.setTheme(ThemeMode.Dark) })
+            }
+            Text("التذكيرات", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            val ctx = LocalContext.current
+            var pendingKey by remember { mutableStateOf<String?>(null) }
+            val permission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+                pendingKey?.let { k -> if (ok) { prefs.setReminder(k, true); com.ayattla.app.widget.Reminders.reschedule(ctx, prefs) } }
+                pendingKey = null
+            }
+            AppCard(padding = 4.dp) {
+                com.ayattla.app.widget.Reminders.kinds.forEach { k ->
+                    val on = when (k.key) { "remindMorning" -> prefs.remindMorning; "remindEvening" -> prefs.remindEvening; else -> prefs.remindAyah }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.NotificationsActive, null, tint = b.goldInk)
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                            Text(k.title, style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                            Text(String.format(java.util.Locale.US, "يوميًا قرابة %d:%02d", k.time.hour, k.time.minute), style = MaterialTheme.typography.bodySmall, color = b.muted)
+                        }
+                        Switch(checked = on, onCheckedChange = { v ->
+                            if (v && !com.ayattla.app.widget.Reminders.canNotify(ctx) && android.os.Build.VERSION.SDK_INT >= 33) {
+                                pendingKey = k.key; permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else { prefs.setReminder(k.key, v); com.ayattla.app.widget.Reminders.reschedule(ctx, prefs) }
+                        })
+                    }
+                }
             }
             Text("القارئ", style = MaterialTheme.typography.titleMedium, color = b.ink)
             AppCard(padding = 4.dp) {

@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Favorite
@@ -82,6 +83,7 @@ fun QuranIndexScreen(nav: NavHostController) {
     val content = LocalContent.current
     var tab by rememberSaveable { mutableStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
+    val prefsNow = LocalPrefs.current
     val results = remember(query) { if (query.isBlank()) emptyList() else content.search(query) }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -118,6 +120,7 @@ fun QuranIndexScreen(nav: NavHostController) {
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip("السور", tab == 0, { tab = 0 })
             Chip("الأجزاء", tab == 1, { tab = 1 })
+            Chip("تصفح بالصفحات", false, { nav.navigate("page/" + (prefsNow.lastRead?.let { lr -> lr.split(":").let { content.pageOf(it[0].toInt(), it[1].toInt()) } } ?: 1)) })
         }
         Spacer(Modifier.height(8.dp))
         if (tab == 0) {
@@ -197,6 +200,10 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("سورة ${surah.shortName}", onBack = { nav.popBackStack() }) {
             IconButton(onClick = { showFont = true }) { Icon(Icons.Filled.FormatSize, "حجم الخط") }
+            IconButton(onClick = {
+                val i = (list.firstVisibleItemIndex - header).coerceIn(0, ayat.size - 1)
+                nav.navigate("page/" + (ayat[i].page ?: 1))
+            }) { Icon(Icons.Filled.AutoStories, "عرض الصفحات") }
             IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة") }
         }
         LazyColumn(state = list, contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 24.dp), modifier = Modifier.fillMaxSize()) {

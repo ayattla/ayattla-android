@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
@@ -159,6 +161,8 @@ fun HomeScreen(nav: NavHostController) {
                 ToolItem("مواقيت الصلاة", "حسب مدينتك", Icons.Filled.AccessTime) { nav.navigate("prayer") },
                 ToolItem("القبلة", "اتجاه الكعبة", Icons.Filled.Explore) { nav.navigate("qibla") },
                 ToolItem("التاريخ الهجري", "أم القرى", Icons.Filled.CalendarMonth) { nav.navigate("hijri") },
+                ToolItem("الأحاديث", "صحيح وحسن", Icons.Filled.LibraryBooks) { nav.navigate("hadith") },
+                ToolItem("خطة الختمة", "وردك اليومي", Icons.Filled.EventNote) { nav.navigate("khatma") },
             )
         )
         Spacer(Modifier.height(12.dp))

@@ -32,6 +32,18 @@ shot 13-zakat zakat
 shot 14-settings settings
 shot 15-about about
 shot 15b-radios radios 8
+shot 18-hadith hadith 9
+shot 19-topics topics
+shot 20-duas duas
+shot 21-guide guide
+shot 22-khatma khatma
+shot 23-mushaf-page page/50
+shot 24-mushaf-page-1 page/1
+# Real clip on the device: Al-Kawthar, 3 ayat, 9:16.
+adb logcat -c
+adb shell am start -S -n com.ayattla.app/.MainActivity --es selftest clip --es screen studio >/dev/null
+for i in $(seq 40); do sleep 5; adb logcat -d -s AyatSelfTest:* | grep -q 'CLIP' && break; done
+adb logcat -d -s AyatSelfTest:* | tee shots/selftest.txt
 adb shell cmd uimode night yes; sleep 2
 shot 16-home-dark home 7
 shot 17-reader-dark reader/1/1

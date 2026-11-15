@@ -66,6 +66,18 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
         ).use { c -> buildList { while (c.moveToNext()) add(JuzStart(c.getInt(0), c.getInt(1), c.getInt(2), c.getInt(3))) } }
     }
 
+    /** Ayat printed on a Madani mushaf page (1 to 604). */
+    fun page(page: Int): List<Ayah> =
+        db.rawQuery(
+            "SELECT surah, ayah, text_uthmani, page, juz FROM ayah WHERE page = ? ORDER BY surah, ayah",
+            arrayOf(page.toString()),
+        ).use { it.toAyat() }
+
+    /** First page of a surah, or the page holding a given ayah. */
+    fun pageOf(surah: Int, ayah: Int = 1): Int = ayah(surah, ayah)?.page ?: surah(surah).pageStart ?: 1
+
+    val library: Library by lazy { Library(this) }
+
     /** Search on the clean text (no tashkeel, unified alef), same normalization as the pack. */
     fun search(query: String, limit: Int = 200): List<Ayah> {
         val q = SearchText.clean(query)

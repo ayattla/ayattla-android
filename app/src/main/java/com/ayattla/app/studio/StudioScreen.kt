@@ -91,13 +91,15 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
     var ratio by rememberSaveable { mutableStateOf(CardRatio.Square) }
     var style by rememberSaveable { mutableStateOf(CardStyle.Emerald) }
     var pickSurah by remember { mutableStateOf(false) }
+    var video by rememberSaveable { mutableStateOf(false) }
+    val maxAyat = if (video) ClipEngine.MAX_AYAT else MAX_AYAT
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     val s = content.surah(surah)
 
-    LaunchedEffect(surah, from, to, ratio, style) {
+    LaunchedEffect(surah, from, to, ratio, style, video) {
         bitmap = null
-        val ayat = content.ayat(surah, from, to)
-        val ref = "سورة ${s.shortName} · " + if (from == to) "$from" else "$from-$to"
+        val ayat = content.ayat(surah, from, if (video) from else to)
+        val ref = "سورة ${s.shortName} · " + if (from == to || video) "$from" else "$from-$to"
         bitmap = withContext(Dispatchers.Default) { CardRenderer.render(ctx, ayat, ref, ratio, style) }
     }
 
@@ -112,7 +114,11 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
     val storage = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) save() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("اصنع بطاقة آية", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Text(if (video) "اصنع مقطع تلاوة" else "اصنع بطاقة آية", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Chip("بطاقة صورة", !video, { video = false })
+            Chip("مقطع فيديو", video, { video = true; if (ratio == CardRatio.Portrait) ratio = CardRatio.Story })
+        }
         Box(
             Modifier.fillMaxWidth().aspectRatio(ratio.w.toFloat() / ratio.h).clip(CardShape).background(b.surface2),
             contentAlignment = Alignment.Center,
@@ -121,7 +127,8 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
             if (bmp == null) CircularProgressIndicator(color = b.accent)
             else Image(bmp.asImageBitmap(), "معاينة البطاقة", Modifier.fillMaxSize())
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (video) ClipPanel(surah, from, to.coerceAtMost(from + maxAyat - 1), ratio, style)
+        else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
                 onClick = {
                     val bmp = bitmap ?: return@Button
@@ -152,13 +159,13 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
                 Text("سورة ${s.shortName}", style = MaterialTheme.typography.bodyLarge, color = b.primaryInk, modifier = Modifier.weight(1f))
                 Text("تغيير", style = MaterialTheme.typography.labelLarge, color = b.goldInk)
             }
-            Stepper("من آية", from, 1, s.ayahCount) { from = it; if (to < it) to = it; if (to - it >= MAX_AYAT) to = it + MAX_AYAT - 1 }
-            Stepper("إلى آية", to, from, minOf(s.ayahCount, from + MAX_AYAT - 1)) { to = it }
+            Stepper("من آية", from, 1, s.ayahCount) { from = it; if (to < it) to = it; if (to - it >= maxAyat) to = it + maxAyat - 1 }
+            Stepper("إلى آية", to, from, minOf(s.ayahCount, from + maxAyat - 1)) { to = it }
         }
         AppCard {
             Text("المقاس", style = MaterialTheme.typography.titleMedium, color = b.ink)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                CardRatio.entries.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
+                CardRatio.entries.filter { it != CardRatio.Wide && (!video || it != CardRatio.Portrait) }.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
             }
             Spacer(Modifier.height(12.dp))
             Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink)
@@ -166,7 +173,7 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
                 CardStyle.entries.forEach { st -> Chip(st.label, st == style, { style = st }) }
             }
         }
-        Text("نص الآيات من المصحف كما هو دون أي تعديل. حد البطاقة $MAX_AYAT آيات.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        if (!video) Text("نص الآيات من المصحف كما هو دون أي تعديل. حد البطاقة $MAX_AYAT آيات.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 
     if (pickSurah) {

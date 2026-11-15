@@ -66,6 +66,9 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
+    implementation(libs.media3.transformer)
+    implementation(libs.media3.effect)
+    implementation(libs.glance.appwidget)
     implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)

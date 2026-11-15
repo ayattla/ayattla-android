@@ -29,6 +29,8 @@ enum class CardRatio(val label: String, val w: Int, val h: Int) {
     Square("مربع 1:1", 1080, 1080),
     Portrait("منشور 4:5", 1080, 1350),
     Story("حالة 9:16", 1080, 1920),
+    /** Home-screen widget only (not offered in the studio). */
+    Wide("عريض", 1080, 600),
 }
 
 enum class CardStyle(val label: String, val top: Int, val bottom: Int, val text: Int, val accent: Int) {
@@ -39,7 +41,10 @@ enum class CardStyle(val label: String, val top: Int, val bottom: Int, val text:
 
 /** Draws an ayah card: Quran text exactly as in the pack, Amiri Quran, centered, auto-fitted. */
 object CardRenderer {
-    fun render(context: Context, ayat: List<Ayah>, reference: String, ratio: CardRatio, style: CardStyle): Bitmap {
+    fun render(context: Context, ayat: List<Ayah>, reference: String, ratio: CardRatio, style: CardStyle): Bitmap =
+        renderText(context, ayat.joinToString(" ") { it.text + " " + Num.ayahMark(it.ayah) }, reference, ratio, style)
+
+    fun renderText(context: Context, text: String, reference: String, ratio: CardRatio, style: CardStyle): Bitmap {
         val bmp = Bitmap.createBitmap(ratio.w, ratio.h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val w = ratio.w.toFloat()
@@ -53,11 +58,11 @@ object CardRenderer {
 
         val quran = ResourcesCompat.getFont(context, R.font.amiri_quran) ?: Typeface.SERIF
         val ui = ResourcesCompat.getFont(context, R.font.plex_semibold) ?: Typeface.DEFAULT_BOLD
-        val text = ayat.joinToString(" ") { it.text + " " + Num.ayahMark(it.ayah) }
 
-        val padX = 120f
+        val wide = ratio == CardRatio.Wide
+        val padX = if (wide) 90f else 120f
         val boxW = (w - padX * 2).toInt()
-        val maxH = h - 2 * 220f
+        val maxH = if (wide) h - 230f else h - 2 * 220f
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = quran; color = style.text }
         var size = 72f
         var layout: StaticLayout
@@ -73,14 +78,14 @@ object CardRenderer {
             size -= 2f
         }
         c.save()
-        c.translate(padX, (h - layout.height) / 2f - 30f)
+        c.translate(padX, if (wide) (h - 130f - layout.height) / 2f + 20f else (h - layout.height) / 2f - 30f)
         layout.draw(c)
         c.restore()
 
         val refPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = ui; color = style.accent; textSize = 40f; textAlign = Paint.Align.CENTER }
-        c.drawText(reference, w / 2, h - 170f, refPaint)
+        c.drawText(reference, w / 2, if (wide) h - 100f else h - 170f, refPaint)
         val mark = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = ui; color = withAlpha(style.text, 150); textSize = 30f; textAlign = Paint.Align.CENTER }
-        c.drawText("آيات تتلى · ayattla.com", w / 2, h - 110f, mark)
+        c.drawText("آيات تتلى · ayattla.com", w / 2, if (wide) h - 58f else h - 110f, mark)
         return bmp
     }
 
