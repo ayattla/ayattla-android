@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.ayattla.app.Routes
+import com.ayattla.app.goTab
 
 /** The site's tool groups, as the iOS SiteTool.Group. */
 enum class ToolGroup(val title: String) { Content("صناعة المحتوى"), Quran("القرآن"), Daily("أدوات يومية"), Hadith("الحديث والتعلم") }
@@ -90,6 +91,6 @@ fun openTool(nav: androidx.navigation.NavHostController, c: Context, t: SiteTool
     ToolUsage.record(c, t.id)
     val r = t.route
     if (r == "home" || r == "quran" || r == "azkar" || r == "more" || r.startsWith("studio")) {
-        if (r.startsWith("studio")) nav.navigate(r) { launchSingleTop = true } else com.ayattla.app.run { nav.goTab(r) }
+        if (r.startsWith("studio")) nav.navigate(r) { launchSingleTop = true } else nav.goTab(r)
     } else nav.navigate(r)
 }

@@ -227,6 +227,7 @@ fun AppRoot(startScreen: String? = null) {
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->
                 com.ayattla.app.screens.MushafScreen(nav, e.arguments!!.getInt("page"))
             }
+            }
           }
             if (!onTab && Recitation.active) PlayerBar()
         }
