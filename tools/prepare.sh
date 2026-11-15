@@ -29,6 +29,7 @@ echo "topics: $(ls "$SRC/ayat" | wc -l)"
 get "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&tatweel=false&quranType=uthmani&outType=txt-2&agree=true" "$SRC/tanzil.txt" || echo "tanzil download failed"
 
 echo "== pack"
+rm -f app/src/main/assets/content-v1.sqlite
 python3 tools/content/normalize_azkar.py "$SRC/azkar-db/azkar.json" --source "osamayy/azkar-db@$AZ" --out "$SRC/azkar.json"
 python3 tools/content/build_content_pack.py --version 1 --quran "$SRC/quran-uthmani.json" --azkar "$SRC/azkar.json" \
   --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" \
