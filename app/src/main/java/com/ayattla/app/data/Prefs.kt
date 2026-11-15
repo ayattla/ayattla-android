@@ -11,7 +11,7 @@ import com.ayattla.app.ui.theme.ThemeMode
 class Prefs(context: Context) {
     private val sp: SharedPreferences = context.getSharedPreferences("ayat", Context.MODE_PRIVATE)
 
-    var themeMode by mutableStateOf(runCatching { ThemeMode.valueOf(sp.getString("theme", "System")!!) }.getOrDefault(ThemeMode.System))
+    var themeMode by mutableStateOf(runCatching { ThemeMode.valueOf(sp.getString("theme", "Light")!!) }.getOrDefault(ThemeMode.Light))
         private set
     var reciterId by mutableStateOf(sp.getString("reciter", "") ?: "")
         private set
@@ -46,6 +46,9 @@ class Prefs(context: Context) {
         when (key) { "remindMorning" -> remindMorning = on; "remindEvening" -> remindEvening = on; "remindAyah" -> remindAyah = on }
         sp.edit().putBoolean(key, on).apply()
     }
+    /** The user chose a plain colour in the studio (so it stops picking a photo for them). */
+    var studioColorChosen by mutableStateOf(sp.getBoolean("studioColor", false))
+    fun markStudioColorChosen() { studioColorChosen = true; sp.edit().putBoolean("studioColor", true).apply() }
     fun setTheme(m: ThemeMode) { themeMode = m; sp.edit().putString("theme", m.name).apply() }
     fun setReciter(id: String) { reciterId = id; sp.edit().putString("reciter", id).apply() }
     fun setQuranFont(size: Float) { quranFontSize = size; sp.edit().putFloat("quranFont", size).apply() }

@@ -393,8 +393,8 @@ fun SettingsScreen(nav: NavHostController) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("المظهر", style = MaterialTheme.typography.titleMedium, color = b.ink)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("تلقائي", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
                 Chip("فاتح", prefs.themeMode == ThemeMode.Light, { prefs.setTheme(ThemeMode.Light) })
+                Chip("حسب الجهاز", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
                 Chip("داكن", prefs.themeMode == ThemeMode.Dark, { prefs.setTheme(ThemeMode.Dark) })
             }
             Text("التذكيرات", style = MaterialTheme.typography.titleMedium, color = b.ink)

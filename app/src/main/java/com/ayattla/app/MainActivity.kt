@@ -92,10 +92,13 @@ class MainActivity : ComponentActivity() {
                 runCatching {
                     val bg = if (video) com.ayattla.app.studio.defaultMedia(this@MainActivity, true) ?: error("no background video") else null
                     android.util.Log.i("AyatSelfTest", "background=${bg?.previewUrl}")
-                    com.ayattla.app.studio.ClipEngine(this@MainActivity, app.content).make(
-                        app.content.reciters.first(), 108, 1, 3,
-                        com.ayattla.app.studio.CardRatio.Story, com.ayattla.app.studio.CardStyle.Emerald, bg,
-                    ) {}
+                    val p = com.ayattla.app.studio.Project(
+                        ranges = listOf(com.ayattla.app.studio.AyahRange(108, 1, 3)), ratio = com.ayattla.app.studio.CardRatio.Story,
+                        background = bg?.let { com.ayattla.app.studio.Background.Library(it) } ?: com.ayattla.app.studio.Background.Color,
+                        style = com.ayattla.app.studio.Style(anim = if (video) com.ayattla.app.studio.Anim.Words else com.ayattla.app.studio.Anim.Slide),
+                        pauses = if (video) mapOf("108:1" to 500) else emptyMap(),
+                    )
+                    com.ayattla.app.studio.ClipEngine(this@MainActivity, app.content).make(p, app.content.reciters.first()) {}
                 }.onSuccess { f ->
                     val r = android.media.MediaMetadataRetriever().apply { setDataSource(f.path) }
                     val ms = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
