@@ -1,6 +1,17 @@
 #!/bin/bash
 # Runs inside the emulator job: installs the debug APK and captures each main screen.
 set -u
+# 1) The minified release build: launch it and record any crash.
+REL=$(ls rel/*.apk 2>/dev/null | head -1)
+if [ -n "$REL" ]; then
+  adb install -r "$REL" && adb logcat -c
+  adb shell am start -W -n com.ayattla.app/.MainActivity >/dev/null; sleep 12
+  adb shell am start -W -n com.ayattla.app/.MainActivity >/dev/null; sleep 4
+  mkdir -p shots; adb exec-out screencap -p > shots/00-release.png
+  adb logcat -d -s AndroidRuntime:E System.err:W > shots/release-crash.txt
+  echo "release crash lines: $(grep -c 'FATAL' shots/release-crash.txt)"
+  adb uninstall com.ayattla.app >/dev/null
+fi
 APK=$(ls apk/*.apk | head -1)
 adb install -r "$APK"
 adb shell pm grant com.ayattla.app android.permission.POST_NOTIFICATIONS 2>/dev/null || true

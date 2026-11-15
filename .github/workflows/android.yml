@@ -89,7 +89,10 @@ jobs:
           path: out
 
       - name: Pick the debug APK
-        run: mkdir -p apk && cp out/apk/debug/*.apk apk/
+        run: |
+          mkdir -p apk rel && cp out/apk/debug/*.apk apk/
+          cp out/apk/release/*.apk rel/ 2>/dev/null || true
+          ls apk rel
 
       - name: Enable KVM
         run: |

@@ -29,9 +29,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            if (!System.getenv("AYT_KS_PASS").isNullOrEmpty()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            // Store key when present (server); otherwise the debug key so CI can install and test the minified build.
+            signingConfig = if (!System.getenv("AYT_KS_PASS").isNullOrEmpty()) signingConfigs.getByName("release")
+            else signingConfigs.getByName("debug")
         }
     }
 
