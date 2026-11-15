@@ -143,6 +143,12 @@ class ClipEngine(private val context: Context, private val content: ContentStore
                     transformer = Transformer.Builder(context)
                         .setVideoMimeType(MimeTypes.VIDEO_H264)
                         .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                        // ~5 Mbps: sharp text, and small enough for WhatsApp and Instagram.
+                        .setEncoderFactory(
+                            androidx.media3.transformer.DefaultEncoderFactory.Builder(context)
+                                .setRequestedVideoEncoderSettings(androidx.media3.transformer.VideoEncoderSettings.Builder().setBitrate(5_000_000).build())
+                                .build(),
+                        )
                         .addListener(object : Transformer.Listener {
                             override fun onCompleted(composition: Composition, exportResult: ExportResult) { if (cont.isActive) cont.resume(Unit) }
                             override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
