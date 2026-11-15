@@ -76,7 +76,7 @@ private const val MAX_AYAT = 10
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
+fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1) {
     val b = LocalBrand.current
     val content = LocalContent.current
     val ctx = LocalContext.current
@@ -91,7 +91,7 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
     var ratio by rememberSaveable { mutableStateOf(CardRatio.Square) }
     var style by rememberSaveable { mutableStateOf(CardStyle.Emerald) }
     var pickSurah by remember { mutableStateOf(false) }
-    var video by rememberSaveable { mutableStateOf(false) }
+    var video by rememberSaveable(v0) { mutableStateOf(v0 == 1) }
     val maxAyat = if (video) ClipEngine.MAX_AYAT else MAX_AYAT
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     val s = content.surah(surah)
@@ -113,11 +113,19 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
     }
     val storage = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) save() }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(if (video) "اصنع مقطع تلاوة" else "اصنع بطاقة آية", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Chip("بطاقة صورة", !video, { video = false })
-            Chip("مقطع فيديو", video, { video = true; if (ratio == CardRatio.Portrait) ratio = CardRatio.Story })
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = com.ayattla.app.LocalBottomInset.current + 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        com.ayattla.app.ui.components.LargeTitle("صناعة المحتوى")
+        com.ayattla.app.ui.components.HeroHeader(
+            if (video) "مقطع قرآني" else "بطاقة آية", eyebrow = "الاستوديو",
+            subtitle = if (video) "آيات بصوت القارئ وتظليل الكلمات، تصنع على جهازك بلا علامة مائية" else "صورة بالمقاس الذي تريد، جاهزة للحالة والمنشور",
+        ) {
+            com.ayattla.app.ui.components.SiteSegmented(
+                listOf(false to "بطاقة صورة", true to "مقطع فيديو"), video,
+                { v -> video = v; if (v && ratio == CardRatio.Portrait) ratio = CardRatio.Story },
+            )
         }
         Box(
             Modifier.fillMaxWidth().aspectRatio(ratio.w.toFloat() / ratio.h).clip(CardShape).background(b.surface2),
@@ -129,25 +137,18 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int) {
         }
         if (video) ClipPanel(surah, from, to.coerceAtMost(from + maxAyat - 1), ratio, style)
         else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                onClick = {
-                    val bmp = bitmap ?: return@Button
-                    val uri = CardRenderer.shareUri(ctx, bmp)
-                    val send = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    ctx.startActivity(Intent.createChooser(send, "مشاركة البطاقة"))
-                },
-                enabled = bitmap != null, modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = b.primary),
-            ) { Icon(Icons.Filled.Share, null); Spacer(Modifier.size(6.dp)); Text("مشاركة") }
-            OutlinedButton(
-                onClick = {
-                    if (Build.VERSION.SDK_INT < 29 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                        storage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    else save()
-                },
-                enabled = bitmap != null, modifier = Modifier.weight(1f),
-            ) { Icon(Icons.Filled.Download, null); Spacer(Modifier.size(6.dp)); Text("حفظ في الصور") }
+            com.ayattla.app.ui.components.BrandButton("مشاركة", Modifier.weight(1f), icon = Icons.Filled.Share, enabled = bitmap != null) {
+                val bmp = bitmap ?: return@BrandButton
+                val uri = CardRenderer.shareUri(ctx, bmp)
+                val send = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                ctx.startActivity(Intent.createChooser(send, "مشاركة البطاقة"))
+            }
+            com.ayattla.app.ui.components.BrandButton("حفظ في الصور", Modifier.weight(1f), icon = Icons.Filled.Download, kind = com.ayattla.app.ui.components.BtnKind.Secondary, enabled = bitmap != null) {
+                if (Build.VERSION.SDK_INT < 29 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                    storage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                else save()
+            }
         }
 
         AppCard {

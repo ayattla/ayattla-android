@@ -6,6 +6,37 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.CropPortrait
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.WbTwilight
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import com.ayattla.app.LocalBottomInset
+import com.ayattla.app.ui.components.Badge
+import com.ayattla.app.ui.components.CategorySelector
+import com.ayattla.app.ui.components.Chevron
+import com.ayattla.app.ui.components.IconTile
+import com.ayattla.app.ui.components.SectionHeader
+import com.ayattla.app.ui.components.TileStyle
+import com.ayattla.app.ui.components.pageHeadSurface
+import com.ayattla.app.ui.components.pressable
+import com.ayattla.app.ui.components.surface
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,40 +84,118 @@ import com.ayattla.app.ui.theme.Fonts
 import com.ayattla.app.ui.theme.LocalBrand
 import java.time.LocalDate
 
+/** «الأذكار والحديث» tab, as the iOS AzkarHadithView: head band, today's four chapters, grouped rows. */
 @Composable
 fun AzkarListScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val content = LocalContent.current
     val cats = content.azkarCategories
-    // Morning and evening first, as on the site.
-    val featured = cats.filter { "الصباح" in it.title || "المساء" in it.title || "النوم" in it.title }
-    val rest = cats - featured.toSet()
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item {
-            Text("الأذكار", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            Text("من حصن المسلم", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        }
-        items(featured, key = { "f${it.id}" }) { c ->
-            val icon = when {
-                "الصباح" in c.title -> Icons.Filled.WbSunny
-                "المساء" in c.title -> Icons.Filled.WbTwilight
-                else -> Icons.Filled.NightsStay
+    val pinned = listOf("الصباح", "المساء", "النوم", "الاستيقاظ").mapNotNull { w -> cats.firstOrNull { w in it.title } }
+    Column(Modifier.fillMaxSize()) {
+        AppTopBar("الأذكار والحديث")
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 8.dp, bottom = LocalBottomInset.current),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Column(Modifier.fillMaxWidth().pageHeadSurface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Badge("حصن المسلم والسنة")
+                Text("الأذكار والحديث", style = MaterialTheme.typography.headlineSmall, color = b.ink)
+                Text("أذكارك اليومية بعداد يحفظ تقدمك، وأدعية من القرآن والسنة، وأحاديث صحيحة وحسنة بمصادرها", style = MaterialTheme.typography.bodySmall, color = b.muted)
             }
-            AppCard(onClick = { nav.navigate(Routes.azkar(c.id)) }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).clip(SmallShape).background(b.goldSoft), contentAlignment = Alignment.Center) { Icon(icon, null, tint = b.goldInk) }
-                    Text(c.title, style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.padding(horizontal = 12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionHeader("أذكار اليوم", subtitle = "يحفظ العداد تقدمك اليوم على جهازك")
+                pinned.chunked(2).forEachIndexed { r, row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEachIndexed { i, c ->
+                            Row(
+                                Modifier.weight(1f).heightIn(min = 66.dp).pressable { nav.navigate(Routes.azkar(c.id)) }.surface(b).padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                IconTile(azkarIcon(c.title), style = TileStyle.Gradient(r * 2 + i + 1), size = 42.dp)
+                                Text(c.title, style = MaterialTheme.typography.labelLarge, color = b.ink)
+                            }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
                 }
             }
+            HubGroup("الأذكار والأدعية", "من حصن المسلم ومن القرآن والسنة، مع المصدر") {
+                HubRow("حصن المسلم", "أبواب الأذكار والأدعية كاملة مع العداد", Icons.Outlined.Shield, 0) { nav.navigate("azkar-all") }
+                HubRow("الأذكار", "أذكار الصباح والمساء والنوم مع العداد", Icons.Outlined.WbSunny, 1) { pinned.firstOrNull()?.let { nav.navigate(Routes.azkar(it.id)) } }
+                HubRow("أدعية من القرآن والسنة", "مصنفة حسب الحاجة مع المصدر", Icons.Outlined.VolunteerActivism, 2) { nav.navigate("duas") }
+                HubRow("المسبحة الإلكترونية", "عداد تسبيح يحفظ العدد على جهازك", Icons.Outlined.TouchApp, 4, divider = false) { nav.navigate("tasbih") }
+            }
+            HubGroup("الحديث والتعلم", "أحاديث صحيحة وحسنة فقط، بالراوي والمصدر والحكم من الدرر السنية") {
+                HubRow("الأحاديث النبوية حسب الموضوع", "أحاديث صحيحة وحسنة بالتخريج والحكم والشرح", Icons.Outlined.Book, 1) { nav.navigate("hadith") }
+                HubRow("التحقق من حديث", "الصق حديثا وصلك لتعرف تخريجه وحكمه", Icons.Outlined.Verified, 2) { nav.navigate("hadith-check") }
+                HubRow("بطاقات الأحاديث الصحيحة", "حديث صحيح أو حسن مع الراوي والمصدر والحكم", Icons.Outlined.CropPortrait, 3) { nav.navigate("hadith") }
+                HubRow("صفة الوضوء والصلاة", "من الأحاديث الصحيحة مع الشرح", Icons.Outlined.WaterDrop, 4, divider = false) { nav.navigate("guide") }
+            }
         }
-        item { Text("كل الأبواب", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.padding(top = 8.dp)) }
-        items(rest, key = { it.id }) { c ->
-            Column {
-                Text(
-                    c.title, style = MaterialTheme.typography.bodyLarge, color = b.ink,
-                    modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.azkar(c.id)) }.padding(vertical = 12.dp),
-                )
-                HorizontalDivider(color = b.line)
+    }
+}
+
+fun azkarIcon(title: String): ImageVector = when {
+    "الصباح" in title -> Icons.Outlined.WbTwilight
+    "المساء" in title -> Icons.Outlined.WbTwilight
+    "النوم" in title -> Icons.Outlined.Bedtime
+    "الاستيقاظ" in title -> Icons.Outlined.WbSunny
+    else -> Icons.Outlined.WbSunny
+}
+
+@Composable
+private fun HubGroup(title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
+    val b = LocalBrand.current
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionHeader(title, subtitle = subtitle)
+        Column(Modifier.fillMaxWidth().surface(b), content = content)
+    }
+}
+
+@Composable
+private fun HubRow(title: String, subtitle: String, icon: ImageVector, tile: Int, divider: Boolean = true, onClick: () -> Unit) {
+    val b = LocalBrand.current
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IconTile(icon, style = TileStyle.Gradient(tile), size = 40.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted)
+            }
+            Chevron()
+        }
+        if (divider) Box(Modifier.fillMaxWidth().padding(start = 70.dp).height(0.5.dp).background(b.line))
+    }
+}
+
+/** Every chapter of Hisn al-Muslim. */
+@Composable
+fun AzkarAllScreen(nav: NavHostController) {
+    val b = LocalBrand.current
+    val content = LocalContent.current
+    var q by rememberSaveable { mutableStateOf("") }
+    val cats = content.azkarCategories.filter { q.isBlank() || q.trim() in it.title }
+    Column(Modifier.fillMaxSize()) {
+        AppTopBar("حصن المسلم", onBack = { nav.popBackStack() })
+        LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            item {
+                CategorySelector(listOf("all" to "${content.azkarCategories.size} بابا"), "all", {}, contentPadding = 0.dp)
+                Spacer(Modifier.height(12.dp))
+            }
+            itemsIndexed(cats, key = { _, c -> c.id }) { i, c ->
+                val shape = when {
+                    cats.size == 1 -> RoundedCornerShape(18.dp)
+                    i == 0 -> RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+                    i == cats.lastIndex -> RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp)
+                    else -> RoundedCornerShape(0.dp)
+                }
+                Column(Modifier.fillMaxWidth().clip(shape).background(b.surface).clickable { nav.navigate(Routes.azkar(c.id)) }) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(c.title, style = MaterialTheme.typography.bodyLarge, color = b.ink, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
+                        Chevron()
+                    }
+                    if (i != cats.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(0.5.dp).background(b.line))
+                }
             }
         }
     }

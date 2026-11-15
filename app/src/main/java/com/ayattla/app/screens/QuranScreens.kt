@@ -1,6 +1,43 @@
 package com.ayattla.app.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.FormatListNumbered
+import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.DpOffset
+import com.ayattla.app.LocalBottomInset
+import com.ayattla.app.ui.components.Badge
+import com.ayattla.app.ui.components.BrandButton
+import com.ayattla.app.ui.components.BtnKind
+import com.ayattla.app.ui.components.Chevron
+import com.ayattla.app.ui.components.HeroHeader
+import com.ayattla.app.ui.components.IconTile
+import com.ayattla.app.ui.components.LargeTitle
+import com.ayattla.app.ui.components.SectionHeader
+import com.ayattla.app.ui.components.pressable
+import com.ayattla.app.ui.components.surface
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,85 +114,146 @@ import com.ayattla.app.ui.theme.Fonts
 import com.ayattla.app.ui.theme.LocalBrand
 import com.ayattla.app.ui.theme.Num
 
+/** «القرآن» tab, as the iOS QuranView: large title, search, hero with continue reading, Quran tools, every surah. */
 @Composable
 fun QuranIndexScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val content = LocalContent.current
-    var tab by rememberSaveable { mutableStateOf(0) }
+    val prefs = LocalPrefs.current
+    val ctx = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
-    val prefsNow = LocalPrefs.current
-    val results = remember(query) { if (query.isBlank()) emptyList() else content.search(query) }
+    var showJuz by rememberSaveable { mutableStateOf(false) }
+    val q = query.trim()
+    val surahHits = remember(q) { if (q.isEmpty()) content.surahs else content.surahs.filter { q in it.shortName || "${it.id}" == q } }
+    val ayahHits = remember(q) { if (q.length < 2) emptyList() else content.search(q) }
+    val last = prefs.lastRead?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }
+    val lastPage = last?.let { content.pageOf(it[0], it[1]) }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Text(
-            "القرآن الكريم", style = MaterialTheme.typography.headlineSmall, color = b.ink,
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp), textAlign = TextAlign.Center,
-        )
-        OutlinedTextField(
-            value = query, onValueChange = { query = it },
-            modifier = Modifier.fillMaxWidth().padding(16.dp, 10.dp),
-            placeholder = { Text("ابحث في الآيات") },
-            leadingIcon = { Icon(Icons.Filled.Search, null) },
-            trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, "مسح") } },
-            singleLine = true, shape = SmallShape,
-            colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = b.surface, unfocusedContainerColor = b.surface, focusedBorderColor = b.primaryInk, unfocusedBorderColor = b.line),
-        )
-        if (query.isNotBlank()) {
-            if (results.isEmpty()) EmptyState("لا نتائج", "جرّب كلمة أخرى من الآية، دون تشكيل.")
-            else {
-                Text("${results.size} نتيجة", style = MaterialTheme.typography.labelMedium, color = b.muted, modifier = Modifier.padding(horizontal = 16.dp))
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(results, key = { it.key }) { a ->
-                        Column(
-                            Modifier.fillMaxWidth().clip(SmallShape).background(b.surface).clickable { nav.navigate(Routes.reader(a.surah, a.ayah)) }.padding(14.dp)
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, LocalBottomInset.current), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        item {
+            Column(Modifier.statusBarsPadding().padding(top = 8.dp)) {
+                LargeTitle(if (showJuz) "الأجزاء" else "القرآن")
+                // iOS search field: grey rounded box.
+                Row(
+                    Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(12.dp)).background(b.ink.copy(alpha = 0.07f)).padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(Icons.Filled.Search, null, tint = b.muted, modifier = Modifier.size(20.dp))
+                    Box(Modifier.weight(1f)) {
+                        if (query.isEmpty()) Text("ابحث في السور والآيات", style = MaterialTheme.typography.bodyLarge, color = b.muted)
+                        BasicTextField(query, { query = it }, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = b.ink), cursorBrush = SolidColor(b.green), modifier = Modifier.fillMaxWidth())
+                    }
+                    if (query.isNotEmpty()) Icon(Icons.Filled.Close, "مسح", tint = b.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
+                }
+                Spacer(Modifier.height(20.dp))
+            }
+        }
+        if (q.isNotEmpty()) {
+            if (surahHits.isNotEmpty()) {
+                item { SectionHeader("السور"); Spacer(Modifier.height(8.dp)) }
+                item { SurahBlock(surahHits, nav) }
+            }
+            if (ayahHits.isNotEmpty()) {
+                item { Spacer(Modifier.height(20.dp)); SectionHeader("الآيات", subtitle = "${ayahHits.size} نتيجة"); Spacer(Modifier.height(8.dp)) }
+                items(ayahHits, key = { it.key }) { a ->
+                    Column(Modifier.padding(bottom = 10.dp).fillMaxWidth().pressable { nav.navigate(Routes.reader(a.surah, a.ayah)) }.surface(b).padding(14.dp)) {
+                        Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        Text("سورة ${content.surah(a.surah).shortName} · ${a.ayah}", style = MaterialTheme.typography.labelMedium, color = b.primaryInk)
+                    }
+                }
+            }
+            if (surahHits.isEmpty() && ayahHits.isEmpty()) item { EmptyState("لا نتائج", "جرّب كلمة أخرى من الآية، دون تشكيل.") }
+            return@LazyColumn
+        }
+        if (showJuz) {
+            item {
+                Column(Modifier.fillMaxWidth().surface(b)) {
+                    content.juzStarts.forEachIndexed { i, j ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { nav.navigate(Routes.reader(j.surah, j.ayah)) }.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                            Text("سورة ${content.surah(a.surah).shortName} · ${a.ayah}", style = MaterialTheme.typography.labelMedium, color = b.goldInk)
+                            NumberBadge(j.juz)
+                            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                                Text("الجزء ${j.juz}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                                Text("يبدأ من سورة ${content.surah(j.surah).shortName} آية ${j.ayah} · صفحة ${j.page}", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                            }
+                            Chevron()
                         }
+                        if (i < content.juzStarts.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 64.dp).height(0.5.dp).background(b.line))
                     }
                 }
+                Spacer(Modifier.height(12.dp))
+                BrandButton("عودة إلى السور", Modifier.fillMaxWidth(), kind = BtnKind.Secondary) { showJuz = false }
             }
-            return@Column
+            return@LazyColumn
         }
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Chip("السور", tab == 0, { tab = 0 })
-            Chip("الأجزاء", tab == 1, { tab = 1 })
-            Chip("تصفح بالصفحات", false, { nav.navigate("page/" + (prefsNow.lastRead?.let { lr -> lr.split(":").let { content.pageOf(it[0].toInt(), it[1].toInt()) } } ?: 1)) })
+        item {
+            HeroHeader("القرآن الكريم", eyebrow = "المصحف الشريف", subtitle = "٦٠٤ صفحة بترقيم مصحف المدينة والرسم العثماني، مع التلاوة والتفسير") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                    BrandButton(
+                        if (last != null) "تابع: سورة ${content.surah(last[0]).shortName}" else "ابدأ القراءة",
+                        icon = Icons.AutoMirrored.Outlined.MenuBook, kind = BtnKind.Gold,
+                    ) { if (last != null) nav.navigate(Routes.reader(last[0], last[1])) else nav.navigate(Routes.reader(1)) }
+                    BrandButton("الأجزاء", kind = BtnKind.Ghost) { showJuz = true }
+                }
+            }
+            Spacer(Modifier.height(32.dp))
         }
-        Spacer(Modifier.height(8.dp))
-        if (tab == 0) {
-            LazyColumn(contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 16.dp)) {
-                items(content.surahs, key = { it.id }) { s ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { nav.navigate(Routes.reader(s.id)) }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        NumberBadge(s.id)
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("سورة ${s.shortName}", style = MaterialTheme.typography.titleMedium, color = b.ink)
-                            Text("${s.revelationAr} · ${s.ayahCount} آية", style = MaterialTheme.typography.bodySmall, color = b.muted)
-                        }
-                        Text(s.nameAr, fontFamily = Fonts.quran, fontSize = 20.sp, color = b.primaryInk)
-                    }
-                    HorizontalDivider(color = b.line)
-                }
-            }
-        } else {
-            LazyColumn(contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 16.dp)) {
-                items(content.juzStarts, key = { it.juz }) { j ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { nav.navigate(Routes.reader(j.surah, j.ayah)) }.padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        NumberBadge(j.juz)
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("الجزء ${j.juz}", style = MaterialTheme.typography.titleMedium, color = b.ink)
-                            Text("يبدأ من سورة ${content.surah(j.surah).shortName} آية ${j.ayah} · صفحة ${j.page}", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        item {
+            SectionHeader("أدوات القرآن", subtitle = "اقرأ واستمع واحفظ وتدبر")
+            Spacer(Modifier.height(12.dp))
+            val tools = listOf(
+                Triple("الأجزاء", Icons.Outlined.FormatListNumbered) { showJuz = true },
+                Triple("آيات بالموضوع", Icons.Outlined.Eco) { nav.navigate("topics") },
+                Triple("المصحف بالصفحات", Icons.Outlined.AutoStories) { nav.navigate("page/" + (lastPage ?: 1)) },
+                Triple("خطة الختمة", Icons.Outlined.CalendarMonth) { nav.navigate("khatma") },
+                Triple("الإذاعات", Icons.Outlined.Radio) { nav.navigate("radios") },
+                Triple("آياتي المحفوظة", Icons.Outlined.StarOutline) { nav.navigate("saved") },
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                tools.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { (t, icon, go) ->
+                            Column(
+                                Modifier.weight(1f).heightIn(min = 112.dp).pressable(go).surface(b).padding(vertical = 14.dp, horizontal = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                            ) {
+                                IconTile(icon, size = 46.dp)
+                                Text(t, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = b.ink, textAlign = TextAlign.Center, maxLines = 2)
+                            }
                         }
                     }
-                    HorizontalDivider(color = b.line)
                 }
             }
+            Spacer(Modifier.height(32.dp))
+        }
+        item {
+            SectionHeader("السور", subtitle = "${content.surahs.size} سورة · ابحث بالاسم أو بكلمة من الآية")
+            Spacer(Modifier.height(12.dp))
+            SurahBlock(content.surahs, nav)
+        }
+    }
+    @Suppress("UNUSED_EXPRESSION") ctx
+}
+
+@Composable
+private fun SurahBlock(list: List<com.ayattla.app.data.Surah>, nav: NavHostController) {
+    val b = LocalBrand.current
+    Column(Modifier.fillMaxWidth().surface(b)) {
+        list.forEachIndexed { i, s ->
+            Row(
+                Modifier.fillMaxWidth().clickable { nav.navigate(Routes.reader(s.id)) }.padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                NumberBadge(s.id)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("سورة ${s.shortName}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                    Text("${s.revelationAr} · ${s.ayahCount} آية", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                }
+                Text(s.nameAr, fontFamily = Fonts.quran, fontSize = 20.sp, color = b.primaryInk)
+            }
+            if (i < list.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 64.dp).height(0.5.dp).background(b.line))
         }
     }
 }
@@ -163,8 +261,8 @@ fun QuranIndexScreen(nav: NavHostController) {
 @Composable
 fun NumberBadge(n: Int) {
     val b = LocalBrand.current
-    Box(Modifier.size(38.dp).clip(CircleShape).background(b.goldSoft), contentAlignment = Alignment.Center) {
-        Text("$n", style = MaterialTheme.typography.labelLarge, color = b.goldInk)
+    Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(b.tint), contentAlignment = Alignment.Center) {
+        Text("$n", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
     }
 }
 
@@ -181,74 +279,87 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     val list = rememberLazyListState()
     var selected by remember { mutableStateOf<Ayah?>(null) }
     var showFont by remember { mutableStateOf(false) }
-    val header = if (surah.hasBasmala) 2 else 1
+    val pages = remember(surahId) { ayat.groupBy { it.page ?: 0 }.values.toList() }
+    val header = 1
+    fun pageIndexOf(ayah: Int) = pages.indexOfFirst { p -> p.any { it.ayah == ayah } }.coerceAtLeast(0)
 
     LaunchedEffect(surahId, startAyah) {
-        if (startAyah > 1) list.scrollToItem((startAyah - 1 + header).coerceAtMost(ayat.size + header - 1))
+        if (startAyah > 1) list.scrollToItem(pageIndexOf(startAyah) + header)
     }
     // Follow the recitation.
     LaunchedEffect(Recitation.current) {
-        val cur = Recitation.current?.split(":")?.map(String::toInt) ?: return@LaunchedEffect
-        if (cur[0] == surahId && cur[1] > 0) list.animateScrollToItem(cur[1] - 1 + header)
+        val cur = Recitation.current?.split(":")?.mapNotNull { it.toIntOrNull() } ?: return@LaunchedEffect
+        if (cur.size == 2 && cur[0] == surahId && cur[1] > 0) list.animateScrollToItem(pageIndexOf(cur[1]) + header)
     }
     // Remember the reading position.
-    LaunchedEffect(list.firstVisibleItemIndex) {
-        val i = (list.firstVisibleItemIndex - header).coerceIn(0, ayat.size - 1)
-        prefs.setLastRead(surahId, ayat[i].ayah)
-    }
+    val visiblePage = pages.getOrNull((list.firstVisibleItemIndex - header).coerceIn(0, pages.size - 1)) ?: ayat
+    LaunchedEffect(list.firstVisibleItemIndex) { prefs.setLastRead(surahId, visiblePage.first().ayah) }
+    val paper = if (b.dark) b.background else Color(0xFFFCF9F1)
+    val highlight = if (b.dark) Color(0xFF3A3317) else Color(0xFFF5E6B0)
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        AppTopBar("سورة ${surah.shortName}", onBack = { nav.popBackStack() }) {
-            IconButton(onClick = { showFont = true }) { Icon(Icons.Filled.FormatSize, "حجم الخط") }
-            IconButton(onClick = {
-                val i = (list.firstVisibleItemIndex - header).coerceIn(0, ayat.size - 1)
-                nav.navigate("page/" + (ayat[i].page ?: 1))
-            }) { Icon(Icons.Filled.AutoStories, "عرض الصفحات") }
-            IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة") }
+    Column(Modifier.fillMaxSize().background(paper).statusBarsPadding()) {
+        AppTopBar(
+            "سورة ${surah.shortName}", onBack = { nav.popBackStack() },
+            subtitle = "الجزء ${visiblePage.first().juz ?: 1} · صفحة ${visiblePage.first().page ?: 1}",
+        ) {
+            IconButton(onClick = { showFont = true }) { Icon(Icons.Filled.FormatSize, "حجم الخط", tint = b.primaryInk) }
+            IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة", tint = b.primaryInk) }
         }
-        LazyColumn(state = list, contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 24.dp), modifier = Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip("المصحف", true, {})
+            Chip("عرض الصفحات", false, { nav.navigate("page/" + (visiblePage.first().page ?: 1)) })
+            Chip("استمع", false, { Recitation.play(ctx, content, reciter, surahId, visiblePage.first().ayah) })
+        }
+        LazyColumn(state = list, contentPadding = PaddingValues(20.dp, 0.dp, 20.dp, if (Recitation.active) 230.dp else 32.dp), modifier = Modifier.fillMaxSize()) {
             item {
-                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(surah.nameAr, fontFamily = Fonts.quran, fontSize = 30.sp, color = b.primaryInk)
-                    Text("${surah.revelationAr} · ${surah.ayahCount} آية", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                Column(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f).height(1.dp).background(b.green.copy(alpha = 0.25f)))
+                        Text("سورة ${surah.shortName}", fontFamily = Fonts.naskh, fontSize = 24.sp, color = b.primaryInk, modifier = Modifier.padding(horizontal = 14.dp))
+                        Box(Modifier.weight(1f).height(1.dp).background(b.green.copy(alpha = 0.25f)))
+                    }
+                    if (surah.hasBasmala) {
+                        // The basmala text as printed in Al-Fatiha 1:1 of the pack.
+                        val basmala = remember { content.ayah(1, 1)?.text.orEmpty() }
+                        Text(
+                            basmala, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize * 0.9f).sp, color = b.ink,
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                        )
+                    }
                 }
             }
-            if (surah.hasBasmala) item {
-                // The basmala text as printed in Al-Fatiha 1:1 of the pack.
-                val basmala = remember { content.ayah(1, 1)?.text.orEmpty() }
-                Text(
-                    basmala, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize * 0.9f).sp, color = b.ink,
-                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-                )
-            }
-            items(ayat, key = { it.key }) { a ->
-                val playing = Recitation.current == a.key
-                val fav = a.key in prefs.favorites
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(SmallShape)
-                        .background(if (playing) b.tint else b.background)
-                        .clickable { selected = a }
-                        .padding(horizontal = 8.dp, vertical = 10.dp),
-                ) {
+            items(pages, key = { it.first().key }) { pageAyat ->
+                val playingKey = Recitation.current
+                val text = buildAnnotatedString {
+                    pageAyat.forEach { a ->
+                        val fav = a.key in prefs.favorites
+                        withLink(LinkAnnotation.Clickable("ayah-${a.key}") { selected = a }) {
+                            withStyle(SpanStyle(background = if (a.key == playingKey) highlight else Color.Transparent, color = b.ink)) {
+                                append(a.text)
+                                append(" ")
+                                withStyle(SpanStyle(color = if (fav) b.goldInk else b.ink)) { append(Num.ayahMark(a.ayah)) }
+                            }
+                        }
+                        append(" ")
+                    }
+                }
+                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     Text(
-                        a.text + " " + Num.ayahMark(a.ayah),
-                        fontFamily = Fonts.quran, fontSize = prefs.quranFontSize.sp, lineHeight = (prefs.quranFontSize * 1.9f).sp,
-                        color = b.ink, textAlign = TextAlign.Justify, modifier = Modifier.fillMaxWidth(),
+                        text, fontFamily = Fonts.quran, fontSize = prefs.quranFontSize.sp, lineHeight = (prefs.quranFontSize * 2.1f).sp,
+                        textAlign = TextAlign.Justify, modifier = Modifier.fillMaxWidth(),
                     )
-                    if (fav) Icon(Icons.Filled.Favorite, "محفوظة", tint = b.accent, modifier = Modifier.size(14.dp))
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f).height(0.5.dp).background(b.line))
+                        Text("${pageAyat.first().page ?: ""}", style = MaterialTheme.typography.labelMedium, color = b.muted, modifier = Modifier.padding(horizontal = 10.dp))
+                        Box(Modifier.weight(1f).height(0.5.dp).background(b.line))
+                    }
                 }
-                HorizontalDivider(color = b.line.copy(alpha = 0.6f))
             }
             item {
                 Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    if (surahId > 1) TextButton(onClick = { nav.navigate(Routes.reader(surahId - 1)) { popUpTo("reader/{surah}/{ayah}") { inclusive = true } } }) {
-                        Text("السورة السابقة")
-                    } else Spacer(Modifier.width(1.dp))
-                    if (surahId < 114) TextButton(onClick = { nav.navigate(Routes.reader(surahId + 1)) { popUpTo("reader/{surah}/{ayah}") { inclusive = true } } }) {
-                        Text("السورة التالية")
-                    }
+                    if (surahId > 1) BrandButton("السورة السابقة", kind = BtnKind.Secondary) { nav.navigate(Routes.reader(surahId - 1)) { popUpTo("reader/{surah}/{ayah}") { inclusive = true } } }
+                    else Spacer(Modifier.width(1.dp))
+                    if (surahId < 114) BrandButton("السورة التالية", kind = BtnKind.Secondary) { nav.navigate(Routes.reader(surahId + 1)) { popUpTo("reader/{surah}/{ayah}") { inclusive = true } } }
                 }
             }
         }
@@ -294,29 +405,75 @@ private fun SheetAction(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-/** Mini player shown above the tab bar while a recitation or radio is active. */
+/** Player card (iOS PlayerBar): reciter tile, ayah and reciter, position, scrubber, speed, previous, play, next, repeat. */
 @Composable
 fun PlayerBar() {
     val b = LocalBrand.current
-    Column(Modifier.fillMaxWidth().background(b.primary)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(Recitation.title.ifEmpty { "جاري التحميل" }, style = MaterialTheme.typography.titleSmall, color = b.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Recitation.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = b.accent, maxLines = 1) }
+    var pos by remember { mutableStateOf(0L) }
+    var dur by remember { mutableStateOf(0L) }
+    LaunchedEffect(Recitation.current, Recitation.isPlaying) {
+        while (true) { pos = Recitation.positionMs; dur = Recitation.durationMs; kotlinx.coroutines.delay(400) }
+    }
+    val shape = RoundedCornerShape(26.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
+            .dropShadow(shape, Shadow(radius = 24.dp, color = Color(0xFF0F1F17).copy(alpha = 0.16f), offset = DpOffset(0.dp, 10.dp)))
+            .clip(shape).background(b.surface).border(1.dp, b.line, shape).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IconTile(Icons.Filled.GraphicEq, size = 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text(Recitation.title.ifEmpty { "جاري التحميل" }, style = MaterialTheme.typography.titleMedium, color = b.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val sub = Recitation.error ?: Recitation.artist
+                if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall, color = if (Recitation.error != null) b.newInk else b.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            TextButton(onClick = { Recitation.cycleSpeed() }) {
-                Text("${Recitation.speed}x".replace(".0x", "x"), color = b.accent)
+            if (Recitation.count > 1) Badge("${Recitation.index + 1} من ${Recitation.count}")
+            Icon(Icons.Filled.Close, "إيقاف", tint = b.muted, modifier = Modifier.size(22.dp).clickable { Recitation.stop() })
+        }
+        if (dur > 0) {
+            Slider(
+                value = (pos.toFloat() / dur).coerceIn(0f, 1f), onValueChange = { Recitation.seekTo((it * dur).toLong()); pos = (it * dur).toLong() },
+                colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = b.green, inactiveTrackColor = b.line),
+                modifier = Modifier.fillMaxWidth().height(28.dp),
+            )
+            Row(Modifier.fillMaxWidth()) {
+                Text(mmss(pos), style = MaterialTheme.typography.labelSmall, color = b.muted)
+                Spacer(Modifier.weight(1f))
+                Text("-" + mmss((dur - pos).coerceAtLeast(0)), style = MaterialTheme.typography.labelSmall, color = b.muted)
             }
-            IconButton(onClick = { Recitation.toggleRepeat() }) {
-                Icon(if (Recitation.repeatOne) Icons.Filled.RepeatOne else Icons.Filled.Repeat, "تكرار", tint = if (Recitation.repeatOne) b.accent else b.onPrimary.copy(alpha = 0.7f))
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            PlayerPill("${Recitation.speed}x".replace(".0x", "x"), Icons.Filled.Speed) { Recitation.cycleSpeed() }
+            Spacer(Modifier.weight(1f))
+            // RTL: «previous» sits on the right.
+            IconButton(onClick = { Recitation.previous() }) { Icon(Icons.Filled.SkipNext, "السابقة", tint = b.green, modifier = Modifier.size(30.dp)) }
+            Box(
+                Modifier.size(62.dp).dropShadow(CircleShape, Shadow(radius = 12.dp, color = Color(0xFF1F8A62).copy(alpha = 0.35f), offset = DpOffset(0.dp, 6.dp)))
+                    .clip(CircleShape).background(Brush.linearGradient(b.siteGradient)).clickable { Recitation.toggle() },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (Recitation.isBuffering) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                else Icon(if (Recitation.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "تشغيل", tint = Color.White, modifier = Modifier.size(32.dp))
             }
-            IconButton(onClick = { Recitation.previous() }) { Icon(Icons.Filled.SkipNext, "السابقة", tint = b.onPrimary) }
-            Box(Modifier.size(44.dp).clip(CircleShape).background(b.accent).clickable { Recitation.toggle() }, contentAlignment = Alignment.Center) {
-                if (Recitation.isBuffering) CircularProgressIndicator(Modifier.size(20.dp), color = b.deep, strokeWidth = 2.dp)
-                else Icon(if (Recitation.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "تشغيل", tint = b.deep)
-            }
-            IconButton(onClick = { Recitation.next() }) { Icon(Icons.Filled.SkipPrevious, "التالية", tint = b.onPrimary) }
-            IconButton(onClick = { Recitation.stop() }) { Icon(Icons.Filled.Close, "إيقاف", tint = b.onPrimary.copy(alpha = 0.7f)) }
+            IconButton(onClick = { Recitation.next() }) { Icon(Icons.Filled.SkipPrevious, "التالية", tint = b.green, modifier = Modifier.size(30.dp)) }
+            Spacer(Modifier.weight(1f))
+            PlayerPill(if (Recitation.repeatOne) "تكرار" else "مرة", if (Recitation.repeatOne) Icons.Filled.RepeatOne else Icons.Filled.Repeat, on = Recitation.repeatOne) { Recitation.toggleRepeat() }
         }
     }
 }
+
+@Composable
+private fun PlayerPill(text: String, icon: ImageVector, on: Boolean = true, onClick: () -> Unit) {
+    val b = LocalBrand.current
+    Row(
+        Modifier.height(44.dp).clip(CircleShape).then(if (on) Modifier.background(Brush.linearGradient(b.siteGradient)) else Modifier.background(b.tint))
+            .clickable(onClick = onClick).padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, null, tint = if (on) Color.White else b.primaryInk, modifier = Modifier.size(18.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = if (on) Color.White else b.primaryInk)
+    }
+}
+
+private fun mmss(ms: Long): String { val t = ms / 1000; return "%d:%02d".format(t / 60, t % 60) }

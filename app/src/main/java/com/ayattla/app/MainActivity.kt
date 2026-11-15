@@ -6,20 +6,37 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.SmartDisplay
+import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
+import com.ayattla.app.ui.components.patternedScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -129,17 +146,21 @@ class MainActivity : ComponentActivity() {
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
-    Tab("home", "الرئيسية", Icons.Filled.Home),
-    Tab("quran", "القرآن", Icons.AutoMirrored.Filled.MenuBook),
-    Tab("studio", "اصنع", Icons.Filled.AutoAwesome),
-    Tab("azkar", "الأذكار", Icons.Filled.WbTwilight),
-    Tab("more", "المزيد", Icons.Filled.GridView),
+    Tab("home", "الرئيسية", Icons.Outlined.Home),
+    Tab("quran", "القرآن", Icons.AutoMirrored.Outlined.MenuBook),
+    Tab("studio", "اصنع", Icons.Outlined.SmartDisplay),
+    Tab("azkar", "الأذكار", Icons.Outlined.WbSunny),
+    Tab("more", "المزيد", Icons.Outlined.GridView),
 )
+
+/** Space a tab screen leaves at its bottom for the floating tab bar (and the player above it). */
+val LocalBottomInset = staticCompositionLocalOf { 0.dp }
 
 object Routes {
     fun reader(surah: Int, ayah: Int = 1) = "reader/$surah/$ayah"
     fun azkar(category: Int) = "azkar/$category"
-    fun studio(surah: Int, from: Int, to: Int) = "studio?s=$surah&a=$from&b=$to"
+    fun studio(surah: Int, from: Int, to: Int, video: Boolean = false) = "studio?s=$surah&a=$from&b=$to&v=${if (video) 1 else 0}"
+    fun studioMode(video: Boolean) = "studio?v=${if (video) 1 else 0}"
 }
 
 @Composable
@@ -150,47 +171,35 @@ fun AppRoot(startScreen: String? = null) {
     }
     val b = LocalBrand.current
     val entry by nav.currentBackStackEntryAsState()
-    val route = entry?.destination?.route
-    val onTab = tabs.any { route == it.route || (it.route == "studio" && route?.startsWith("studio") == true) }
-    Scaffold(
-        containerColor = b.background,
-        bottomBar = {
-            Column {
-                if (Recitation.active) PlayerBar()
-                if (onTab) NavigationBar(containerColor = b.surface, tonalElevation = 0.dp) {
-                    tabs.forEach { t ->
-                        val selected = route == t.route || (t.route == "studio" && route?.startsWith("studio") == true)
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { nav.goTab(t.route) },
-                            icon = { Icon(t.icon, null) },
-                            label = { Text(t.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = b.onPrimary, indicatorColor = b.primary,
-                                selectedTextColor = b.primaryInk, unselectedIconColor = b.muted, unselectedTextColor = b.muted,
-                            ),
-                        )
-                    }
-                }
-            }
-        },
-    ) { pad ->
-        NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize().padding(pad)) {
+    val route = entry?.destination?.route?.substringBefore("?")
+    val onTab = tabs.any { route == it.route }
+    val inset = if (onTab) (if (Recitation.active) 190.dp else 120.dp) else 0.dp
+    Box(Modifier.fillMaxSize().patternedScreen(b)) {
+        Column(Modifier.fillMaxSize()) {
+          CompositionLocalProvider(LocalBottomInset provides inset) {
+            NavHost(nav, startDestination = "home", modifier = Modifier.weight(1f).fillMaxWidth()) {
             composable("home") { HomeScreen(nav) }
             composable("quran") { QuranIndexScreen(nav) }
             composable(
-                "studio?s={s}&a={a}&b={b}",
+                "studio?s={s}&a={a}&b={b}&v={v}",
                 arguments = listOf(
                     navArgument("s") { type = NavType.IntType; defaultValue = 0 },
                     navArgument("a") { type = NavType.IntType; defaultValue = 0 },
                     navArgument("b") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("v") { type = NavType.IntType; defaultValue = -1 },
                 ),
             ) { e ->
                 val a = e.arguments!!
-                StudioScreen(nav, a.getInt("s"), a.getInt("a"), a.getInt("b"))
+                StudioScreen(nav, a.getInt("s"), a.getInt("a"), a.getInt("b"), a.getInt("v"))
             }
             composable("azkar") { AzkarListScreen(nav) }
-            composable("more") { MoreScreen(nav) }
+            composable(
+                "more?group={group}&focus={focus}",
+                arguments = listOf(
+                    navArgument("group") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("focus") { type = NavType.IntType; defaultValue = 0 },
+                ),
+            ) { e -> MoreScreen(nav, e.arguments?.getString("group"), e.arguments?.getInt("focus") == 1) }
             composable(
                 "reader/{surah}/{ayah}",
                 arguments = listOf(navArgument("surah") { type = NavType.IntType }, navArgument("ayah") { type = NavType.IntType }),
@@ -198,6 +207,7 @@ fun AppRoot(startScreen: String? = null) {
             composable("azkar/{cat}", arguments = listOf(navArgument("cat") { type = NavType.IntType })) { e ->
                 AzkarScreen(nav, e.arguments!!.getInt("cat"))
             }
+            composable("azkar-all") { com.ayattla.app.screens.AzkarAllScreen(nav) }
             composable("tasbih") { TasbihScreen(nav) }
             composable("prayer") { PrayerTimesScreen(nav) }
             composable("qibla") { QiblaScreen(nav) }
@@ -216,6 +226,38 @@ fun AppRoot(startScreen: String? = null) {
             composable("khatma") { com.ayattla.app.screens.KhatmaScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->
                 com.ayattla.app.screens.MushafScreen(nav, e.arguments!!.getInt("page"))
+            }
+          }
+            if (!onTab && Recitation.active) PlayerBar()
+        }
+        if (onTab) Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
+            if (Recitation.active) Box(Modifier.padding(horizontal = 12.dp)) { PlayerBar() }
+            FloatingTabBar(route) { nav.goTab(it) }
+        }
+    }
+}
+
+/** iOS-style floating tab bar: white rounded bar, the chosen tab filled with the site gradient. */
+@Composable
+private fun FloatingTabBar(route: String?, onSelect: (String) -> Unit) {
+    val b = LocalBrand.current
+    val shape = RoundedCornerShape(30.dp)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
+            .dropShadow(shape, Shadow(radius = 24.dp, color = Color(0xFF0F1F17).copy(alpha = if (b.dark) 0.5f else 0.16f), offset = DpOffset(0.dp, 10.dp)))
+            .clip(shape).background(b.surface.copy(alpha = 0.97f)).border(1.dp, b.line, shape).padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        tabs.forEach { t ->
+            val on = route == t.route
+            Column(
+                Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(24.dp))
+                    .then(if (on) Modifier.background(Brush.linearGradient(b.siteGradient)) else Modifier)
+                    .clickable { onSelect(t.route) },
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(t.icon, t.label, tint = if (on) Color.White else b.muted, modifier = Modifier.size(25.dp))
+                Text(t.label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium), color = if (on) Color.White else b.muted, maxLines = 1)
             }
         }
     }

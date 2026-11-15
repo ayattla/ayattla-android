@@ -101,40 +101,6 @@ import java.time.LocalTime
 import kotlin.math.roundToInt
 
 @Composable
-fun MoreScreen(nav: NavHostController) {
-    val b = LocalBrand.current
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("المزيد", style = MaterialTheme.typography.headlineSmall, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        com.ayattla.app.ui.components.SectionHeader("القرآن والسنة")
-        ToolGrid(
-            listOf(
-                ToolItem("المصحف بالصفحات", "604 صفحة", Icons.AutoMirrored.Filled.MenuBook) { nav.navigate("page/1") },
-                ToolItem("آيات بالموضوع", "مواضيع مختارة", Icons.Filled.Category) { nav.navigate("topics") },
-                ToolItem("الأحاديث", "صحيح وحسن فقط", Icons.Filled.LibraryBooks) { nav.navigate("hadith") },
-                ToolItem("التحقق من حديث", "ابحث عن درجته", Icons.Filled.FactCheck) { nav.navigate("hadith-check") },
-                ToolItem("الأدعية", "من القرآن والسنة", Icons.Filled.VolunteerActivism) { nav.navigate("duas") },
-                ToolItem("صفة الصلاة", "بالأدلة", Icons.Filled.SelfImprovement) { nav.navigate("guide") },
-                ToolItem("خطة الختمة", "ورد يومي", Icons.Filled.EventNote) { nav.navigate("khatma") },
-            )
-        )
-        com.ayattla.app.ui.components.SectionHeader("أدوات")
-        ToolGrid(
-            listOf(
-                ToolItem("مواقيت الصلاة", "حسب مدينتك", Icons.Filled.AccessTime) { nav.navigate("prayer") },
-                ToolItem("القبلة", "بوصلة الاتجاه", Icons.Filled.Explore) { nav.navigate("qibla") },
-                ToolItem("المسبحة", "عداد التسبيح", Icons.Filled.TouchApp) { nav.navigate("tasbih") },
-                ToolItem("الإذاعات", "177 إذاعة قرآنية", Icons.Filled.Radio) { nav.navigate("radios") },
-                ToolItem("التاريخ الهجري", "تحويل التاريخ", Icons.Filled.CalendarMonth) { nav.navigate("hijri") },
-                ToolItem("الزكاة", "حاسبة النصاب", Icons.Filled.Calculate) { nav.navigate("zakat") },
-                ToolItem("آياتي المحفوظة", "ما حفظته من آيات", Icons.Filled.Favorite) { nav.navigate("saved") },
-                ToolItem("الإعدادات", "القارئ والمظهر", Icons.Filled.Settings) { nav.navigate("settings") },
-                ToolItem("عن التطبيق", "المصادر والتراخيص", Icons.Filled.Info) { nav.navigate("about") },
-            )
-        )
-    }
-}
-
-@Composable
 fun TasbihScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val content = LocalContent.current

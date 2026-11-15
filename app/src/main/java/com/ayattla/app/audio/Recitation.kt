@@ -65,7 +65,21 @@ object Recitation {
         }, ContextCompat.getMainExecutor(context))
     }
 
+    /** Reciter (or station) name of the current item. */
+    var artist by mutableStateOf("")
+        private set
+    var index by mutableStateOf(0)
+        private set
+    var count by mutableStateOf(0)
+        private set
+    val positionMs: Long get() = controller?.currentPosition ?: 0L
+    val durationMs: Long get() = controller?.duration?.takeIf { it > 0 } ?: 0L
+    fun seekTo(ms: Long) { controller?.seekTo(ms) }
+
     private fun sync(p: Player) {
+        artist = p.mediaMetadata.artist?.toString() ?: ""
+        index = p.currentMediaItemIndex
+        count = p.mediaItemCount
         isPlaying = p.isPlaying
         isBuffering = p.playbackState == Player.STATE_BUFFERING
         current = p.currentMediaItem?.mediaId
