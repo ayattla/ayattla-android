@@ -1,6 +1,7 @@
 package com.ayattla.app.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -203,8 +204,8 @@ fun DownloadsScreen(nav: NavHostController) {
             Text("المساحة المستعملة: ${mb(size)}", style = MaterialTheme.typography.titleMedium, color = b.primaryInk, modifier = Modifier.padding(top = 6.dp))
         }
         Text("القارئ", style = MaterialTheme.typography.labelLarge, color = b.muted)
-        @OptIn(ExperimentalLayoutApi::class)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // One scrolling row: the surahs stay on the first screen.
+        Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             content.reciters.forEach { r -> Chip(r.name, r.id == reciter.id, { reciter = r }) }
         }
         failed?.let { Text(it, color = androidx.compose.ui.graphics.Color(0xFFB3261E), style = MaterialTheme.typography.bodyMedium) }
