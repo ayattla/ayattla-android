@@ -20,7 +20,7 @@ jobs:
             probe tajweed1 "$ua" https://ayattla.com/api/qf/tajweed/1
             probe tajweed2 "$ua" https://ayattla.com/api/qf/tajweed/2
             probe tajweed114 "$ua" https://ayattla.com/api/qf/tajweed/114
-            probe words1-ar "$ua" "https://ayattla.com/api/qf/words/1?lang=ar&page=1"
+            for lg in en ur id tr bn fr; do probe words18-$lg "$ua" "https://ayattla.com/api/qf/words/18?lang=$lg&page=1"; done
             probe words2-en "$ua" "https://ayattla.com/api/qf/words/2?lang=en&page=1"
             probe hadith "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q="
             probe hadith-q "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q=%D8%A7%D9%84%D8%B5%D9%84%D8%A7%D8%A9"
@@ -32,4 +32,8 @@ jobs:
             probe everyayah "$ua" https://everyayah.com/data/Alafasy_128kbps/001001.mp3
             probe overpass "$ua" -X POST --data-urlencode 'data=[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.77,46.65);out 5;' https://overpass-api.de/api/interpreter
             echo
+          done
+          q='[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.7136,46.6753);out 5;'
+          for s in https://overpass-api.de https://overpass.private.coffee https://maps.mail.ru/osm/tools/overpass https://overpass.kumi.systems; do
+            probe "overpass $s" "AyatTutla-Android (ayattla.com)" -X POST --data-urlencode "data=$q" $s/api/interpreter
           done

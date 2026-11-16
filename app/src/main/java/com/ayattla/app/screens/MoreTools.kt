@@ -134,6 +134,47 @@ fun ToolPage(nav: NavHostController, title: String, id: String? = null, content:
     }
 }
 
+/**
+ * Same page as [ToolPage] for long content (a whole surah, many rows): only what is on screen is
+ * laid out and drawn, so long surahs open at once and never build one giant view.
+ * Add sections with [block] (16 dp apart, as on ToolPage) and long cards with [cardPieces].
+ */
+@Composable
+fun LazyToolPage(nav: NavHostController, title: String, id: String? = null, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+    val tool = id?.let { runCatching { SiteTool.byId(it) }.getOrNull() }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        AppTopBar(title, onBack = { nav.popBackStack() })
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
+        ) {
+            if (tool != null) block("hero") { HeroHeader(tool.title, subtitle = tool.subtitle) }
+            content()
+        }
+    }
+}
+
+/** A section of a [LazyToolPage], followed by the page's usual 16 dp gap. */
+fun androidx.compose.foundation.lazy.LazyListScope.block(key: Any, content: @Composable ColumnScope.() -> Unit) =
+    item(key = key) { Column(Modifier.fillMaxWidth().padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content) }
+
+/** A long card split into list items that join into one card on screen (only visible pieces are drawn). */
+fun androidx.compose.foundation.lazy.LazyListScope.cardPieces(
+    count: Int, key: (Int) -> Any, padding: androidx.compose.ui.unit.Dp = 16.dp,
+    piece: @Composable ColumnScope.(Int) -> Unit,
+) = items(count, key = key) { i ->
+    val b = LocalBrand.current
+    val first = i == 0; val last = i == count - 1
+    val r = 18.dp
+    val shape = RoundedCornerShape(topStart = if (first) r else 0.dp, topEnd = if (first) r else 0.dp, bottomStart = if (last) r else 0.dp, bottomEnd = if (last) r else 0.dp)
+    Column(Modifier.fillMaxWidth().padding(bottom = if (last) 16.dp else 0.dp)) {
+        Column(
+            Modifier.fillMaxWidth().clip(shape).background(b.surface)
+                .padding(start = padding, end = padding, top = if (first) padding else 0.dp, bottom = if (last) padding else 0.dp),
+        ) { piece(i) }
+    }
+}
+
 /** Surah chooser row (opens a sheet with all 114). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,7 +247,8 @@ object Tajweed {
     fun color(rule: String, dark: Boolean): Color? = palette[rule]?.let { Color(0xFF000000 or (if (dark) it.second else it.first).toLong()) }
 
     private val tag = Regex("<span class=\"tj-([a-z_]+)\">(.*?)</span>", RegexOption.DOT_MATCHES_ALL)
-    private fun unescape(s: String) = s.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
+    private val anyTag = Regex("<[^>]*>")
+    private fun unescape(s: String) = s.replace(anyTag, "").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
 
     /** The site's tajweed HTML as coloured text; the letters inside the tags are kept exactly. */
     fun annotate(html: String, dark: Boolean): AnnotatedString = buildAnnotatedString {
@@ -255,25 +297,39 @@ fun TajweedScreen(nav: NavHostController) {
     var size by rememberSaveable { mutableStateOf(26) }
     var verses by remember { mutableStateOf<List<SiteApi.TajweedVerse>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
-    LaunchedEffect(surah) {
-        verses = emptyList(); failed = false
+    var retry by remember { mutableIntStateOf(0) }
+    var chunks by remember { mutableStateOf<List<androidx.compose.ui.text.AnnotatedString>>(emptyList()) }
+    LaunchedEffect(surah, retry) {
+        verses = emptyList(); chunks = emptyList(); failed = false
         runCatching { SiteApi.tajweed(ctx, surah) }.onSuccess { verses = it }.onFailure { failed = true }
     }
-    ToolPage(nav, "المصحف الملون بالتجويد", "tajweed") {
-        SurahPicker(surah) { surah = it }
-        SiteSegmented(listOf(22 to "صغير", 26 to "متوسط", 32 to "كبير"), size, { size = it })
-        TajweedLegend()
-        AppCard {
-            when {
-                failed -> Text("تعذر تحميل السورة من Quran.com، حاول لاحقا.", color = b.muted)
-                verses.isEmpty() -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = b.green) }
-                else -> {
-                    val all = buildAnnotatedString { verses.forEach { append(Tajweed.annotate(it.html, b.dark)); append(" ") } }
-                    Text(all, fontFamily = Fonts.quran, fontSize = size.sp, lineHeight = (size * 1.9f).sp, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    val dark = b.dark
+    LaunchedEffect(verses, dark) {
+        // Colouring the whole of Al-Baqara takes a moment: done off the main thread.
+        chunks = if (verses.isEmpty()) emptyList() else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            verses.chunked(5).map { g -> buildAnnotatedString { g.forEach { append(Tajweed.annotate(it.html, dark)); append(" ") } } }
+        }
+    }
+    LazyToolPage(nav, "المصحف الملون بالتجويد", "tajweed") {
+        block("picker") {
+            SurahPicker(surah) { surah = it }
+            SiteSegmented(listOf(22 to "صغير", 26 to "متوسط", 32 to "كبير"), size, { size = it })
+            TajweedLegend()
+        }
+        when {
+            failed -> block("failed") {
+                AppCard {
+                    Text("تعذر تحميل السورة. تحقق من الاتصال بالإنترنت.", color = b.muted)
+                    BrandButton("إعادة المحاولة", Modifier.fillMaxWidth().padding(top = 8.dp), kind = BtnKind.Secondary) { retry++ }
                 }
             }
+            chunks.isEmpty() -> block("loading") { AppCard { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = b.green) } } }
+            // The surah flows as one card, built in pieces so a long surah is never one huge view.
+            else -> cardPieces(chunks.size, key = { "tj$surah-$it" }) { i ->
+                Text(chunks[i], fontFamily = Fonts.quran, fontSize = size.sp, lineHeight = (size * 1.9f).sp, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            }
         }
-        Text("نص ملون بأحكام التجويد من Quran.com (Quran Foundation).", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        block("credit") { Text("نص ملون بأحكام التجويد من Quran.com (Quran Foundation).", style = MaterialTheme.typography.bodySmall, color = b.muted) }
     }
 }
 
@@ -290,23 +346,29 @@ fun WordByWordScreen(nav: NavHostController) {
     var lang by rememberSaveable { mutableStateOf(sp(ctx).getString("wbw.lang", "en") ?: "en") }
     var verses by remember { mutableStateOf<List<SiteApi.WordsVerse>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
-    LaunchedEffect(surah, lang) {
-        verses = emptyList(); failed = false
+    var loading by remember { mutableStateOf(true) }
+    var retry by remember { mutableIntStateOf(0) }
+    LaunchedEffect(surah, lang, retry) {
+        verses = emptyList(); failed = false; loading = true
         sp(ctx).edit().putString("wbw.lang", lang).apply()
-        runCatching { SiteApi.words(ctx, surah, lang) }.onSuccess { verses = it }.onFailure { failed = true }
+        // Pages are shown as they arrive, so long surahs start at once.
+        runCatching { SiteApi.words(ctx, surah, lang) { page -> verses = verses + page } }.onFailure { failed = verses.isEmpty() }
+        loading = false
     }
-    ToolPage(nav, "معاني الكلمات", "word-by-word") {
-        SurahPicker(surah) { surah = it }
-        Text("لغة المعنى", style = MaterialTheme.typography.titleMedium, color = b.ink)
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            WordLanguages.forEach { (id, t) -> Chip(t, id == lang, { lang = id }) }
+    LazyToolPage(nav, "معاني الكلمات", "word-by-word") {
+        block("controls") {
+            SurahPicker(surah) { surah = it }
+            Text("لغة المعنى", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                WordLanguages.forEach { (id, t) -> Chip(t, id == lang, { lang = id }) }
+            }
+            if (failed) {
+                Text("تعذر التحميل. تحقق من الاتصال بالإنترنت.", color = b.muted)
+                BrandButton("إعادة المحاولة", Modifier.fillMaxWidth(), kind = BtnKind.Secondary) { retry++ }
+            } else if (verses.isEmpty()) LoadingState(Modifier.height(160.dp))
         }
-        when {
-            failed -> Text("تعذر التحميل من Quran.com الآن.", color = b.muted)
-            verses.isEmpty() -> LoadingState(Modifier.height(160.dp))
-        }
-        verses.forEach { v ->
-            AppCard {
+        items(verses, key = { "w${it.key}" }) { v ->
+            AppCard(Modifier.padding(bottom = 16.dp)) {
                 Text("الآية ${v.n}", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
                 FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     v.words.forEach { w ->
@@ -322,7 +384,8 @@ fun WordByWordScreen(nav: NavHostController) {
                 v.tafsir?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(top = 8.dp)) }
             }
         }
-        Text("معاني الكلمات من Quran.com (Quran Foundation)، والتفسير الميسر من مجمع الملك فهد.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        if (loading && verses.isNotEmpty()) block("more") { LoadingState(Modifier.height(80.dp)) }
+        block("credit") { Text("معاني الكلمات من Quran.com (Quran Foundation)، والتفسير الميسر من مجمع الملك فهد.", style = MaterialTheme.typography.bodySmall, color = b.muted) }
     }
 }
 
