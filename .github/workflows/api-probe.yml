@@ -9,10 +9,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Probe every endpoint the apps use
+        shell: bash {0}
         run: |
           probe() {  # $1 label, $2 UA, rest: curl args
             l=$1; ua=$2; shift 2
-            out=$(curl -sS -m 40 -A "$ua" -H 'Accept: application/json' -o /tmp/b -w '%{http_code} %{size_download}B %{time_total}s %{content_type}' "$@" 2>&1)
+            out=$(curl -sS -m 25 -A "$ua" -H 'Accept: application/json' -o /tmp/b -w '%{http_code} %{size_download}B %{time_total}s %{content_type}' "$@" 2>&1 || true)
             head=$(head -c 160 /tmp/b | tr '\n' ' ')
             echo "$l | $ua | $out | $head"
           }
@@ -34,6 +35,6 @@ jobs:
             echo
           done
           q='[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.7136,46.6753);out 5;'
-          for s in https://overpass-api.de https://overpass.private.coffee https://maps.mail.ru/osm/tools/overpass https://overpass.kumi.systems; do
+          for s in https://overpass-api.de https://overpass.private.coffee https://maps.mail.ru/osm/tools/overpass https://overpass.kumi.systems https://overpass.osm.jp https://z.overpass-api.de https://lz4.overpass-api.de; do
             probe "overpass $s" "AyatTutla-Android (ayattla.com)" -X POST --data-urlencode "data=$q" $s/api/interpreter
           done
