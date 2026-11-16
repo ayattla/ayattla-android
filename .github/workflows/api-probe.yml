@@ -1,0 +1,35 @@
+name: API probe
+on:
+  push:
+    branches: [tools-audit]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe every endpoint the apps use
+        run: |
+          probe() {  # $1 label, $2 UA, rest: curl args
+            l=$1; ua=$2; shift 2
+            out=$(curl -sS -m 40 -A "$ua" -H 'Accept: application/json' -o /tmp/b -w '%{http_code} %{size_download}B %{time_total}s %{content_type}' "$@" 2>&1)
+            head=$(head -c 160 /tmp/b | tr '\n' ' ')
+            echo "$l | $ua | $out | $head"
+          }
+          for ua in "AyatTutla-Android" "AyatTutla-iOS" "Mozilla/5.0"; do
+            probe tajweed1 "$ua" https://ayattla.com/api/qf/tajweed/1
+            probe tajweed2 "$ua" https://ayattla.com/api/qf/tajweed/2
+            probe tajweed114 "$ua" https://ayattla.com/api/qf/tajweed/114
+            probe words1-ar "$ua" "https://ayattla.com/api/qf/words/1?lang=ar&page=1"
+            probe words2-en "$ua" "https://ayattla.com/api/qf/words/2?lang=en&page=1"
+            probe hadith "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q="
+            probe hadith-q "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q=%D8%A7%D9%84%D8%B5%D9%84%D8%A7%D8%A9"
+            probe hadith-check "$ua" -X POST -H 'Content-Type: application/json' --data '{"text":"إنما الأعمال بالنيات"}' https://ayattla.com/api/hadith/check
+            probe radios "$ua" https://ayattla.com/api/radios
+            probe ruqya "$ua" https://ayattla.com/api/ruqya
+            probe media "$ua" "https://ayattla.com/api/media/search?q=nature&type=photo"
+            probe media-col "$ua" https://ayattla.com/api/media/collections
+            probe everyayah "$ua" https://everyayah.com/data/Alafasy_128kbps/001001.mp3
+            probe overpass "$ua" -X POST --data-urlencode 'data=[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.77,46.65);out 5;' https://overpass-api.de/api/interpreter
+            echo
+          done
