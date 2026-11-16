@@ -1,5 +1,8 @@
 package com.ayattla.app.screens
 
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -419,6 +422,10 @@ fun HifzTestScreen(nav: NavHostController) {
             SiteSegmented(listOf(0.25 to "25٪", 0.5 to "50٪", 1.0 to "الكل"), level, { level = it })
             Spacer(Modifier.height(12.dp))
             BrandButton(if (started) "اختبار جديد" else "ابدأ الاختبار", Modifier.fillMaxWidth()) { start() }
+            if (started) Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("المخفي الآن: ${hidden.size}", style = MaterialTheme.typography.bodyMedium, color = b.primaryInk, modifier = Modifier.weight(1f))
+                TextButton(onClick = { hidden.clear() }, enabled = hidden.isNotEmpty()) { Text("اكشف الكل") }
+            }
         }
         if (started) {
             AppCard {
@@ -428,15 +435,14 @@ fun HifzTestScreen(nav: NavHostController) {
                             val k = "${a.key}#$i"
                             if (k in hidden) Box(
                                 Modifier.clip(RoundedCornerShape(6.dp)).background(b.tint).border(1.dp, b.line, RoundedCornerShape(6.dp)).clickable { hidden.remove(k) }.padding(horizontal = 4.dp),
-                            ) { Text(w, fontFamily = Fonts.quran, fontSize = 22.sp, color = Color.Transparent) }
+                            ) { Text(w, fontFamily = Fonts.quran, fontSize = 22.sp, color = Color.Transparent, modifier = Modifier.clearAndSetSemantics { contentDescription = "كلمة مخفية، اضغط لكشفها" }) }
                             else Text(w, fontFamily = Fonts.quran, fontSize = 22.sp, color = b.ink)
                         }
                         Text(Num.ayahMark(a.ayah), fontFamily = Fonts.quran, fontSize = 22.sp, color = b.ink)
                     }
                 }
-                BrandButton("اكشف الكل", Modifier.fillMaxWidth().padding(top = 8.dp), kind = BtnKind.Secondary) { hidden.clear() }
             }
-            Text("اضغط على الكلمة المخفية لكشفها. المخفي الآن: ${hidden.size}", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            Text("اضغط على الكلمة المخفية لكشفها.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         }
     }
 }
@@ -718,6 +724,9 @@ fun MosquesScreen(nav: NavHostController) {
     val locate = rememberLocationRequest { loc ->
         if (loc == null) phase = "denied" else { at = loc.latitude to loc.longitude; search() }
     }
+    val prefs = com.ayattla.app.LocalPrefs.current
+    val cityPoint = if (prefs.cityName == com.ayattla.app.data.Prefs.MY_LOCATION) ("موقعك المحفوظ" to (prefs.myLat to prefs.myLng)).takeIf { !prefs.myLat.isNaN() }
+        else com.ayattla.app.calc.PrayerCity.named(prefs.cityName)?.let { it.name to (it.lat to it.lng) }
     ToolPage(nav, "المساجد القريبة", "nearby-mosques") {
         SiteSegmented(listOf(1 to "1 كم", 3 to "3 كم", 5 to "5 كم"), radius, { radius = it; if (at != null) search() })
         BrandButton("حدد موقعي وابحث", Modifier.fillMaxWidth(), icon = Icons.Outlined.MyLocation, kind = BtnKind.Dark, enabled = phase != "searching") {
@@ -726,8 +735,26 @@ fun MosquesScreen(nav: NavHostController) {
         when (phase) {
             "idle" -> Text("اختر نصف القطر ثم اضغط «حدد موقعي وابحث». البحث في خرائط OpenStreetMap ولا يحفظ موقعك.", style = MaterialTheme.typography.bodySmall, color = b.muted)
             "searching" -> LoadingState(Modifier.height(140.dp))
-            "denied" -> EmptyState("الموقع غير متاح", "اسمح للتطبيق بالوصول إلى موقعك وشغل خدمة الموقع، ثم حاول مرة أخرى.")
-            "failed" -> EmptyState("تعذر البحث", "تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.")
+            "denied" -> {
+                val off = !locationEnabled(ctx)
+                EmptyState("الموقع غير متاح", if (off) "خدمة الموقع مغلقة في الجهاز. شغلها ثم حاول مرة أخرى." else "اسمح للتطبيق بالوصول إلى موقعك، ثم حاول مرة أخرى.")
+                if (off) BrandButton("افتح إعدادات الموقع", Modifier.fillMaxWidth(), kind = BtnKind.Secondary) {
+                    runCatching { ctx.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+                }
+                // Without a fix, search around the city chosen for prayer times.
+                cityPoint?.let { (name, p) ->
+                    BrandButton("ابحث حول $name", Modifier.fillMaxWidth(), kind = BtnKind.Ghost) { at = p; search() }
+                }
+            }
+            "failed" -> {
+                EmptyState("تعذر البحث الآن", "خوادم الخرائط مشغولة أو الاتصال ضعيف. أعد المحاولة، أو افتح البحث في تطبيق الخرائط.")
+                BrandButton("إعادة المحاولة", Modifier.fillMaxWidth(), kind = BtnKind.Secondary) { search() }
+                BrandButton("ابحث عن مساجد في الخرائط", Modifier.fillMaxWidth(), kind = BtnKind.Ghost) {
+                    val p = at
+                    val uri = Uri.parse(if (p != null) "geo:${p.first},${p.second}?q=" + Uri.encode("مسجد") else "geo:0,0?q=" + Uri.encode("مسجد قريب"))
+                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                }
+            }
             else -> if (list.isEmpty()) EmptyState("لا توجد مساجد ضمن $radius كم", if (radius < 5) "جرب نصف قطر أكبر" else "لم تعثر الخرائط على مساجد قريبة")
             else {
                 Text("${list.size} مسجدا ضمن $radius كم", style = MaterialTheme.typography.titleMedium, color = b.ink)

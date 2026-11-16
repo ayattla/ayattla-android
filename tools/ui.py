@@ -36,19 +36,35 @@ def center(n):
     x1, y1, x2, y2 = map(int, re.findall(r"\d+", n.get("bounds")))
     return (x1 + x2) // 2, (y1 + y2) // 2
 
+def swipe_up():
+    sh("shell", "input", "swipe", "540", "1700", "540", "700", "300"); time.sleep(1)
+
 cmd = sys.argv[1]
 if cmd == "tap":
+    # Scrolls down (up to 8 times) to reach an element below the screen edge.
     t = sys.argv[2]; i = int(sys.argv[3]) if len(sys.argv) > 3 else 0
-    ns = find(t)
-    if len(ns) <= i:
+    for _ in range(9):
+        ns = find(t)
+        if len(ns) > i: break
+        swipe_up()
+    else:
         print(f"  ! not found: {t}"); sys.exit(1)
     x, y = center(ns[i]); sh("shell", "input", "tap", str(x), str(y)); time.sleep(1.2)
+elif cmd == "field":
+    # Taps the n-th text field (class EditText), so typing goes into it.
+    i = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+    ns = [n for n in nodes() if n.get("class", "").endswith("EditText")]
+    if len(ns) <= i:
+        print("  ! no text field"); sys.exit(1)
+    x, y = center(ns[i]); sh("shell", "input", "tap", str(x), str(y)); time.sleep(1)
 elif cmd == "has":
     sys.exit(0 if find(sys.argv[2]) else 1)
 elif cmd in ("wait", "gone"):
-    t = sys.argv[2]; end = time.time() + float(sys.argv[3])
+    t = sys.argv[2]; end = time.time() + float(sys.argv[3]); k = 0
     while time.time() < end:
         ok = bool(find(t))
+        if not ok and cmd == "wait" and k % 3 == 2: swipe_up()   # the result may be below the fold
+        k += 1
         if ok == (cmd == "wait"): sys.exit(0)
         time.sleep(1.5)
     sys.exit(1)

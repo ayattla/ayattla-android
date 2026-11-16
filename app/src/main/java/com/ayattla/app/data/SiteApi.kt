@@ -2,6 +2,7 @@ package com.ayattla.app.data
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -133,19 +134,27 @@ object SiteApi {
     /** Public Overpass servers: the main one is often at capacity (HTTP 429/502/504), so the others are tried in turn. */
     private val overpass = listOf(
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.private.coffee/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
     )
 
     suspend fun mosques(lat: Double, lng: Double, radiusM: Int): List<Mosque> = withContext(Dispatchers.IO) {
         val q = "[out:json][timeout:25];(node[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng);" +
             "way[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng););out center 80;"
-        var last: Exception? = null
-        for (server in overpass) {
-            try { return@withContext queryMosques(server, q, lat, lng) } catch (e: Exception) { last = e }
+        // All servers are asked at once and the first answer is used: each one is often busy or slow.
+        kotlinx.coroutines.coroutineScope {
+            val pending = overpass.map { server -> async { runCatching { queryMosques(server, q, lat, lng) } } }.toMutableList()
+            var last: Throwable? = null
+            while (pending.isNotEmpty()) {
+                val (done, r) = kotlinx.coroutines.selects.select<Pair<kotlinx.coroutines.Deferred<Result<List<Mosque>>>, Result<List<Mosque>>>> {
+                    pending.forEach { d -> d.onAwait { d to it } }
+                }
+                pending.remove(done)
+                r.onSuccess { list -> pending.forEach { it.cancel() }; return@coroutineScope list }.onFailure { last = it }
+            }
+            throw last ?: IllegalStateException("no server")
         }
-        throw last ?: IllegalStateException("no server")
     }
 
     private fun queryMosques(server: String, q: String, lat: Double, lng: Double): List<Mosque> {

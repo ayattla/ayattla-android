@@ -41,7 +41,8 @@ open tajweed
 expect "التجويد: الفاتحة تظهر ملونة" "مفتاح الألوان" 10
 pickSurah "البقرة"; sleep 3
 if $UI gone "تعذر" 2 && alive; then :; fi
-sleep 6; shot tajweed-baqara
+expect "التجويد: نص سورة البقرة يظهر" "الٓمٓ" 25
+shot tajweed-baqara
 scrollAll; scrollAll; scrollAll
 if alive; then ok "التجويد: سورة البقرة كاملة وتمرير حتى آخرها"; else bad "التجويد: انهار مع سورة البقرة"; fi
 shot tajweed-baqara-end
@@ -50,7 +51,7 @@ shot tajweed-baqara-end
 open word-by-word
 expect "معاني الكلمات: الفاتحة" "الآية 1" 25
 pickSurah "البقرة"
-expect "معاني الكلمات: البقرة" "الآية 1" 30
+expect "معاني الكلمات: البقرة" "Alif Laam Meem" 30
 scrollAll; scrollAll
 alive && ok "معاني الكلمات: التمرير في البقرة" || bad "معاني الكلمات: انهار أثناء التمرير"
 shot wbw
@@ -85,12 +86,13 @@ shot hifz-plan
 # ── Hadith: search and categories.
 open hadith
 expect "الأحاديث: القائمة" "حديثًا" 20
-$UI tap "ابحث في الأحاديث"; typeAr "الصلاة"; $UI tap "بحث"
+$UI field 0; typeAr "الصلاة"; $UI tap "بحث"
+expect "الأحاديث: نتائج البحث فيها الكلمة" "الصلاة" 20
 expect "الأحاديث: البحث" "حديثًا" 20
 $UI tap "العقيدة"; expect "الأحاديث: تصنيف" "حديثًا" 20
 shot hadith
 open hadith-check
-$UI tap "نص الحديث"; typeAr "إنما الأعمال بالنيات"; $UI tap "تحقق"
+$UI field 0; typeAr "إنما الأعمال بالنيات"; adb shell input keyevent 4; sleep 1; $UI tap "تحقق"
 expect "التحقق من حديث" "إنما الأعمال بالنيات" 20
 shot hadith-check
 
@@ -118,8 +120,8 @@ shot radios
 
 # ── Mosques (location set to Riyadh).
 open mosques
-$UI tap "حدد موقعي وابحث"; sleep 2
-$UI tap "While using" 2>/dev/null || $UI tap "أثناء" 2>/dev/null || true
+# A fresh GPS fix shortly after the request, as a phone would get it.
+$UI tap "حدد موقعي وابحث"; sleep 3; adb emu geo fix 46.6753 24.7136 >/dev/null 2>&1
 if $UI wait "مسجدا ضمن" 60; then ok "المساجد القريبة: نتائج"; else bad "المساجد القريبة: لا نتائج"; fi
 shot mosques
 
@@ -136,7 +138,7 @@ open qada; $UI tap "أضف للعداد"; $UI tap "قضيت واحدة"; alive &
 open sawm; $UI tap "حفظ"; alive && ok "قضاء الصيام" || bad "قضاء الصيام"; shot sawm
 
 # ── Kids.
-open kids; $UI tap "النبأ" || $UI tap "الناس"; sleep 3; alive && ok "الأطفال: فتح سورة" || bad "الأطفال: فتح سورة"; shot kids-surah
+open kids; $UI tap "الناس" || $UI tap "الفلق"; sleep 3; alive && ok "الأطفال: فتح سورة" || bad "الأطفال: فتح سورة"; shot kids-surah
 open kids-quiz; expect "مسابقة الأطفال" "النتيجة" 6
 shot kids-quiz
 
@@ -150,7 +152,9 @@ open guide; sleep 2; alive && ok "دليل الاستخدام" || bad "دليل 
 
 # ── Downloads: one short surah.
 open downloads
-$UI tap "تحميل" 0; sleep 15
+# Al-Kawthar (3 ayat) for the first reciter: scroll to it, download, wait for the delete icon.
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28; do adb shell input swipe 540 1800 540 600 200; sleep 0.3; done
+$UI tap "تحميل" 0; sleep 20
 if $UI has "حذف"; then ok "التحميلات: تحميل سورة"; else bad "التحميلات: تحميل سورة"; fi
 shot downloads
 
