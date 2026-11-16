@@ -48,6 +48,13 @@ adb shell cmd uimode night yes; sleep 1
 sweep "داكن"
 adb shell cmd uimode night no
 
+# Large text on a dense screen, as on big phones with a larger font size: long cards get much taller.
+adb shell settings put system font_scale 1.3
+adb shell wm density 520; sleep 2
+sweep "خط كبير"
+adb shell settings put system font_scale 1.0
+adb shell wm density reset; sleep 2
+
 # Random taps and swipes across the app (fixed seed, so a failure can be replayed).
 adb logcat -b all -c
 adb shell am start -S -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 4
