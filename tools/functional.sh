@@ -161,6 +161,24 @@ $UI tap "تحميل" 0; sleep 20
 if $UI has "حذف"; then ok "التحميلات: تحميل سورة"; else bad "التحميلات: تحميل سورة"; fi
 shot downloads
 
+# ── Notification center: turn on the five prayers, check the system has the alarms, send a test.
+adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS 2>/dev/null || true
+adb shell appops set $PKG SCHEDULE_EXACT_ALARM allow 2>/dev/null || true
+open notifications
+expect "مركز التنبيهات: يفتح" "إذن الإشعارات" 8
+$UI tap "كل الصلوات الخمس"; sleep 3
+expect "مركز التنبيهات: جدولة الصلوات" "التالي:" 8
+n=$(adb shell dumpsys alarm | grep -c "com.ayattla.app.ALERT")
+if [ "$n" -ge 5 ]; then ok "مركز التنبيهات: $n منبها في النظام"; else bad "مركز التنبيهات: المنبهات في النظام ($n)"; fi
+shot notifications
+$UI tap "تنبيه تجريبي"; sleep 3
+if adb shell dumpsys notification --noredact | grep -q "تنبيه تجريبي"; then ok "مركز التنبيهات: وصل التنبيه التجريبي"; else bad "مركز التنبيهات: التنبيه التجريبي"; fi
+open prayer-settings
+expect "حساب المواقيت: يفتح" "طريقة الحساب" 6
+$UI tap "الحنفي"; sleep 2; alive && ok "حساب المواقيت: العصر الحنفي" || bad "حساب المواقيت: العصر الحنفي"
+shot prayer-settings
+$UI tap "إعادة الضبط الافتراضي"
+
 # ── Reader and mushaf pages.
 open reader/2/1; scrollAll; scrollAll; alive && ok "القارئ: البقرة كاملة" || bad "القارئ: البقرة"
 open page/1; for i in 1 2 3 4 5; do adb shell input swipe 900 1200 150 1200 120; sleep 0.6; done; alive && ok "المصحف: تقليب الصفحات" || bad "المصحف: تقليب"

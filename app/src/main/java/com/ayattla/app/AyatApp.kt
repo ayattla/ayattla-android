@@ -18,6 +18,9 @@ class AyatApp : Application() {
         super.onCreate()
         prefs = Prefs(this)
         com.ayattla.app.data.Notes.load(this)
+        com.ayattla.app.notify.NotifyStore.load(this)
+        // Every start plans the notifications again (cheap): times follow the city, settings and day.
+        Thread { runCatching { com.ayattla.app.notify.Scheduler.reschedule(this) } }.start()
         com.ayattla.app.data.Hifz.load(this)
     }
 }

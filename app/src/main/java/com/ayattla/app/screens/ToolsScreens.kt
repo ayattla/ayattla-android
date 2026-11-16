@@ -149,14 +149,14 @@ fun PrayerTimesScreen(nav: NavHostController) {
     val prefs = LocalPrefs.current
     val loc = rememberPrayerLocation()
     var day by remember { mutableStateOf(LocalDate.now()) }
-    val times = remember(loc, day) { PrayerTimes.forDate(day, loc.lat, loc.lng, loc.zone, loc.method) }
+    val times = remember(loc, day) { loc.times(day) }
     var message by remember { mutableStateOf<String?>(null) }
     val request = rememberLocationRequest { l ->
         if (l != null) { prefs.setMyLocation(l.latitude, l.longitude); message = null }
         else message = "تعذر تحديد موقعك. اختر مدينة من القائمة."
     }
     val now = LocalTime.now()
-    val next = if (day == LocalDate.now()) PrayerTimes.next(now.hour * 60 + now.minute, times, PrayerTimes.forDate(day.plusDays(1), loc.lat, loc.lng, loc.zone, loc.method)) else null
+    val next = if (day == LocalDate.now()) PrayerTimes.next(now.hour * 60 + now.minute, times, loc.times(day.plusDays(1))) else null
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("مواقيت الصلاة", onBack = { nav.popBackStack() })
@@ -189,8 +189,12 @@ fun PrayerTimesScreen(nav: NavHostController) {
             }
             message?.let { Text(it, color = b.goldInk, style = MaterialTheme.typography.bodySmall) }
             FlowChips(PrayerCity.all.map { it.name }, prefs.cityName) { prefs.setCity(it) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { nav.navigate("notifications") }, modifier = Modifier.weight(1f)) { Text("تنبيهات الصلاة") }
+                OutlinedButton(onClick = { nav.navigate("prayer-settings") }, modifier = Modifier.weight(1f)) { Text("طريقة الحساب") }
+            }
             Text(
-                "طريقة الحساب مطابقة لموقع آيات تتلى: أم القرى للمدن السعودية، والعشاء بعد المغرب بـ 90 دقيقة (120 في رمضان).",
+                "الحساب الافتراضي مطابق لموقع آيات تتلى: أم القرى للمدن السعودية، والعشاء بعد المغرب بـ 90 دقيقة (120 في رمضان). يمكنك تغيير الطريقة ومذهب العصر والتعديل بالدقائق من «طريقة الحساب».",
                 style = MaterialTheme.typography.bodySmall, color = b.muted,
             )
         }
@@ -410,29 +414,19 @@ fun SettingsScreen(nav: NavHostController) {
                 Chip("حسب الجهاز", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
                 Chip("داكن", prefs.themeMode == ThemeMode.Dark, { prefs.setTheme(ThemeMode.Dark) })
             }
-            Text("التذكيرات", style = MaterialTheme.typography.titleMedium, color = b.ink)
-            val ctx = LocalContext.current
-            var pendingKey by remember { mutableStateOf<String?>(null) }
-            val permission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
-                pendingKey?.let { k -> if (ok) { prefs.setReminder(k, true); com.ayattla.app.widget.Reminders.reschedule(ctx, prefs) } }
-                pendingKey = null
-            }
-            AppCard(padding = 4.dp) {
-                com.ayattla.app.widget.Reminders.kinds.forEach { k ->
-                    val on = when (k.key) { "remindMorning" -> prefs.remindMorning; "remindEvening" -> prefs.remindEvening; else -> prefs.remindAyah }
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.NotificationsActive, null, tint = b.goldInk)
-                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text(k.title, style = MaterialTheme.typography.bodyLarge, color = b.ink)
-                            Text(String.format(java.util.Locale.US, "يوميًا قرابة %d:%02d", k.time.hour, k.time.minute), style = MaterialTheme.typography.bodySmall, color = b.muted)
-                        }
-                        Switch(checked = on, onCheckedChange = { v ->
-                            if (v && !com.ayattla.app.widget.Reminders.canNotify(ctx) && android.os.Build.VERSION.SDK_INT >= 33) {
-                                pendingKey = k.key; permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                            } else { prefs.setReminder(k.key, v); com.ayattla.app.widget.Reminders.reschedule(ctx, prefs) }
-                        })
+            Text("التنبيهات", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            AppCard(onClick = { nav.navigate("notifications") }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.NotificationsActive, null, tint = b.goldInk)
+                    Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                        Text("مركز التنبيهات", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                        Text("الصلوات والأذكار والورد والختمة والصيام وتذكيراتك", style = MaterialTheme.typography.bodySmall, color = b.muted)
                     }
                 }
+            }
+            AppCard(onClick = { nav.navigate("prayer-settings") }) {
+                Text("حساب مواقيت الصلاة", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                Text("طريقة الحساب والعصر والتعديل اليدوي", style = MaterialTheme.typography.bodySmall, color = b.muted)
             }
             Text("القارئ", style = MaterialTheme.typography.titleMedium, color = b.ink)
             AppCard(padding = 4.dp) {

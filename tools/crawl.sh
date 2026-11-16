@@ -11,7 +11,7 @@ FAIL=0
 ROUTES=(
   home quran azkar azkar/1 azkar/5 azkar-all tasbih tajweed word-by-word hifz-test ruqya asma occasions
   qada sawm mosques kids kids/112 kids/78 hifz-plan downloads kids-quiz ayah-today text-card status
-  prayer qibla hijri zakat saved settings about radios hadith hadith-check topics duas guide khatma
+  prayer notifications prayer-settings qibla hijri zakat saved settings about radios hadith hadith-check topics duas guide khatma
   page/1 page/50 page/604 reader/1/1 reader/2/1 reader/2/255 reader/26/1 reader/114/1
   'more?group=Daily' 'more?group=Quran' more 'studio?s=2\&a=255\&b=255' 'studio?v=1'
 )
@@ -42,18 +42,21 @@ sweep() {  # $1 = theme label
   done
 }
 
-adb shell cmd uimode night no; sleep 1
-sweep "فاتح"
-adb shell cmd uimode night yes; sleep 1
-sweep "داكن"
-adb shell cmd uimode night no
-
-# Large text on a dense screen, as on big phones with a larger font size: long cards get much taller.
-adb shell settings put system font_scale 1.3
-adb shell wm density 520; sleep 2
-sweep "خط كبير"
-adb shell settings put system font_scale 1.0
-adb shell wm density reset; sleep 2
+# Mode (CI runs each in its own emulator, in parallel): light (with the random-tap test), dark, large.
+MODE=${1:-all}
+if [ "$MODE" = all ] || [ "$MODE" = light ]; then adb shell cmd uimode night no; sleep 1; sweep "فاتح"; fi
+if [ "$MODE" = all ] || [ "$MODE" = dark ]; then adb shell cmd uimode night yes; sleep 1; sweep "داكن"; adb shell cmd uimode night no; fi
+if [ "$MODE" = all ] || [ "$MODE" = large ]; then
+  # Large text on a dense screen, as on big phones with a larger font size: long cards get much taller.
+  adb shell settings put system font_scale 1.3
+  adb shell wm density 520; sleep 2
+  sweep "خط كبير"
+  adb shell settings put system font_scale 1.0
+  adb shell wm density reset; sleep 2
+fi
+if [ "$MODE" = dark ] || [ "$MODE" = large ]; then
+  echo "screens checked: $(grep -c '^✓' "$OUT") passed, $FAIL failed" | tee -a "$OUT"; [ "$FAIL" -eq 0 ]; exit
+fi
 
 # Random taps and swipes across the app (fixed seed, so a failure can be replayed).
 adb logcat -b all -c

@@ -112,17 +112,27 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Notification taps: "home", "azkar:morning" or "azkar:evening". */
+    /** Notification taps: "route:<screen>", "azkar:<word in the category title>" (and 2.0's "azkar:morning"/"azkar:evening"/"home"). */
     private fun openTarget(i: android.content.Intent?): String? {
         val o = i?.getStringExtra("open") ?: return null
         val content = (application as AyatApp).content
         fun cat(word: String) = content.azkarCategories.firstOrNull { word in it.title }?.let { Routes.azkar(it.id) } ?: "azkar"
-        return when (o) {
-            "azkar:morning" -> cat("الصباح")
-            "azkar:evening" -> cat("المساء")
-            "home" -> "home"
+        return when {
+            o == "azkar:morning" -> cat("الصباح")
+            o == "azkar:evening" -> cat("المساء")
+            o.startsWith("azkar:") -> cat(o.removePrefix("azkar:"))
+            o.startsWith("route:") -> o.removePrefix("route:")
+            o == "home" -> "home"
             else -> null
         }
+    }
+
+    /** A notification tapped while the app is open opens its screen too. */
+    private val pendingOpen = androidx.compose.runtime.mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        openTarget(intent)?.let { pendingOpen.value = it }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -142,7 +152,7 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalContent provides app.content,
                     LocalPrefs provides app.prefs,
-                ) { AppRoot(startScreen) }
+                ) { AppRoot(startScreen, pendingOpen) }
             }
         }
     }
@@ -169,8 +179,12 @@ object Routes {
 }
 
 @Composable
-fun AppRoot(startScreen: String? = null) {
+fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.MutableState<String?>? = null) {
     val nav = rememberNavController()
+    val req = openRequest?.value
+    androidx.compose.runtime.LaunchedEffect(req) {
+        if (req != null) { if (req != "home") runCatching { nav.navigate(req) }; openRequest.value = null }
+    }
     androidx.compose.runtime.LaunchedEffect(startScreen) {
         if (startScreen != null && startScreen != "home") runCatching { nav.navigate(startScreen) }
     }
@@ -225,6 +239,8 @@ fun AppRoot(startScreen: String? = null) {
             composable("mosques") { com.ayattla.app.screens.MosquesScreen(nav) }
             composable("kids") { com.ayattla.app.screens.KidsScreen(nav) }
             composable("kids/{n}", arguments = listOf(navArgument("n") { type = NavType.IntType })) { e -> com.ayattla.app.screens.KidsSurahScreen(nav, e.arguments!!.getInt("n")) }
+            composable("notifications") { com.ayattla.app.notify.NotificationsScreen(nav) }
+            composable("prayer-settings") { com.ayattla.app.notify.PrayerSettingsScreen(nav) }
             composable("hifz-plan") { com.ayattla.app.screens.HifzPlanScreen(nav) }
             composable("downloads") { com.ayattla.app.screens.DownloadsScreen(nav) }
             composable("kids-quiz") { com.ayattla.app.screens.KidsQuizScreen(nav) }

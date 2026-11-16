@@ -388,8 +388,8 @@ fun NextPrayerCard(nav: NavHostController) {
     LaunchedEffect(Unit) { while (true) { delay(30_000); now = LocalTime.now() } }
     val loc = rememberPrayerLocation()
     val next = remember(loc, now.hour, now.minute) {
-        val t = PrayerTimes.forDate(today, loc.lat, loc.lng, loc.zone, loc.method)
-        val t2 = PrayerTimes.forDate(today.plusDays(1), loc.lat, loc.lng, loc.zone, loc.method)
+        val t = loc.times(today)
+        val t2 = loc.times(today.plusDays(1))
         PrayerTimes.next(now.hour * 60 + now.minute, t, t2) to t
     }
     val time = PrayerTimes.hm12(if (next.first.isTomorrow) next.second.fajr else next.second.hours(next.first.prayer))
