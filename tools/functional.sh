@@ -10,8 +10,11 @@ FAIL=0
 UI="python3 tools/ui.py"
 
 # Arabic typing: ADB keyboard (adb's own "input text" is ASCII only).
-curl -sSL -m 60 -o /tmp/adbkb.apk https://github.com/senzhk/ADBKeyBoard/raw/master/ADBKeyboard.apk && adb install -r /tmp/adbkb.apk >/dev/null 2>&1 \
-  && adb shell ime enable com.android.adbkeyboard/.AdbIME >/dev/null && adb shell ime set com.android.adbkeyboard/.AdbIME >/dev/null
+IME=com.android.adbkeyboard/.AdbIME
+curl -sSL -m 60 -o /tmp/adbkb.apk https://github.com/senzhk/ADBKeyBoard/raw/master/ADBKeyboard.apk && adb install -r /tmp/adbkb.apk
+adb shell ime enable $IME; adb shell ime set $IME
+adb shell settings put secure enabled_input_methods "$IME"; adb shell settings put secure default_input_method "$IME"
+echo "keyboard: $(adb shell settings get secure default_input_method)"
 typeAr() { adb shell am broadcast -a ADB_INPUT_TEXT --es msg "$1" >/dev/null; sleep 1; }
 
 # Location for prayer times, qibla and mosques: Riyadh.
