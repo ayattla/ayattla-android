@@ -1,5 +1,6 @@
 package com.ayattla.app.screens
 
+import com.ayattla.app.ui.components.softShadow
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

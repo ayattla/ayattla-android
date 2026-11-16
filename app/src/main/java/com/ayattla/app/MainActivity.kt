@@ -1,5 +1,6 @@
 package com.ayattla.app
 
+import com.ayattla.app.ui.components.softShadow
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
