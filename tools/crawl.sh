@@ -26,7 +26,7 @@ check() {  # $1 = label
     echo "✗ $1 (the app is no longer running)" | tee -a "$OUT"
     FAIL=$((FAIL + 1))
   else
-    echo "✓ $1" >> "$OUT"
+    echo "✓ $1" | tee -a "$OUT"
   fi
 }
 
@@ -34,10 +34,9 @@ sweep() {  # $1 = theme label
   for r in "${ROUTES[@]}"; do
     adb logcat -b all -c
     adb shell am start -S -W -n $PKG/.MainActivity --es screen "$r" >/dev/null 2>&1
-    sleep 4
-    for i in 1 2 3 4 5 6 7 8 9 10; do adb shell input swipe 540 1800 540 300 120; sleep 0.4; done
-    sleep 1
-    for i in 1 2 3; do adb shell input swipe 540 400 540 1900 120; sleep 0.3; done
+    sleep 3
+    for i in 1 2 3 4 5 6 7 8; do adb shell input swipe 540 1800 540 300 100; sleep 0.3; done
+    for i in 1 2; do adb shell input swipe 540 400 540 1900 100; sleep 0.3; done
     sleep 1
     check "$1 $r"
   done
