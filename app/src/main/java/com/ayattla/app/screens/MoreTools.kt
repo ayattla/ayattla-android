@@ -335,7 +335,7 @@ fun TajweedScreen(nav: NavHostController) {
 
 // ───────────── Word by word (/tools/word-by-word) ─────────────
 
-private val WordLanguages = listOf("en" to "English", "ur" to "اردو", "id" to "Indonesia", "tr" to "Türkçe", "bn" to "বাংলা", "fr" to "Français")
+private val WordLanguages = listOf("en" to "English", "ur" to "اردو", "id" to "Indonesia", "tr" to "Türkçe", "bn" to "বাংলা")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -343,7 +343,7 @@ fun WordByWordScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
     var surah by rememberSaveable { mutableIntStateOf(1) }
-    var lang by rememberSaveable { mutableStateOf(sp(ctx).getString("wbw.lang", "en") ?: "en") }
+    var lang by rememberSaveable { mutableStateOf((sp(ctx).getString("wbw.lang", "en") ?: "en").takeIf { l -> WordLanguages.any { it.first == l } } ?: "en") }
     var verses by remember { mutableStateOf<List<SiteApi.WordsVerse>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
