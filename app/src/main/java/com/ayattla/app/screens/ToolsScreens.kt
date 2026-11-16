@@ -362,7 +362,7 @@ fun SavedScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val content = LocalContent.current
     val prefs = LocalPrefs.current
-    val saved = prefs.favorites.mapNotNull { k -> k.split(":").takeIf { it.size == 2 }?.let { it[0].toInt() to it[1].toInt() } }
+    val saved = prefs.favorites.mapNotNull { k -> k.split(":").takeIf { it.size == 2 }?.let { (s, a) -> (s.toIntOrNull() ?: return@mapNotNull null) to (a.toIntOrNull() ?: return@mapNotNull null) } }
         .sortedWith(compareBy({ it.first }, { it.second }))
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("آياتي المحفوظة", onBack = { nav.popBackStack() })

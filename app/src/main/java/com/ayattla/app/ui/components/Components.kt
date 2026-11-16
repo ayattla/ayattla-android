@@ -44,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,8 +87,8 @@ fun Modifier.surface(b: Brand, level: Surface = Surface.Raised, radius: Dp = Rad
     val fill = when (level) { Surface.Raised, Surface.Flat -> b.surface; Surface.Tinted -> b.surface2; Surface.Gold -> b.goldSoft }
     val border = if (level == Surface.Gold) b.accent.copy(alpha = 0.45f) else b.line
     val shadowed = if (level == Surface.Raised && !b.dark) this
-        .dropShadow(shape, Shadow(radius = 20.dp, color = b.shadow.copy(alpha = 0.14f), offset = DpOffset(0.dp, 14.dp)))
-        .dropShadow(shape, Shadow(radius = 1.dp, color = b.shadow.copy(alpha = 0.06f), offset = DpOffset(0.dp, 1.dp)))
+        .softShadow(shape, 20.dp, b.shadow.copy(alpha = 0.14f), DpOffset(0.dp, 14.dp))
+        .softShadow(shape, 1.dp, b.shadow.copy(alpha = 0.06f), DpOffset(0.dp, 1.dp))
     else this
     return shadowed.clip(shape).background(fill).border(1.dp, border, shape)
 }
@@ -99,7 +97,7 @@ fun Modifier.surface(b: Brand, level: Surface = Surface.Raised, radius: Dp = Rad
 fun Modifier.heroSurface(b: Brand, radius: Dp = Radius.hero): Modifier {
     val shape = RoundedCornerShape(radius)
     return this
-        .dropShadow(shape, Shadow(radius = 20.dp, color = Color(0xFF0B211C).copy(alpha = 0.25f), offset = DpOffset(0.dp, 12.dp)))
+        .softShadow(shape, 20.dp, Color(0xFF0B211C).copy(alpha = 0.25f), DpOffset(0.dp, 12.dp))
         .clip(shape)
         .background(Brush.linearGradient(b.gradient))
         .drawBehind {
@@ -114,7 +112,7 @@ fun Modifier.heroSurface(b: Brand, radius: Dp = Radius.hero): Modifier {
 fun Modifier.featureSurface(b: Brand, radius: Dp = Radius.feature): Modifier {
     val shape = RoundedCornerShape(radius)
     return this
-        .dropShadow(shape, Shadow(radius = 24.dp, color = Color(0xFF1F8A62).copy(alpha = 0.45f), offset = DpOffset(0.dp, 16.dp)))
+        .softShadow(shape, 24.dp, Color(0xFF1F8A62).copy(alpha = 0.45f), DpOffset(0.dp, 16.dp))
         .clip(shape)
         .background(b.siteBrush)
         .drawBehind {
@@ -127,7 +125,7 @@ fun Modifier.featureSurface(b: Brand, radius: Dp = Radius.feature): Modifier {
 fun Modifier.pageHeadSurface(b: Brand, radius: Dp = Radius.hero): Modifier {
     val shape = RoundedCornerShape(radius)
     return this
-        .then(if (b.dark) Modifier else Modifier.dropShadow(shape, Shadow(radius = 18.dp, color = b.shadow.copy(alpha = 0.10f), offset = DpOffset(0.dp, 12.dp))))
+        .then(if (b.dark) Modifier else Modifier.softShadow(shape, 18.dp, b.shadow.copy(alpha = 0.10f), DpOffset(0.dp, 12.dp)))
         .clip(shape)
         .background(b.surface)
         .drawBehind {
@@ -347,7 +345,7 @@ fun IconTile(icon: ImageVector, modifier: Modifier = Modifier, style: TileStyle 
     Box(
         modifier
             .size(size)
-            .then(if (shadow != Color.Transparent) Modifier.dropShadow(shape, Shadow(radius = 8.dp, color = shadow, offset = DpOffset(0.dp, 6.dp))) else Modifier)
+            .then(if (shadow != Color.Transparent) Modifier.softShadow(shape, 8.dp, shadow, DpOffset(0.dp, 6.dp)) else Modifier)
             .clip(shape)
             .then(
                 when (style) {
@@ -440,7 +438,7 @@ fun BrandButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? 
         modifier
             .heightIn(min = 50.dp)
             .then(if (enabled) Modifier.pressable(onClick) else Modifier)
-            .then(if (shadow != Color.Transparent && !b.dark) Modifier.dropShadow(ButtonShape, Shadow(radius = 12.dp, color = shadow, offset = DpOffset(0.dp, 8.dp))) else Modifier)
+            .then(if (shadow != Color.Transparent && !b.dark) Modifier.softShadow(ButtonShape, 12.dp, shadow, DpOffset(0.dp, 8.dp)) else Modifier)
             .clip(ButtonShape)
             .then(
                 when (kind) {

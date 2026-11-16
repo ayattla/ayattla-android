@@ -114,3 +114,41 @@ object RemoteImages {
         }
     }
 }
+
+/**
+ * Decodes a photo from the device at most [maxSide] pixels on its longer side, upright as the camera
+ * recorded it (EXIF rotation). Phone cameras take 50–200 MP photos; decoding those whole needs
+ * 200 MB–800 MB and crashes the app, so a photo is never decoded larger than it will be shown.
+ */
+fun decodeScaled(path: String, maxSide: Int): Bitmap? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(path, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxSide) sample *= 2
+    var bmp = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@runCatching null
+    val longest = maxOf(bmp.width, bmp.height)
+    if (longest > maxSide) {
+        val k = maxSide / longest.toFloat()
+        bmp = Bitmap.createScaledBitmap(bmp, (bmp.width * k).toInt().coerceAtLeast(1), (bmp.height * k).toInt().coerceAtLeast(1), true)
+    }
+    val degrees = when (android.media.ExifInterface(path).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1)) {
+        android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+        android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+        android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+        else -> 0f
+    }
+    if (degrees == 0f) bmp
+    else Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, android.graphics.Matrix().apply { postRotate(degrees) }, true)
+}.getOrNull()
+
+/** A video's first frame, at most [maxSide] pixels on its longer side. */
+fun videoFrame(path: String, maxSide: Int): Bitmap? = runCatching {
+    val r = android.media.MediaMetadataRetriever(); r.setDataSource(path)
+    try {
+        val f = r.getFrameAtTime(0) ?: return@runCatching null
+        val longest = maxOf(f.width, f.height)
+        if (longest <= maxSide) f
+        else (maxSide / longest.toFloat()).let { k -> Bitmap.createScaledBitmap(f, (f.width * k).toInt(), (f.height * k).toInt(), true).also { f.recycle() } }
+    } finally { r.release() }
+}.getOrNull()

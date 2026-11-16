@@ -66,11 +66,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -200,7 +198,7 @@ private fun HomeHead(nav: NavHostController) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 52.dp)
                 .pressable { nav.navigate("more?focus=1") }
-                .dropShadow(RoundedCornerShape(16.dp), Shadow(radius = 10.dp, color = b.shadow.copy(alpha = 0.06f), offset = DpOffset(0.dp, 4.dp)))
+                .softShadow(RoundedCornerShape(16.dp), 10.dp, b.shadow.copy(alpha = 0.06f), DpOffset(0.dp, 4.dp))
                 .clip(RoundedCornerShape(16.dp)).background(b.surface).border(1.dp, b.line, RoundedCornerShape(16.dp))
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -259,7 +257,7 @@ private fun MediaShortcut(
     val shape = RoundedCornerShape(if (big) Radius.hero else Radius.card)
     Box(
         modifier.fillMaxWidth().height(height).pressable(onClick)
-            .dropShadow(shape, Shadow(radius = 14.dp, color = b.shadow.copy(alpha = 0.16f), offset = DpOffset(0.dp, 8.dp)))
+            .softShadow(shape, 14.dp, b.shadow.copy(alpha = 0.16f), DpOffset(0.dp, 8.dp))
             .clip(shape).background(Brush.linearGradient(tileGradient(gradient))),
     ) {
         RemoteImage(media?.still, Modifier.fillMaxSize())
@@ -524,7 +522,7 @@ private fun BarIconOn(icon: ImageVector, label: String, onClick: () -> Unit) {
 private fun FloatChip(text: String, icon: ImageVector, modifier: Modifier) {
     val b = LocalBrand.current
     Row(
-        modifier.dropShadow(CircleShape, Shadow(radius = 10.dp, color = b.shadow.copy(alpha = 0.18f), offset = DpOffset(0.dp, 6.dp)))
+        modifier.softShadow(CircleShape, 10.dp, b.shadow.copy(alpha = 0.18f), DpOffset(0.dp, 6.dp))
             .clip(CircleShape).background(b.surface).border(1.dp, b.line, CircleShape).padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {

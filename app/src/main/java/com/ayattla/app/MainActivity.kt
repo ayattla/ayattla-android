@@ -26,10 +26,8 @@ import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import com.ayattla.app.ui.components.patternedScreen
@@ -268,7 +266,7 @@ private fun FloatingTabBar(route: String?, onSelect: (String) -> Unit) {
     val shape = RoundedCornerShape(30.dp)
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
-            .dropShadow(shape, Shadow(radius = 24.dp, color = Color(0xFF0F1F17).copy(alpha = if (b.dark) 0.5f else 0.16f), offset = DpOffset(0.dp, 10.dp)))
+            .softShadow(shape, 24.dp, Color(0xFF0F1F17).copy(alpha = if (b.dark) 0.5f else 0.16f), DpOffset(0.dp, 10.dp))
             .clip(shape).background(b.surface.copy(alpha = 0.97f)).border(1.dp, b.line, shape).padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {

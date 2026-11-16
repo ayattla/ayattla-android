@@ -251,7 +251,7 @@ object KidsQuiz {
     fun make(content: ContentStore, pool: List<Int>, rnd: java.util.Random): Q {
         val surahs = pool.ifEmpty { Kids.surahs }
         val s = surahs[rnd.nextInt(surahs.size)]
-        val ayat = content.ayat(s).filter { words(it).size >= 4 }
+        val ayat = content.ayat(s).filter { words(it).size >= 4 }.ifEmpty { content.ayat(s) }
         val a = ayat[rnd.nextInt(ayat.size)]
         return if (rnd.nextBoolean()) {
             // «أكمل الآية»: the first half shown, the real second half among others from Juz Amma.
@@ -260,7 +260,7 @@ object KidsQuiz {
             var cut = w.size / 2
             while (cut < w.size - 1 && w[cut].none { it in '\u0621'..'\u064A' }) cut++
             val right = w.drop(cut).joinToString(" ")
-            val wrong = generateSequence { val o = content.ayat(Kids.surahs[rnd.nextInt(Kids.surahs.size)]).filter { words(it).size >= 4 }.random(); words(o).let { it.drop(it.size / 2).joinToString(" ") } }
+            val wrong = generateSequence { val o = content.ayat(Kids.surahs[rnd.nextInt(Kids.surahs.size)]).filter { words(it).size >= 4 }.randomOrNull() ?: a; words(o).let { it.drop(it.size / 2).joinToString(" ") } }
                 .filter { it != right }.distinct().take(2).toList()
             val opts = (wrong + right).shuffled(kotlin.random.Random(rnd.nextLong()))
             Q(w.take(cut).joinToString(" ") + " …", a, opts, opts.indexOf(right), 0)

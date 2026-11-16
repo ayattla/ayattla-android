@@ -21,11 +21,9 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.style.TextDecoration
@@ -441,7 +439,7 @@ fun PlayerBar() {
     val shape = RoundedCornerShape(26.dp)
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
-            .dropShadow(shape, Shadow(radius = 24.dp, color = Color(0xFF0F1F17).copy(alpha = 0.16f), offset = DpOffset(0.dp, 10.dp)))
+            .softShadow(shape, 24.dp, Color(0xFF0F1F17).copy(alpha = 0.16f), DpOffset(0.dp, 10.dp))
             .clip(shape).background(b.surface).border(1.dp, b.line, shape).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -473,7 +471,7 @@ fun PlayerBar() {
             // RTL: «previous» sits on the right.
             IconButton(onClick = { Recitation.previous() }) { Icon(Icons.Filled.SkipNext, "السابقة", tint = b.green, modifier = Modifier.size(30.dp)) }
             Box(
-                Modifier.size(62.dp).dropShadow(CircleShape, Shadow(radius = 12.dp, color = Color(0xFF1F8A62).copy(alpha = 0.35f), offset = DpOffset(0.dp, 6.dp)))
+                Modifier.size(62.dp).softShadow(CircleShape, 12.dp, Color(0xFF1F8A62).copy(alpha = 0.35f), DpOffset(0.dp, 6.dp))
                     .clip(CircleShape).background(Brush.linearGradient(b.siteGradient)).clickable { Recitation.toggle() },
                 contentAlignment = Alignment.Center,
             ) {

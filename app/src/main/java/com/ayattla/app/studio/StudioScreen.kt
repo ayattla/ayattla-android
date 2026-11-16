@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
@@ -313,11 +312,8 @@ private suspend fun previewPhoto(ctx: android.content.Context, bg: Background): 
     Background.Color -> null
     is Background.Library -> (if (bg.media.isVideo) bg.media.thumbUrl else bg.media.still)?.let { RemoteImages.load(ctx, it, 700) }
     is Background.Local -> withContext(Dispatchers.IO) {
-        if (bg.isVideo) runCatching {
-            val r = MediaMetadataRetriever(); r.setDataSource(bg.path)
-            try { r.getFrameAtTime(0) } finally { r.release() }
-        }.getOrNull()
-        else android.graphics.BitmapFactory.decodeFile(bg.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 })
+        if (bg.isVideo) com.ayattla.app.data.videoFrame(bg.path, 1280)
+        else com.ayattla.app.data.decodeScaled(bg.path, 1280)
     }
 }
 
@@ -725,7 +721,7 @@ private fun CardsExport(p: Project, parts: List<Part>, onMedia: Boolean) {
                     // Full-size photo for the cards themselves.
                     when (val bg = p.background) {
                         is Background.Library -> if (!bg.media.isVideo) bg.media.still?.let { RemoteImages.load(ctx, it, (w * 1.2f).toInt()) } ?: small else small
-                        is Background.Local -> if (!bg.isVideo) android.graphics.BitmapFactory.decodeFile(bg.path) ?: small else small
+                        is Background.Local -> if (!bg.isVideo) com.ayattla.app.data.decodeScaled(bg.path, (maxOf(w, h) * 1.2f).toInt()) ?: small else small
                         Background.Color -> small
                     }
                 }
@@ -750,7 +746,7 @@ private fun CardsExport(p: Project, parts: List<Part>, onMedia: Boolean) {
             Text("جاهزة: ${made.size} بطاقة (${Composer.size(p.ratio, q).let { "${it.first}×${it.second}" }})", style = MaterialTheme.typography.titleSmall, color = b.primaryInk, modifier = Modifier.padding(top = 8.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 made.take(12).forEach { f ->
-                    val thumb = remember(f) { android.graphics.BitmapFactory.decodeFile(f.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = 8 }) }
+                    val thumb = remember(f) { com.ayattla.app.data.decodeScaled(f.path, 360) }
                     thumb?.let { Image(it.asImageBitmap(), null, Modifier.height(120.dp).clip(RoundedCornerShape(10.dp))) }
                 }
             }

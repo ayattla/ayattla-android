@@ -106,7 +106,7 @@ class ClipEngine(private val context: Context, private val content: ContentStore
             Background.Color -> null
         }
         val photo: Bitmap? = when (bg) {
-            is Background.Local -> if (!bg.isVideo) android.graphics.BitmapFactory.decodeFile(bg.path) else null
+            is Background.Local -> if (!bg.isVideo) com.ayattla.app.data.decodeScaled(bg.path, (maxOf(w, h) * 1.2f).toInt()) else null
             is Background.Library -> if (!bg.media.isVideo) bg.media.still?.let { RemoteImages.load(context, it, (w * 1.2f).toInt()) } else null
             Background.Color -> null
         }
