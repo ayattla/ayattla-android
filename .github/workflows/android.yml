@@ -123,7 +123,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             bash tools/shots.sh
-            bash tools/crawl.sh
+            bash tools/functional.sh; f=$?; bash tools/crawl.sh || exit 1; exit $f
 
       - name: Publish screenshots to the ci-shots branch
         if: always()

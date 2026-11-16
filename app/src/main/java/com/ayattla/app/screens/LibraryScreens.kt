@@ -362,8 +362,18 @@ fun KhatmaScreen(nav: NavHostController) {
                 AppCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("أبدأ من صفحة $startPage", style = MaterialTheme.typography.bodyLarge, color = b.ink, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { startPage = (startPage - 10).coerceAtLeast(1) }) { Text("−١٠") }
                         TextButton(onClick = { if (startPage > 1) startPage -= 1 }) { Text("−") }
                         TextButton(onClick = { if (startPage < KhatmaPlan.PAGES) startPage += 1 }) { Text("+") }
+                        TextButton(onClick = { startPage = (startPage + 10).coerceAtMost(KhatmaPlan.PAGES) }) { Text("+١٠") }
+                    }
+                    // Start quickly from the beginning of any juz (the page numbers of the Madinah mushaf).
+                    Text("أو ابدأ من بداية جزء", style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(top = 4.dp))
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        content.juzStarts.forEachIndexed { i, j ->
+                            val pg = content.pageOf(j.surah, j.ayah)
+                            com.ayattla.app.ui.components.Chip("${i + 1}", startPage == pg, { startPage = pg })
+                        }
                     }
                     if (startPage > 1) Text("سورة ${content.surah(content.page(startPage).first().surah).shortName}", style = MaterialTheme.typography.bodySmall, color = b.muted)
                     val p = KhatmaPlan.create(days, startPage, LocalDate.now())
@@ -381,8 +391,15 @@ fun KhatmaScreen(nav: NavHostController) {
                     LinearProgressIndicator(progress = { plan.completedDays.size.toFloat() / plan.days }, color = b.accent, trackColor = b.onPrimary.copy(alpha = 0.2f), modifier = Modifier.fillMaxWidth())
                     Text("${plan.completedDays.size} من ${plan.days} يومًا · الختام المتوقع ${plan.expectedEnd}", style = MaterialTheme.typography.bodySmall, color = b.onPrimary.copy(alpha = 0.8f), modifier = Modifier.padding(top = 6.dp))
                 }
+                // Days before today that are not ticked: the reader is behind the plan.
+                val behind = (1 until today).count { it !in plan.completedDays }
+                if (behind > 0 && !plan.isFinished) Text("فاتك ورد $behind ${if (behind == 1) "يوم" else "أيام"}، اضغط اليوم في القائمة عند إتمامه.", style = MaterialTheme.typography.bodyMedium, color = b.goldInk)
                 plan.range(today)?.let { r ->
                     Button(onClick = { nav.navigate("page/${r.first}") }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = b.primary)) { Text("اقرأ ورد اليوم") }
+                    val doneToday = today in plan.completedDays
+                    OutlinedButton(onClick = {
+                        prefs.saveKhatma(plan.copy(completedDays = if (doneToday) plan.completedDays - today else plan.completedDays + today).encode())
+                    }, modifier = Modifier.fillMaxWidth()) { Text(if (doneToday) "أتممت ورد اليوم ✓ (تراجع)" else "أتممت ورد اليوم", color = b.primaryInk) }
                     AppCard {
                         Text("مقسّمًا على الصلوات", style = MaterialTheme.typography.titleSmall, color = b.ink)
                         val names = listOf("بعد الفجر", "بعد الظهر", "بعد العصر", "بعد المغرب", "بعد العشاء")

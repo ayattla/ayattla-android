@@ -1,0 +1,40 @@
+name: API probe
+on:
+  push:
+    branches: [tools-audit]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe every endpoint the apps use
+        shell: bash {0}
+        run: |
+          probe() {  # $1 label, $2 UA, rest: curl args
+            l=$1; ua=$2; shift 2
+            out=$(curl -sS -m 25 -A "$ua" -H 'Accept: application/json' -o /tmp/b -w '%{http_code} %{size_download}B %{time_total}s %{content_type}' "$@" 2>&1 || true)
+            head=$(head -c 160 /tmp/b | tr '\n' ' ')
+            echo "$l | $ua | $out | $head"
+          }
+          for ua in "AyatTutla-Android" "AyatTutla-iOS" "Mozilla/5.0"; do
+            probe tajweed1 "$ua" https://ayattla.com/api/qf/tajweed/1
+            probe tajweed2 "$ua" https://ayattla.com/api/qf/tajweed/2
+            probe tajweed114 "$ua" https://ayattla.com/api/qf/tajweed/114
+            for lg in en ur id tr bn fr; do probe words18-$lg "$ua" "https://ayattla.com/api/qf/words/18?lang=$lg&page=1"; done
+            probe words2-en "$ua" "https://ayattla.com/api/qf/words/2?lang=en&page=1"
+            probe hadith "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q="
+            probe hadith-q "$ua" "https://ayattla.com/api/hadith/browse?cat=&page=1&q=%D8%A7%D9%84%D8%B5%D9%84%D8%A7%D8%A9"
+            probe hadith-check "$ua" -X POST -H 'Content-Type: application/json' --data '{"text":"إنما الأعمال بالنيات"}' https://ayattla.com/api/hadith/check
+            probe radios "$ua" https://ayattla.com/api/radios
+            probe ruqya "$ua" https://ayattla.com/api/ruqya
+            probe media "$ua" "https://ayattla.com/api/media/search?q=nature&type=photo"
+            probe media-col "$ua" https://ayattla.com/api/media/collections
+            probe everyayah "$ua" https://everyayah.com/data/Alafasy_128kbps/001001.mp3
+            probe overpass "$ua" -X POST --data-urlencode 'data=[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.77,46.65);out 5;' https://overpass-api.de/api/interpreter
+            echo
+          done
+          q='[out:json][timeout:25];node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,24.7136,46.6753);out 5;'
+          for s in https://overpass-api.de https://overpass.private.coffee https://maps.mail.ru/osm/tools/overpass https://overpass.kumi.systems https://overpass.osm.jp https://z.overpass-api.de https://lz4.overpass-api.de; do
+            probe "overpass $s" "AyatTutla-Android (ayattla.com)" -X POST --data-urlencode "data=$q" $s/api/interpreter
+          done

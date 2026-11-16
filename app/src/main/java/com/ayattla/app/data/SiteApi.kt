@@ -2,6 +2,7 @@ package com.ayattla.app.data
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -104,10 +105,12 @@ object SiteApi {
     }
 
     /** GET /api/qf/words/{chapter}?lang=&page= (all pages): word meanings and the tafsir line. */
-    suspend fun words(context: Context, chapter: Int, lang: String): List<WordsVerse> {
+    suspend fun words(context: Context, chapter: Int, lang: String, onPage: (List<WordsVerse>) -> Unit = {}): List<WordsVerse> {
         val out = ArrayList<WordsVerse>()
         var page: Int? = 1
-        while (page != null && out.size <= 300) {
+        var guard = 0
+        while (page != null && out.size <= 300 && guard++ < 60) {
+            val before = out.size
             val o = JSONObject(getQf(context, "$BASE/api/qf/words/$chapter?lang=${enc(lang)}&page=$page", "wbw-$chapter-$lang-$page"))
             val vs = o.getJSONArray("verses")
             for (i in 0 until vs.length()) {
@@ -119,6 +122,7 @@ object SiteApi {
                     v.optString("tafsir").ifBlank { null },
                 )
             }
+            onPage(out.subList(before, out.size).toList())
             page = o.optJSONObject("pagination")?.let { p -> if (p.isNull("next_page")) null else p.optInt("next_page").takeIf { it > 0 } }
         }
         return out
@@ -127,18 +131,42 @@ object SiteApi {
     data class Mosque(val name: String, val lat: Double, val lng: Double, val distanceM: Double)
 
     /** Mosques around a point from OpenStreetMap (Overpass API); the search sends only the coordinates. */
+    /** Public Overpass servers: the main one is often at capacity (HTTP 429/502/504), so the others are tried in turn. */
+    private val overpass = listOf(
+        "https://overpass-api.de/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+    )
+
     suspend fun mosques(lat: Double, lng: Double, radiusM: Int): List<Mosque> = withContext(Dispatchers.IO) {
         val q = "[out:json][timeout:25];(node[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng);" +
             "way[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng););out center 80;"
-        val c = (URL("https://overpass-api.de/api/interpreter").openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"; doOutput = true; connectTimeout = 15_000; readTimeout = 40_000
-            setRequestProperty("User-Agent", "AyatTutla-Android"); setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+        // All servers are asked at once and the first answer is used: each one is often busy or slow.
+        kotlinx.coroutines.coroutineScope {
+            val pending = overpass.map { server -> async { runCatching { queryMosques(server, q, lat, lng) } } }.toMutableList()
+            var last: Throwable? = null
+            while (pending.isNotEmpty()) {
+                val (done, r) = kotlinx.coroutines.selects.select<Pair<kotlinx.coroutines.Deferred<Result<List<Mosque>>>, Result<List<Mosque>>>> {
+                    pending.forEach { d -> d.onAwait { d to it } }
+                }
+                pending.remove(done)
+                r.onSuccess { list -> pending.forEach { it.cancel() }; return@coroutineScope list }.onFailure { last = it }
+            }
+            throw last ?: IllegalStateException("no server")
+        }
+    }
+
+    private fun queryMosques(server: String, q: String, lat: Double, lng: Double): List<Mosque> {
+        val c = (URL(server).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; doOutput = true; connectTimeout = 10_000; readTimeout = 30_000
+            setRequestProperty("User-Agent", "AyatTutla-Android (ayattla.com)"); setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
         }
         try {
             c.outputStream.use { it.write(("data=" + enc(q)).toByteArray()) }
             if (c.responseCode != 200) error("HTTP ${c.responseCode}")
             val els = JSONObject(c.inputStream.bufferedReader().readText()).getJSONArray("elements")
-            List(els.length()) { els.getJSONObject(it) }.mapNotNull { e ->
+            return List(els.length()) { els.getJSONObject(it) }.mapNotNull { e ->
                 val la = if (e.has("lat")) e.getDouble("lat") else e.optJSONObject("center")?.optDouble("lat") ?: return@mapNotNull null
                 val lo = if (e.has("lon")) e.getDouble("lon") else e.optJSONObject("center")?.optDouble("lon") ?: return@mapNotNull null
                 val tags = e.optJSONObject("tags")
