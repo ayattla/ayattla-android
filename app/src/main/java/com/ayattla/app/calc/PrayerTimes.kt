@@ -24,6 +24,18 @@ data class PrayerTimes(
     /** Fajr angle, and Isha angle or (if > 30) minutes after Maghrib. 90 becomes 120 in Ramadan. */
     data class Method(val fajrAngle: Double, val isha: Double) {
         companion object {
+            /** Methods the user can choose (id, name, method). "auto" keeps the site's choice per city. */
+            val choices = listOf(
+                Triple("umm-al-qura", "أم القرى (مكة المكرمة)", Method(18.5, 90.0)),
+                Triple("mwl", "رابطة العالم الإسلامي", Method(18.0, 17.0)),
+                Triple("egypt", "الهيئة المصرية العامة للمساحة", Method(19.5, 17.5)),
+                Triple("karachi", "جامعة العلوم الإسلامية بكراتشي", Method(18.0, 18.0)),
+                Triple("isna", "أمريكا الشمالية (ISNA)", Method(15.0, 15.0)),
+                Triple("dubai", "دبي", Method(18.2, 18.2)),
+                Triple("kuwait", "الكويت", Method(18.0, 17.5)),
+                Triple("qatar", "قطر", Method(18.0, 90.0)),
+            )
+            fun byId(id: String) = choices.firstOrNull { it.first == id }?.third
             val UmmAlQura = Method(18.5, 90.0)
             val DefaultGeo = Method(18.0, 17.0)
             /** Same rule as the site's "موقعي" button. */
@@ -33,6 +45,13 @@ data class PrayerTimes(
             }
         }
     }
+
+    /** Each prayer moved by the user's minutes (the "manual adjustment" setting). */
+    fun adjusted(minutes: Map<Prayer, Int>): PrayerTimes = if (minutes.isEmpty()) this else PrayerTimes(
+        fajr + (minutes[Prayer.Fajr] ?: 0) / 60.0, sunrise + (minutes[Prayer.Sunrise] ?: 0) / 60.0,
+        dhuhr + (minutes[Prayer.Dhuhr] ?: 0) / 60.0, asr + (minutes[Prayer.Asr] ?: 0) / 60.0,
+        maghrib + (minutes[Prayer.Maghrib] ?: 0) / 60.0, isha + (minutes[Prayer.Isha] ?: 0) / 60.0,
+    )
 
     fun hours(p: Prayer): Double = when (p) {
         Prayer.Fajr -> fajr
@@ -46,7 +65,7 @@ data class PrayerTimes(
     companion object {
         fun compute(
             year: Int, month: Int, day: Int, lat: Double, lng: Double,
-            tzHours: Double, method: Method, ramadan: Boolean = false,
+            tzHours: Double, method: Method, ramadan: Boolean = false, asrFactor: Int = 1,
         ): PrayerTimes {
             val jd = Astro.julian(year, month, day) - lng / (15 * 24)
             fun mid(t: Double) = Astro.fix(12 - Astro.sunPos(jd + t).second, 24.0)
@@ -57,7 +76,7 @@ data class PrayerTimes(
             }
             fun asr(t: Double): Double {
                 val d = Astro.sunPos(jd + t).first
-                return ang(-Astro.darccot(1 + Astro.dtan(abs(lat - d))), t)
+                return ang(-Astro.darccot(asrFactor + Astro.dtan(abs(lat - d))), t)
             }
             fun adj(t: Double) = t + tzHours - lng / 15
             val fajr = adj(ang(method.fajrAngle, 5.0 / 24, ccw = true))
@@ -73,9 +92,9 @@ data class PrayerTimes(
         }
 
         /** Times for a civil date in a zone, with Ramadan from the Umm al-Qura calendar. */
-        fun forDate(date: LocalDate, lat: Double, lng: Double, zone: ZoneId, method: Method): PrayerTimes {
+        fun forDate(date: LocalDate, lat: Double, lng: Double, zone: ZoneId, method: Method, asrFactor: Int = 1): PrayerTimes {
             val tz = ZonedDateTime.of(date.atTime(12, 0), zone).offset.totalSeconds / 3600.0
-            return compute(date.year, date.monthValue, date.dayOfMonth, lat, lng, tz, method, Hijri.isRamadan(date))
+            return compute(date.year, date.monthValue, date.dayOfMonth, lat, lng, tz, method, Hijri.isRamadan(date), asrFactor)
         }
 
         /** "HH:mm" (24h), rounded like the site's fmt (half a minute, then floor). */

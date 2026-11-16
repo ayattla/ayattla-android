@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.DownloadForOffline
 import androidx.compose.material.icons.outlined.Quiz
@@ -68,6 +69,7 @@ data class SiteTool(
             SiteTool("hisn-almuslim", "حصن المسلم", "حصن المسلم", "أبواب الأذكار والأدعية كاملة مع العداد", Icons.Outlined.Shield, ToolGroup.Daily, true, "azkar-all"),
             SiteTool("radio", "إذاعات القرآن", "الإذاعات", "بث مباشر لإذاعات التلاوة", Icons.Outlined.Radio, ToolGroup.Quran, true, "radios"),
             SiteTool("prayer-times", "مواقيت الصلاة", "المواقيت", "حسب مدينتك بطريقة الحساب المعتمدة", Icons.Outlined.Schedule, ToolGroup.Daily, false, "prayer"),
+            SiteTool("notifications", "مركز التنبيهات", "التنبيهات", "الصلوات والأذكار والورد والصيام وتذكيراتك", Icons.Outlined.NotificationsActive, ToolGroup.Daily, true, "notifications"),
             SiteTool("qibla", "اتجاه القبلة", "القبلة", "زاوية القبلة من موقعك مع البوصلة", Icons.Outlined.Explore, ToolGroup.Daily, false, "qibla"),
             SiteTool("khatma", "خطة ختم القرآن", "خطة الختم", "وزع الختمة على الأيام والصلوات", Icons.AutoMirrored.Outlined.MenuBook, ToolGroup.Quran, true, "khatma"),
             SiteTool("hijri", "التاريخ الهجري", "الهجري", "تحويل بين الهجري والميلادي", Icons.Outlined.CalendarMonth, ToolGroup.Daily, false, "hijri"),
