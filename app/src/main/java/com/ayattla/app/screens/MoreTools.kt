@@ -745,6 +745,7 @@ fun KidsScreen(nav: NavHostController) {
                 repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+        BrandButton("مسابقة جزء عم", Modifier.fillMaxWidth(), icon = Icons.Filled.Star, kind = BtnKind.Secondary) { nav.navigate("kids-quiz") }
         BrandButton("شهادة تقدير", Modifier.fillMaxWidth(), icon = Icons.Outlined.WorkspacePremium, kind = BtnKind.Gold, enabled = done.isNotEmpty()) {
             val who = name.ifBlank { "بطلنا" }
             PendingText.value = CardText(

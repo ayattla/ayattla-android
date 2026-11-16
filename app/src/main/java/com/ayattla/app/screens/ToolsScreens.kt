@@ -367,18 +367,31 @@ fun SavedScreen(nav: NavHostController) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("آياتي المحفوظة", onBack = { nav.popBackStack() })
         if (saved.isEmpty()) EmptyState("لا آيات محفوظة بعد", "اضغط على أي آية في المصحف ثم اختر «حفظ الآية».")
+        var editing by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+        var tagFilter by remember { mutableStateOf("") }
+        val notes = com.ayattla.app.data.Notes.all
+        val tags = saved.mapNotNull { notes["${it.first}:${it.second}"]?.tag?.takeIf(String::isNotBlank) }.distinct()
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            saved.forEach { (s, a) ->
+            if (tags.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Chip("الكل", tagFilter.isEmpty(), { tagFilter = "" })
+                tags.forEach { t -> Chip(t, tagFilter == t, { tagFilter = t }) }
+            }
+            saved.filter { tagFilter.isEmpty() || notes["${it.first}:${it.second}"]?.tag == tagFilter }.forEach { (s, a) ->
                 val ayah = content.ayah(s, a) ?: return@forEach
+                val n = notes["$s:$a"]
                 AppCard(onClick = { nav.navigate(Routes.reader(s, a)) }) {
                     Text(ayah.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink)
+                    if (n != null && n.note.isNotBlank()) Text(n.note, style = MaterialTheme.typography.bodyMedium, color = b.muted, modifier = Modifier.padding(top = 6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("سورة ${content.surah(s).shortName} · $a", style = MaterialTheme.typography.labelMedium, color = b.goldInk, modifier = Modifier.weight(1f))
+                        Text("سورة ${content.surah(s).shortName} · $a" + (n?.tag?.takeIf(String::isNotBlank)?.let { " · $it" } ?: ""),
+                            style = MaterialTheme.typography.labelMedium, color = b.goldInk, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { editing = s to a }) { Text(if (n == null) "ملاحظة" else "تعديل") }
                         TextButton(onClick = { prefs.toggleFavorite("$s:$a") }) { Text("إزالة") }
                     }
                 }
             }
         }
+        editing?.let { (s, a) -> com.ayattla.app.screens.NoteSheet("$s:$a", "سورة ${content.surah(s).shortName} $a") { editing = null } }
     }
 }
 

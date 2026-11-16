@@ -82,9 +82,11 @@ class ClipEngine(private val context: Context, private val content: ContentStore
         val audioDir = File(root, "audio").apply { mkdirs() }
         val files = parts.mapIndexed { i, (_, audio) ->
             onStage(Stage.Downloading(i, parts.size))
-            val f = File(audioDir, "${reciter.folder}_${audio.first}_${audio.second}.mp3")
-            if (!f.exists() || f.length() < 1000) download(Recitation.url(reciter.folder, audio.first, audio.second), f)
-            f
+            com.ayattla.app.audio.Downloads.local(context, reciter.folder, audio.first, audio.second) ?: run {
+                val f = File(audioDir, "${reciter.folder}_${audio.first}_${audio.second}.mp3")
+                if (!f.exists() || f.length() < 1000) download(Recitation.url(reciter.folder, audio.first, audio.second), f)
+                f
+            }
         }
         onStage(Stage.Downloading(parts.size, parts.size))
         val pauses = parts.map { (part, _) -> (p.pauses[part.keys.first()] ?: 0).coerceIn(0, 5000).toLong() }

@@ -226,6 +226,9 @@ fun AppRoot(startScreen: String? = null) {
             composable("mosques") { com.ayattla.app.screens.MosquesScreen(nav) }
             composable("kids") { com.ayattla.app.screens.KidsScreen(nav) }
             composable("kids/{n}", arguments = listOf(navArgument("n") { type = NavType.IntType })) { e -> com.ayattla.app.screens.KidsSurahScreen(nav, e.arguments!!.getInt("n")) }
+            composable("hifz-plan") { com.ayattla.app.screens.HifzPlanScreen(nav) }
+            composable("downloads") { com.ayattla.app.screens.DownloadsScreen(nav) }
+            composable("kids-quiz") { com.ayattla.app.screens.KidsQuizScreen(nav) }
             composable("ayah-today") { com.ayattla.app.screens.AyahTodayScreen(nav) }
             composable("text-card") { com.ayattla.app.studio.TextCardScreen(nav) }
             composable("status") { com.ayattla.app.studio.StatusScreen(nav) }

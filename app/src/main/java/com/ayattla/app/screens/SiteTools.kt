@@ -8,6 +8,9 @@ import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.DownloadForOffline
+import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.NightsStay
@@ -75,6 +78,8 @@ data class SiteTool(
             SiteTool("tajweed", "المصحف الملون بالتجويد", "التجويد", "أحكام التجويد بالألوان مع المفتاح", Icons.Outlined.Palette, ToolGroup.Quran, true, "tajweed"),
             SiteTool("word-by-word", "معاني الكلمات", "معاني الكلمات", "كلمة بكلمة مع التفسير الميسر", Icons.Outlined.Translate, ToolGroup.Quran, true, "word-by-word"),
             SiteTool("hifz-test", "اختبار الحفظ", "اختبار الحفظ", "أخف الكلمات واختبر حفظك", Icons.Outlined.Autorenew, ToolGroup.Quran, true, "hifz-test"),
+            SiteTool("hifz-plan", "خطة الحفظ والمراجعة", "خطة الحفظ", "مقطع جديد كل يوم ومراجعة متباعدة لما حفظت", Icons.Outlined.EventRepeat, ToolGroup.Quran, true, "hifz-plan"),
+            SiteTool("downloads", "التلاوات المحمّلة", "التحميلات", "حمّل السور واستمع بلا إنترنت", Icons.Outlined.DownloadForOffline, ToolGroup.Quran, true, "downloads"),
             SiteTool("duas", "أدعية من القرآن والسنة", "الأدعية", "مصنفة حسب الحاجة مع المصدر", Icons.Outlined.VolunteerActivism, ToolGroup.Daily, true, "duas"),
             SiteTool("mushaf", "المصحف بالصفحات", "المصحف", "٦٠٤ صفحات بترقيم مصحف المدينة", Icons.Outlined.AutoStories, ToolGroup.Quran, true, "page/1"),
             SiteTool("ruqya", "الرقية الشرعية", "الرقية", "آيات الرقية من القرآن تتلى متتابعة", Icons.Outlined.PlayCircle, ToolGroup.Quran, true, "ruqya"),
@@ -83,6 +88,7 @@ data class SiteTool(
             SiteTool("hadith-checker", "التحقق من حديث", "تحقق من حديث", "الصق حديثا وصلك لتعرف تخريجه وحكمه", Icons.Outlined.Verified, ToolGroup.Hadith, true, "hadith-check"),
             SiteTool("prayer-guide", "صفة الوضوء والصلاة", "الوضوء والصلاة", "من الأحاديث الصحيحة مع الشرح", Icons.Outlined.WaterDrop, ToolGroup.Hadith, true, "guide"),
             SiteTool("kids-juz-amma", "تحفيظ الأطفال جزء عم", "تحفيظ الأطفال", "استماع وتكرار ونجوم وشهادة باسم الطفل", Icons.Outlined.ChildCare, ToolGroup.Hadith, true, "kids"),
+            SiteTool("kids-quiz", "مسابقة جزء عم للأطفال", "مسابقة الأطفال", "أكمل الآية ومن أي سورة، من نص المصحف", Icons.Outlined.Quiz, ToolGroup.Hadith, true, "kids-quiz"),
             SiteTool("group-khatma", "الختمة الجماعية", "الختمة الجماعية", "وزع الأجزاء على المجموعة برابط واحد", Icons.Outlined.Groups, ToolGroup.Quran, true, "khatma"),
             SiteTool("qada-salah", "متتبع قضاء الصلوات", "قضاء الصلوات", "عداد لكل صلاة وخطة يومية", Icons.Outlined.Checklist, ToolGroup.Daily, true, "qada"),
             SiteTool("sawm-tracker", "متتبع الصيام", "متتبع الصيام", "قضاء رمضان والتطوع على تقويم هجري وميلادي", Icons.Outlined.DarkMode, ToolGroup.Daily, true, "sawm"),

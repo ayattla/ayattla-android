@@ -17,5 +17,7 @@ class AyatApp : Application() {
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
+        com.ayattla.app.data.Notes.load(this)
+        com.ayattla.app.data.Hifz.load(this)
     }
 }

@@ -96,6 +96,7 @@ object Recitation {
     /** [repeatEach]: each ayah is heard that many times in a row (memorisation, kids' Juz Amma). */
     fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1) {
         error = null
+        appContext = context.applicationContext
         val s = content.surah(surah)
         val last = minOf(to, s.ayahCount)
         val items = buildList {
@@ -114,11 +115,15 @@ object Recitation {
         if (controller == null) { pending = { run() }; connect(context) } else run()
     }
 
+    private var appContext: Context? = null
+
     private fun item(r: Reciter, surah: Int, ayah: Int, title: String, fileKey: String, album: String): MediaItem {
         val (fs, fa) = fileKey.split(":").map(String::toInt)
+        // A downloaded copy plays without internet.
+        val local = appContext?.let { Downloads.local(it, r.folder, fs, fa) }
         return MediaItem.Builder()
             .setMediaId("$surah:$ayah")
-            .setUri(Uri.parse(url(r.folder, fs, fa)))
+            .setUri(if (local != null) Uri.fromFile(local) else Uri.parse(url(r.folder, fs, fa)))
             .setMediaMetadata(
                 MediaMetadata.Builder().setTitle(title).setArtist(r.name).setAlbumTitle("سورة $album")
                     .setIsPlayable(true).build()
