@@ -77,10 +77,12 @@ object Recitation {
         private set
     private val timer = android.os.Handler(android.os.Looper.getMainLooper())
     private val sleepRun = Runnable { controller?.pause(); sleepAt = null }
-    private var session: Session? = null
+    private var session by mutableStateOf<Session?>(null)
+    /** Whether «السورة التالية» applies to what is playing (mushaf listening). */
+    val continuous: Boolean get() = session?.continuous == true
 
     /** What is playing as a whole surah or range, to continue with the next surah and to resume later. */
-    private data class Session(val reciter: Reciter, val surah: Int, val to: Int, val repeatEach: Int)
+    private data class Session(val reciter: Reciter, val surah: Int, val to: Int, val repeatEach: Int, val continuous: Boolean)
 
     /** Off → 15 → 30 → 60 minutes → end of surah → off. */
     fun cycleSleep() {
@@ -163,7 +165,7 @@ object Recitation {
         val ctx = appContext ?: return
         val content = lastContent ?: return
         val whole = se.to >= content.surah(se.surah).ayahCount
-        if (autoNext && whole && se.surah < 114) play(ctx, content, se.reciter, se.surah + 1, 1, Int.MAX_VALUE, se.repeatEach)
+        if (se.continuous && autoNext && whole && se.surah < 114) play(ctx, content, se.reciter, se.surah + 1, 1, Int.MAX_VALUE, se.repeatEach, continuous = true)
         else session = null
     }
 
@@ -172,12 +174,13 @@ object Recitation {
 
     /** Recite [surah] from [from] to [to] (inclusive). */
     /** [repeatEach]: each ayah is heard that many times in a row (memorisation, kids' Juz Amma). */
-    fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1) {
+    /** [continuous]: the mushaf and the listen buttons; only then does the next surah follow at the end. */
+    fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1, continuous: Boolean = false) {
         error = null
         appContext = context.applicationContext
         lastContent = content
         autoNext = context.getSharedPreferences("ayat", Context.MODE_PRIVATE).getBoolean("listen.autoNext", true)
-        session = Session(reciter, surah, to, repeatEach)
+        session = Session(reciter, surah, to, repeatEach, continuous)
         val s = content.surah(surah)
         val last = minOf(to, s.ayahCount)
         val items = buildList {

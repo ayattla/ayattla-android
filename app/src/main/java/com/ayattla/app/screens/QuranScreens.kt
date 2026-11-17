@@ -224,7 +224,7 @@ fun QuranIndexScreen(nav: NavHostController) {
                     if (reciter != null && hs in 1..114) BrandButton(
                         "تابع الاستماع: ${content.surah(hs).shortName} آية $ha", Modifier.fillMaxWidth().padding(top = 4.dp),
                         icon = Icons.Filled.PlayArrow, kind = BtnKind.Secondary,
-                    ) { Recitation.play(ctx, content, reciter, hs, ha) }
+                    ) { Recitation.play(ctx, content, reciter, hs, ha, continuous = true) }
                 }
             }
             Spacer(Modifier.height(32.dp))
@@ -338,12 +338,12 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
             subtitle = "الجزء ${visiblePage.first().juz ?: 1} · صفحة ${visiblePage.first().page ?: 1}",
         ) {
             IconButton(onClick = { showFont = true }) { Icon(Icons.Filled.FormatSize, "حجم الخط", tint = b.primaryInk) }
-            IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة", tint = b.primaryInk) }
+            IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1, continuous = true) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة", tint = b.primaryInk) }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip("المصحف", true, {})
             Chip("عرض الصفحات", false, { nav.navigate("page/" + (visiblePage.first().page ?: 1)) })
-            Chip("استمع", false, { Recitation.play(ctx, content, reciter, surahId, visiblePage.first().ayah) })
+            Chip("استمع", false, { Recitation.play(ctx, content, reciter, surahId, visiblePage.first().ayah, continuous = true) })
         }
         LazyColumn(state = list, contentPadding = PaddingValues(20.dp, 0.dp, 20.dp, if (Recitation.active) 230.dp else 32.dp), modifier = Modifier.fillMaxSize()) {
             item {
@@ -406,7 +406,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
                 Text("سورة ${surah.shortName} · آية ${a.ayah}", style = MaterialTheme.typography.titleMedium, color = b.ink)
                 Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(vertical = 8.dp))
                 val share = a.text + "\n\n[سورة ${surah.shortName} ${a.ayah}]\nayattla.com"
-                SheetAction(Icons.Filled.PlayArrow, "استمع من هنا") { Recitation.play(ctx, content, reciter, surahId, a.ayah); selected = null }
+                SheetAction(Icons.Filled.PlayArrow, "استمع من هنا") { Recitation.play(ctx, content, reciter, surahId, a.ayah, continuous = true); selected = null }
                 SheetAction(Icons.Filled.Repeat, "استمع لهذه الآية فقط") { Recitation.play(ctx, content, reciter, surahId, a.ayah, a.ayah); selected = null }
                 SheetAction(if (a.key in prefs.favorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (a.key in prefs.favorites) "إزالة من المحفوظات" else "حفظ الآية") {
                     prefs.toggleFavorite(a.key); selected = null
@@ -499,7 +499,7 @@ fun PlayerBar() {
         if (Recitation.current != "stream") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
             val ctx = androidx.compose.ui.platform.LocalContext.current
             PlayerPill(Recitation.sleepLabel(), Icons.Filled.Bedtime, on = Recitation.sleepAt != null || Recitation.sleepAtSurahEnd) { Recitation.cycleSleep() }
-            PlayerPill("السورة التالية", Icons.Filled.PlaylistPlay, on = Recitation.autoNext) { Recitation.toggleAutoNext(ctx) }
+            if (Recitation.continuous) PlayerPill("السورة التالية", Icons.Filled.PlaylistPlay, on = Recitation.autoNext) { Recitation.toggleAutoNext(ctx) }
         }
     }
 }
