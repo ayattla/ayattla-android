@@ -126,7 +126,10 @@ shot radios
 open mosques
 # A fresh GPS fix shortly after the request, as a phone would get it.
 $UI tap "حدد موقعي وابحث"; sleep 3; adb emu geo fix 46.6753 24.7136 >/dev/null 2>&1
-if $UI wait "مسجدا ضمن" 60; then ok "المساجد القريبة: نتائج"; else bad "المساجد القريبة: لا نتائج"; fi
+# Public map servers are often busy: then the app must show its fallback (retry / open in maps).
+if $UI wait "مسجدا ضمن" 60; then ok "المساجد القريبة: نتائج"
+elif $UI has "ابحث عن مساجد في الخرائط"; then ok "المساجد القريبة: الخوادم مشغولة فظهر البديل (إعادة المحاولة والخرائط)"
+else bad "المساجد القريبة: لا نتائج ولا بديل"; fi
 shot mosques
 
 # ── Prayer times and qibla.
