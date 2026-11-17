@@ -139,7 +139,6 @@ fun TasbihScreen(nav: NavHostController) {
                 }
             }
         }
-        Text("اضغط على الدائرة للتسبيح", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp))
     }
 }
 
@@ -194,7 +193,7 @@ fun PrayerTimesScreen(nav: NavHostController) {
                 OutlinedButton(onClick = { nav.navigate("prayer-settings") }, modifier = Modifier.weight(1f)) { Text("طريقة الحساب") }
             }
             Text(
-                "الحساب الافتراضي مطابق لموقع آيات تتلى: أم القرى للمدن السعودية، والعشاء بعد المغرب بـ 90 دقيقة (120 في رمضان). يمكنك تغيير الطريقة ومذهب العصر والتعديل بالدقائق من «طريقة الحساب».",
+                "أم القرى افتراضيا للمدن السعودية، كما في موقع آيات تتلى.",
                 style = MaterialTheme.typography.bodySmall, color = b.muted,
             )
         }
@@ -277,7 +276,7 @@ fun QiblaScreen(nav: NavHostController) {
             Button(onClick = request, colors = ButtonDefaults.buttonColors(containerColor = b.primary)) {
                 Icon(Icons.Filled.MyLocation, null); Spacer(Modifier.size(8.dp)); Text("حدّث موقعي")
             }
-            Text("أبعد الهاتف عن المعادن والمغناطيس، وحرّكه على شكل 8 لمعايرة البوصلة.", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
+            Text("للمعايرة: حرّك الهاتف على شكل 8.", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
         }
     }
 }
@@ -310,7 +309,7 @@ fun HijriScreen(nav: NavHostController) {
                 val ramadan = Hijri.toGregorian(Hijri.Date(if (h.month <= 9) h.year else h.year + 1, 9, 1))
                 ramadan?.let { Text("أول رمضان القادم: $it م", style = MaterialTheme.typography.bodyMedium, color = b.muted) }
             }
-            Text("حسب تقويم أم القرى، وهو المعتمد في موقع آيات تتلى. قد يختلف يومًا عن رؤية الهلال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            Text("تقويم أم القرى، وقد يختلف يومًا عن رؤية الهلال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         }
     }
 }
@@ -356,7 +355,7 @@ fun ZakatScreen(nav: NavHostController) {
             Field("sv", "فضة (جرام)")
             Field("rec", "ديون لك مرجوّة السداد")
             Field("debt", "ديون عليك حالّة")
-            Text("الزكاة 2.5٪ من صافي المال إذا بلغ النصاب وحال عليه الحول. للحالات الخاصة راجع أهل العلم.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            Text("2.5٪ إذا بلغ النصاب وحال الحول. للحالات الخاصة راجع أهل العلم.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         }
     }
 }

@@ -131,7 +131,6 @@ fun ToolPage(nav: NavHostController, title: String, id: String? = null, content:
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (tool != null) HeroHeader(tool.title, subtitle = tool.subtitle)
             content()
         }
     }
@@ -151,7 +150,6 @@ fun LazyToolPage(nav: NavHostController, title: String, id: String? = null, cont
             Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
         ) {
-            if (tool != null) block("hero") { HeroHeader(tool.title, subtitle = tool.subtitle) }
             content()
         }
     }
@@ -442,7 +440,6 @@ fun HifzTestScreen(nav: NavHostController) {
                     }
                 }
             }
-            Text("اضغط على الكلمة المخفية لكشفها.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         }
     }
 }
@@ -519,7 +516,6 @@ fun AsmaScreen(nav: NavHostController) {
             if (q.isEmpty()) Text("ابحث في الأسماء", color = b.muted, style = MaterialTheme.typography.bodyMedium)
             BasicTextField(q, { q = it }, singleLine = true, textStyle = MaterialTheme.typography.bodyMedium.copy(color = b.ink), cursorBrush = SolidColor(b.green), modifier = Modifier.fillMaxWidth())
         }
-        Text("اضغط أي اسم لتصنع منه بطاقة", style = MaterialTheme.typography.bodySmall, color = b.muted)
         AppCard(level = com.ayattla.app.ui.components.Surface.Gold) {
             Text("عن هذه القائمة", style = MaterialTheme.typography.titleMedium, color = b.goldInk)
             Text(
@@ -605,7 +601,6 @@ fun QadaScreen(nav: NavHostController) {
                     save(Triple(left.map { it + n }, done, per)); days = ""
                 }
             }
-            Text("يضاف العدد لكل صلاة من الصلوات الخمس، ويمكنك تعديل كل صلاة بالأزرار.", style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(top = 6.dp))
         }
         Text("المتبقي: ${left.sum()} صلاة — تم قضاء: $done", style = MaterialTheme.typography.titleMedium, color = b.primaryInk)
         GroupedSection {
@@ -628,7 +623,7 @@ fun QadaScreen(nav: NavHostController) {
         BrandButton(if (confirm) "اضغط مرة أخرى للتصفير" else "تصفير العداد", Modifier.fillMaxWidth(), kind = BtnKind.Secondary, enabled = left.sum() > 0 || done > 0) {
             if (confirm) { save(Triple(listOf(0, 0, 0, 0, 0), 0, per)); confirm = false } else confirm = true
         }
-        Text("هذه الأداة تنظم العدد فقط. اسأل أهل العلم عن أحكام القضاء وترتيبه. يحفظ على جهازك فقط.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        Text("اسأل أهل العلم عن أحكام القضاء وترتيبه.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -698,7 +693,6 @@ fun SawmScreen(nav: NavHostController) {
                 }
             }
         }
-        Text("اختر قضاء أو تطوع ثم اضغط اليوم في التقويم. الضغط مرة ثانية يلغي العلامة. يحفظ على جهازك فقط.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -733,7 +727,7 @@ fun MosquesScreen(nav: NavHostController) {
             phase = "searching"; locate()
         }
         when (phase) {
-            "idle" -> Text("اختر نصف القطر ثم اضغط «حدد موقعي وابحث». البحث في خرائط OpenStreetMap ولا يحفظ موقعك.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            "idle" -> Text("خرائط OpenStreetMap، ولا يُحفظ موقعك.", style = MaterialTheme.typography.bodySmall, color = b.muted)
             "searching" -> LoadingState(Modifier.height(140.dp))
             "denied" -> {
                 val off = !locationEnabled(ctx)
@@ -771,7 +765,7 @@ fun MosquesScreen(nav: NavHostController) {
                         )
                     }
                 }
-                Text("بيانات الخرائط من OpenStreetMap. اضغط مسجدا لفتح الاتجاهات.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                Text("بيانات الخرائط من OpenStreetMap.", style = MaterialTheme.typography.bodySmall, color = b.muted)
             }
         }
     }
@@ -819,7 +813,6 @@ fun KidsScreen(nav: NavHostController) {
                 }
             }
         }
-        Text("اختر سورة لتبدأ الاستماع والتكرار.", style = MaterialTheme.typography.bodyMedium, color = b.muted)
         Kids.surahs.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { n ->

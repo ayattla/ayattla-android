@@ -175,7 +175,6 @@ fun HadithCheckScreen(nav: NavHostController) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("التحقق من حديث", onBack = { nav.popBackStack() })
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("الصق نص الحديث، ونبحث عنه في مصادره الموثقة مع درجته.", style = MaterialTheme.typography.bodyMedium, color = b.muted)
             OutlinedTextField(value = text, onValueChange = { text = it }, minLines = 4, modifier = Modifier.fillMaxWidth(), placeholder = { Text("نص الحديث") })
             Button(
                 onClick = {
@@ -428,7 +427,7 @@ fun KhatmaScreen(nav: NavHostController) {
                     }
                 }
             }
-            Text("الحساب على مصحف المدينة 604 صفحات، مطابق لأداة الختمة في الموقع.", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
+            Text("مصحف المدينة: 604 صفحات.", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
         }
     }
 }

@@ -65,6 +65,69 @@ object Recitation {
         }, ContextCompat.getMainExecutor(context))
     }
 
+    // ── Sleep timer, continuing to the next surah, and the last listening position.
+    /** When the sleep timer stops playback (epoch ms), or null. */
+    var sleepAt by mutableStateOf<Long?>(null)
+        private set
+    /** Stop at the end of the current surah instead of a set time. */
+    var sleepAtSurahEnd by mutableStateOf(false)
+        private set
+    /** After the last ayah of a whole surah, the next surah follows (saved setting). */
+    var autoNext by mutableStateOf(true)
+        private set
+    private val timer = android.os.Handler(android.os.Looper.getMainLooper())
+    private val sleepRun = Runnable { controller?.pause(); sleepAt = null }
+    private var session: Session? = null
+
+    /** What is playing as a whole surah or range, to continue with the next surah and to resume later. */
+    private data class Session(val reciter: Reciter, val surah: Int, val to: Int, val repeatEach: Int)
+
+    /** Off → 15 → 30 → 60 minutes → end of surah → off. */
+    fun cycleSleep() {
+        timer.removeCallbacks(sleepRun)
+        val steps = listOf(15, 30, 60)
+        when {
+            sleepAtSurahEnd -> { sleepAtSurahEnd = false; sleepAt = null }
+            sleepAt == null -> setSleep(steps[0])
+            else -> {
+                val left = ((sleepAt!! - System.currentTimeMillis()) / 60_000.0).let { kotlin.math.ceil(it).toInt() }
+                val next = steps.firstOrNull { it > left }
+                if (next != null) setSleep(next) else { sleepAt = null; sleepAtSurahEnd = true }
+            }
+        }
+    }
+
+    private fun setSleep(minutes: Int) {
+        sleepAtSurahEnd = false
+        sleepAt = System.currentTimeMillis() + minutes * 60_000L
+        timer.postDelayed(sleepRun, minutes * 60_000L)
+    }
+
+    /** Minutes left on the sleep timer (for the player). */
+    fun sleepLabel(): String = when {
+        sleepAtSurahEnd -> "نهاية السورة"
+        sleepAt != null -> "${kotlin.math.ceil((sleepAt!! - System.currentTimeMillis()) / 60_000.0).toInt().coerceAtLeast(1)} د"
+        else -> "مؤقت"
+    }
+
+    fun toggleAutoNext(ctx: Context) {
+        autoNext = !autoNext
+        ctx.getSharedPreferences("ayat", Context.MODE_PRIVATE).edit().putBoolean("listen.autoNext", autoNext).apply()
+    }
+
+    /** The last place listened to: (reciter folder, surah, ayah), kept across launches. */
+    fun lastListened(ctx: Context): Triple<String, Int, Int>? =
+        ctx.getSharedPreferences("ayat", Context.MODE_PRIVATE).getString("listen.last", null)?.split("|")
+            ?.takeIf { it.size == 3 }?.let { (f, s, a) -> s.toIntOrNull()?.let { si -> a.toIntOrNull()?.let { ai -> Triple(f, si, ai) } } }
+
+    private fun saveLast(surah: Int, ayah: Int) {
+        val c = appContext ?: return
+        val r = session?.reciter ?: return
+        c.getSharedPreferences("ayat", Context.MODE_PRIVATE).edit().putString("listen.last", "${r.folder}|$surah|${ayah.coerceAtLeast(1)}").apply()
+    }
+
+    private var lastContent: ContentStore? = null
+
     /** Reciter (or station) name of the current item. */
     var artist by mutableStateOf("")
         private set
@@ -84,9 +147,24 @@ object Recitation {
         isBuffering = p.playbackState == Player.STATE_BUFFERING
         current = p.currentMediaItem?.mediaId
         title = p.mediaMetadata.title?.toString() ?: ""
+        current?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }?.let { (s, a) -> saveLast(s, a) }
         if (p.playbackState == Player.STATE_ENDED || p.mediaItemCount == 0) {
-            if (p.playbackState == Player.STATE_ENDED) { current = null; isPlaying = false }
+            if (p.playbackState == Player.STATE_ENDED) {
+                current = null; isPlaying = false
+                onSurahEnded()
+            }
         }
+    }
+
+    /** End of the list: the sleep timer «نهاية السورة» stops here; otherwise the next surah follows. */
+    private fun onSurahEnded() {
+        val se = session ?: return
+        if (sleepAtSurahEnd) { sleepAtSurahEnd = false; session = null; return }
+        val ctx = appContext ?: return
+        val content = lastContent ?: return
+        val whole = se.to >= content.surah(se.surah).ayahCount
+        if (autoNext && whole && se.surah < 114) play(ctx, content, se.reciter, se.surah + 1, 1, Int.MAX_VALUE, se.repeatEach)
+        else session = null
     }
 
     fun url(folder: String, surah: Int, ayah: Int): String =
@@ -97,6 +175,9 @@ object Recitation {
     fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1) {
         error = null
         appContext = context.applicationContext
+        lastContent = content
+        autoNext = context.getSharedPreferences("ayat", Context.MODE_PRIVATE).getBoolean("listen.autoNext", true)
+        session = Session(reciter, surah, to, repeatEach)
         val s = content.surah(surah)
         val last = minOf(to, s.ayahCount)
         val items = buildList {
@@ -134,7 +215,10 @@ object Recitation {
     fun toggle() { controller?.run { if (isPlaying) pause() else play() } }
     fun next() { controller?.seekToNextMediaItem() }
     fun previous() { controller?.seekToPreviousMediaItem() }
-    fun stop() { controller?.run { stop(); clearMediaItems() }; current = null; isPlaying = false }
+    fun stop() {
+        controller?.run { stop(); clearMediaItems() }; current = null; isPlaying = false
+        session = null; timer.removeCallbacks(sleepRun); sleepAt = null; sleepAtSurahEnd = false
+    }
 
     fun cycleSpeed() {
         val steps = listOf(1f, 1.25f, 1.5f, 0.75f)
@@ -150,6 +234,7 @@ object Recitation {
     /** Plays one stream (a radio or a single file) through the same session. */
     fun playStream(context: Context, url: String, name: String) {
         error = null
+        session = null
         val it = MediaItem.Builder().setMediaId("stream").setUri(Uri.parse(url))
             .setMediaMetadata(MediaMetadata.Builder().setTitle(name).setArtist("آيات تتلى").build()).build()
         val run = { controller?.run { setMediaItem(it); prepare(); play() } }

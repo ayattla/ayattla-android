@@ -106,8 +106,6 @@ fun HifzPlanScreen(nav: NavHostController) {
             var daily by remember { mutableIntStateOf(3) }
             AppCard {
                 Text("ابدأ خطة حفظ", style = MaterialTheme.typography.titleMedium, color = b.ink)
-                Text("مقطع جديد كل يوم، ثم يعود كل ما حفظته للمراجعة بعد يوم، ثم تتباعد المراجعة كلما أتقنته، وتعود قريبة إن صعب عليك.",
-                    style = MaterialTheme.typography.bodyMedium, color = b.muted)
                 Text("الترتيب", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.padding(top = 10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip("من سورة الناس صعودا", !forward, { forward = false })
@@ -165,7 +163,7 @@ fun HifzPlanScreen(nav: NavHostController) {
         BrandButton(if (confirm) "اضغط مرة أخرى لحذف الخطة" else "إعادة بدء الخطة", Modifier.fillMaxWidth(), kind = BtnKind.Ghost) {
             if (confirm) Hifz.reset() else confirm = true
         }
-        Text("الخطة محفوظة على جهازك فقط. النص: مصحف التنزيل.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        Text("النص: مصحف التنزيل.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -199,10 +197,7 @@ fun DownloadsScreen(nav: NavHostController) {
     val size = remember(v, reciter) { Downloads.sizeBytes(ctx) }
     var failed by remember { mutableStateOf<String?>(null) }
     ToolPage(nav, "التلاوات المحمّلة", "downloads") {
-        AppCard {
-            Text("حمّل السور لتستمع إليها بلا إنترنت، وتُستعمل في المقاطع تلقائيا.", style = MaterialTheme.typography.bodyMedium, color = b.muted)
-            Text("المساحة المستعملة: ${mb(size)}", style = MaterialTheme.typography.titleMedium, color = b.primaryInk, modifier = Modifier.padding(top = 6.dp))
-        }
+        AppCard { Text("المساحة المستعملة: ${mb(size)}", style = MaterialTheme.typography.titleMedium, color = b.primaryInk) }
         Text("القارئ", style = MaterialTheme.typography.labelLarge, color = b.muted)
         // One scrolling row: the surahs stay on the first screen.
         Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -287,8 +282,6 @@ fun KidsQuizScreen(nav: NavHostController) {
     var score by remember { mutableIntStateOf(0) }
     var total by remember { mutableIntStateOf(0) }
     ToolPage(nav, "مسابقة جزء عم") {
-        Text(if (pool.isEmpty()) "الأسئلة من سور جزء عم كلها. علّم السور التي حفظها طفلك لتكون الأسئلة منها." else "الأسئلة من السور التي حفظها طفلك.",
-            style = MaterialTheme.typography.bodyMedium, color = b.muted)
         Text("النتيجة: $score من $total", style = MaterialTheme.typography.titleMedium, color = b.primaryInk)
         AppCard {
             Text(if (q.kind == 0) "أكمل الآية" else "من أي سورة هذه الآية؟", style = MaterialTheme.typography.labelLarge, color = b.goldInk)

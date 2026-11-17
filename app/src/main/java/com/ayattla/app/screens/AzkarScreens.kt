@@ -1,5 +1,7 @@
 package com.ayattla.app.screens
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.width
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,10 +111,9 @@ fun AzkarListScreen(nav: NavHostController) {
             Column(Modifier.fillMaxWidth().pageHeadSurface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Badge("حصن المسلم والسنة")
                 Text("الأذكار والحديث", style = MaterialTheme.typography.headlineSmall, color = b.ink)
-                Text("أذكارك اليومية بعداد يحفظ تقدمك، وأدعية من القرآن والسنة، وأحاديث صحيحة وحسنة بمصادرها", style = MaterialTheme.typography.bodySmall, color = b.muted)
             }
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeader("أذكار اليوم", subtitle = "يحفظ العداد تقدمك اليوم على جهازك")
+                SectionHeader("أذكار اليوم")
                 pinned.chunked(2).forEachIndexed { r, row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEachIndexed { i, c ->
@@ -128,6 +129,7 @@ fun AzkarListScreen(nav: NavHostController) {
                     }
                 }
             }
+            AzkarWeekLog(pinned.take(2))
             HubGroup("الأذكار والأدعية", "من حصن المسلم ومن القرآن والسنة، مع المصدر") {
                 HubRow("حصن المسلم", "أبواب الأذكار والأدعية كاملة مع العداد", Icons.Outlined.Shield, 0) { nav.navigate("azkar-all") }
                 HubRow("الأذكار", "أذكار الصباح والمساء والنوم مع العداد", Icons.Outlined.WbSunny, 1) { pinned.firstOrNull()?.let { nav.navigate(Routes.azkar(it.id)) } }
@@ -289,3 +291,57 @@ fun AzkarScreen(nav: NavHostController, categoryId: Int) {
 }
 
 private val RoundedCard = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+
+
+/**
+ * «سجل الإنجاز»: the last seven days of the morning and evening azkar, from the counters saved per
+ * day (complete when every zikr of the category was counted to zero that day). Kept on the device.
+ */
+@Composable
+private fun AzkarWeekLog(cats: List<com.ayattla.app.data.ZikrCategory>) {
+    if (cats.isEmpty()) return
+    val b = LocalBrand.current
+    val content = LocalContent.current
+    val prefs = LocalPrefs.current
+    val today = LocalDate.now()
+    val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
+    val items = remember(cats) { cats.associate { c -> c.id to content.azkar(c.id) } }
+    fun state(day: LocalDate, catId: Int): Float {
+        val list = items[catId].orEmpty()
+        val total = list.sumOf { it.count }.coerceAtLeast(1)
+        val done = list.sumOf { it.count - prefs.zikrRemaining(day.toString(), it.id, it.count) }
+        return done.toFloat() / total
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("سجل الإنجاز")
+        Column(Modifier.fillMaxWidth().surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth()) {
+                Spacer(Modifier.width(64.dp))
+                days.forEach { d ->
+                    Text(d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ar")).take(3),
+                        style = MaterialTheme.typography.labelSmall, color = if (d == today) b.primaryInk else b.muted,
+                        textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                }
+            }
+            cats.forEach { c ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(c.title.removePrefix("أذكار "), style = MaterialTheme.typography.labelLarge, color = b.ink, modifier = Modifier.width(64.dp))
+                    days.forEach { d ->
+                        val f = state(d, c.id)
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Box(
+                                Modifier.size(22.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(when { f >= 1f -> b.green; f > 0f -> b.green.copy(alpha = 0.35f); else -> b.tint }),
+                                contentAlignment = Alignment.Center,
+                            ) { if (f >= 1f) Text("✓", color = Color.White, style = MaterialTheme.typography.labelSmall) }
+                        }
+                    }
+                }
+            }
+            val streak = generateSequence(today) { it.minusDays(1) }.take(60)
+                .takeWhile { d -> cats.all { state(d, it.id) >= 1f } }.count()
+            Text(if (streak > 0) "أتممت أذكار الصباح والمساء $streak ${if (streak == 1) "يوما" else "أيام"} متتالية" else "أتمم أذكار اليوم لتبدأ سلسلة الإنجاز",
+                style = MaterialTheme.typography.bodySmall, color = b.muted)
+        }
+    }
+}
