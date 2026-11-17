@@ -294,7 +294,7 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
 
         if (project.video) ClipExport(project, engine, reciter) else CardsExport(project, parts, onMedia)
         Text(
-            "نص الآيات من المصحف كما هو دون أي تعديل، يرسم بخط المصحف بدقة الجودة المختارة. التلاوة من EveryAyah والخلفيات من مكتبة الموقع (Pixabay وPexels) أو من جهازك.",
+            "النص من المصحف كما هو. التلاوة: EveryAyah. الخلفيات: Pixabay وPexels أو جهازك.",
             style = MaterialTheme.typography.bodySmall, color = b.muted,
         )
     }
@@ -548,7 +548,6 @@ private fun AnimSection(s: Style, set: (Style) -> Unit) {
     }
     if (s.anim != Anim.None && s.anim != Anim.Words) LabeledSlider("مدة الظهور والاختفاء", s.animMs.toFloat(), 200f..1500f, "${s.animMs} م.ث") { set(s.copy(animMs = it.toInt())) }
     if (s.anim == Anim.Words) LabeledSlider("سرعة ظهور الكلمات (نسبة من مدة الآية)", s.wordPace, 0.3f..1f, "${(s.wordPace * 100).toInt()}٪") { set(s.copy(wordPace = it)) }
-    Text("تظهر كل آية مع بداية تلاوتها وتختفي قبل الآية التالية.", style = MaterialTheme.typography.bodySmall, color = b.muted)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -774,7 +773,6 @@ private fun ProjectsSheet(current: String, onOpen: (Project) -> Unit, onNew: () 
     var list by remember { mutableStateOf(ProjectStore.all(ctx)) }
     Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("مشاريعي", style = MaterialTheme.typography.headlineSmall, color = b.ink)
-        Text("تحفظ تلقائيا على جهازك، وتبقى بعد إغلاق التطبيق وتحديثه.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         BrandButton("مشروع جديد", Modifier.fillMaxWidth(), icon = Icons.Filled.Add) { onNew() }
         list.take(30).forEach { p ->
             Row(
