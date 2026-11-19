@@ -631,3 +631,10 @@ private fun FooterRow(title: String, icon: ImageVector, tile: Int, chevron: Bool
 fun openUrl(c: android.content.Context, url: String) {
     runCatching { c.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }
+
+// Public entry points for the v5 home's optional sections.
+@Composable fun HomeAyahPublic(nav: NavHostController) = HomeAyahCard(nav)
+@Composable fun HomeCreatePublic(nav: NavHostController) = HomeCreateBento(nav)
+@Composable fun HomeGalleryPublic(nav: NavHostController) = HomeMediaGallery(nav)
+@Composable fun HomeAllToolsPublic(nav: NavHostController) = HomeToolLauncher(nav)
+@Composable fun HomeFooterPublic(nav: NavHostController) = HomeFooter(nav)
