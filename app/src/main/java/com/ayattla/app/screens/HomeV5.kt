@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.ayattla.app.LocalBottomInset
 import com.ayattla.app.LocalContent
 import com.ayattla.app.LocalPrefs
 import com.ayattla.app.Routes
@@ -101,7 +102,7 @@ import com.ayattla.app.ui.components.softShadow
 import com.ayattla.app.ui.components.surface
 import com.ayattla.app.ui.theme.Fonts
 import com.ayattla.app.ui.theme.LocalBrand
-import com.ayattla.app.ui.theme.Radius
+import com.ayattla.app.ui.components.Radius
 import com.ayattla.app.ui.theme.ToolAccent
 import kotlinx.coroutines.delay
 import java.time.Duration
