@@ -286,9 +286,9 @@ private fun PrayerHero(nav: NavHostController) {
         Text("$greeting · ${Hijri.format(today)}", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.85f), textAlign = TextAlign.Center)
         Text("صلاة $nextName", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
         Text(
-            String.format(Locale.US, "%02d:%02d:%02d", left.toHours(), left.toMinutesPart(), left.toSecondsPart()),
+            String.format(Locale.US, "%02d:%02d:%02d", left.seconds / 3600, (left.seconds % 3600) / 60, left.seconds % 60),
             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp), color = Color.White,
-            modifier = Modifier.semantics { contentDescription = "بعد ${left.toHours()} ساعة و${left.toMinutesPart()} دقيقة" },
+            modifier = Modifier.semantics { contentDescription = "بعد ${left.seconds / 3600} ساعة و${(left.seconds % 3600) / 60} دقيقة" },
         )
         Text("${loc.name} · ${PrayerTimes.hm12(if (nextP != null) t.hours(nextP) else tTomorrow.fajr)}", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
         LinearProgressIndicator(
