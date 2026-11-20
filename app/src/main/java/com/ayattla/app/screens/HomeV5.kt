@@ -126,20 +126,20 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), Tracker("صلواتي اليوم"), Quick("الوصول السريع"),
-    Continue("تابع من حيث توقفت"), Wird("الورد والختمة"), Azkar("أذكار اليوم"), Dhikr("الذكر السريع"),
-    Quiz("مسابقة اليوم"), Tools("أدواتي"), Occasion("المناسبات"), Ayah("آية اليوم"),
-    Create("صناعة المحتوى"), Gallery("معرض الخلفيات"), All("كل الأدوات"),
+    Prayer("الصلاة القادمة"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
+    Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
+    Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
+    Quick("الوصول السريع"),
 }
 
 object HomeLayout {
-    /** Sections off until the user turns them on: the full launcher repeats «الوصول السريع» and «أدواتي». */
-    val hiddenByDefault = setOf(HomeSection.All)
+    /** Off until turned on: «الوصول السريع» repeats the tool sections. */
+    val hiddenByDefault = setOf(HomeSection.Quick)
     private fun sp(c: Context) = c.getSharedPreferences("home.layout", Context.MODE_PRIVATE)
 
     /** Ordered sections with their visibility. New sections (from updates) join at the end, shown. */
     fun load(c: Context): List<Pair<HomeSection, Boolean>> {
-        val saved = sp(c).getString("order", null)?.split(",")?.mapNotNull { e ->
+        val saved = sp(c).getString("order.v2", null)?.split(",")?.mapNotNull { e ->
             val (n, v) = e.split(":").let { it.getOrNull(0) to it.getOrNull(1) }
             HomeSection.entries.firstOrNull { it.name == n }?.let { it to (v != "0") }
         }.orEmpty()
@@ -147,9 +147,9 @@ object HomeLayout {
     }
 
     fun save(c: Context, l: List<Pair<HomeSection, Boolean>>) =
-        sp(c).edit().putString("order", l.joinToString(",") { "${it.first.name}:${if (it.second) 1 else 0}" }).apply()
+        sp(c).edit().putString("order.v2", l.joinToString(",") { "${it.first.name}:${if (it.second) 1 else 0}" }).apply()
 
-    fun reset(c: Context) = sp(c).edit().remove("order").remove("pinned").apply()
+    fun reset(c: Context) = sp(c).edit().remove("order.v2").remove("pinned").apply()
 
     fun pinned(c: Context): List<String> = sp(c).getString("pinned", null)?.split(",")?.filter { it.isNotBlank() }.orEmpty()
     fun setPinned(c: Context, ids: List<String>) = sp(c).edit().putString("pinned", ids.joinToString(",")).apply()

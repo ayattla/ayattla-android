@@ -208,10 +208,6 @@ fun StatusScreen(nav: NavHostController) {
                     StartTile("حديث", Icons.Outlined.Book, 3, Modifier.weight(1f)) { nav.navigate("hadith") }
                 }
             }
-            item {
-                Text("لا ننشر دعاء أو عبارة دينية بلا مصدر. النصوص كما في الموقع.", style = MaterialTheme.typography.bodySmall, color = b.muted,
-                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            }
         }
     }
 }

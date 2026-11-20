@@ -163,7 +163,6 @@ fun HifzPlanScreen(nav: NavHostController) {
         BrandButton(if (confirm) "اضغط مرة أخرى لحذف الخطة" else "إعادة بدء الخطة", Modifier.fillMaxWidth(), kind = BtnKind.Ghost) {
             if (confirm) Hifz.reset() else confirm = true
         }
-        Text("النص: مصحف التنزيل.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -227,7 +226,6 @@ fun DownloadsScreen(nav: NavHostController) {
             }
         }
         BrandButton("حذف كل تلاوات ${reciter.name}", Modifier.fillMaxWidth(), kind = BtnKind.Ghost) { Downloads.deleteAll(ctx, reciter.folder) }
-        Text("الصوت: EveryAyah، دون أي تعديل.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -304,6 +302,5 @@ fun KidsQuizScreen(nav: NavHostController) {
                 style = MaterialTheme.typography.titleMedium, color = if (p == q.answer) b.primaryInk else b.ink)
             BrandButton("السؤال التالي", Modifier.fillMaxWidth(), kind = BtnKind.Gold) { q = KidsQuiz.make(content, pool, rnd); picked = null }
         }
-        Text("النص: مصحف التنزيل كما هو.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }

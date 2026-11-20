@@ -495,7 +495,6 @@ fun RuqyaScreen(nav: NavHostController) {
                 )
             }
         }
-        Text("النص من المصحف الموثق، والتلاوة من EveryAyah.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
@@ -837,7 +836,6 @@ fun KidsScreen(nav: NavHostController) {
             )
             nav.navigate("text-card")
         }
-        Text("النص: مصحف التنزيل. الصوت: EveryAyah.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 
