@@ -108,7 +108,7 @@ private fun DrawScope.trace(path: Path, t: Float, brush: Brush, width: Float, al
  * A tap skips it; with system animations off, or turned off in Settings, it does not play.
  */
 @Composable
-fun IntroOverlay(onDone: () -> Unit) {
+fun IntroOverlay(force: Boolean = false, onDone: () -> Unit) {
     val ctx = LocalContext.current
     val ring = remember { Animatable(0f) }
     val star = remember { Animatable(0f) }
@@ -123,7 +123,7 @@ fun IntroOverlay(onDone: () -> Unit) {
 
     LaunchedEffect(Unit) {
         val scale = runCatching { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }.getOrDefault(1f)
-        if (scale == 0f) { onDone(); return@LaunchedEffect }
+        if (scale == 0f && !force) { onDone(); return@LaunchedEffect }
         coroutineScope {
             val d = async { drift.animateTo(1f, tween(3200, easing = LinearEasing)) }
             val steps = listOf(
