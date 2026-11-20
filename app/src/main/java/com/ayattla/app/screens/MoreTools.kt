@@ -65,6 +65,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ayattla.app.data.QuranRef
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -473,26 +474,61 @@ fun RuqyaScreen(nav: NavHostController) {
     val ctx = LocalContext.current
     val reciter = rememberReciter()
     val data = content.library.ruqya
+    // The site's passages first; then the passages scholars name for ruqya that it does not list
+    // (Ibn Baz's list for treating magic: Al-A'raf 117–119, Yunus 79–82, Taha 65–69), by reference only:
+    // the text always comes from the mushaf in the pack.
+    val site = data?.second.orEmpty()
+    val extra = listOf(QuranRef(7, 117, 119), QuranRef(10, 79, 82), QuranRef(20, 65, 69))
+        .filter { e -> site.none { it.s == e.s && it.a <= e.a && it.b >= e.b } }
+    val passages = site + extra
+    // From Hisn al-Muslim in the pack: its chapters on ruqya and visiting the sick, with their references.
+    val sunnah = remember {
+        content.azkarCategories.filter { c -> listOf("رقي", "الرقى", "المريض", "العين").any { it in c.title } }
+            .map { it to content.azkar(it.id) }.filter { it.second.isNotEmpty() }
+    }
+    var times by remember { mutableIntStateOf(1) }
+    var tab by remember { mutableIntStateOf(0) }
     ToolPage(nav, "الرقية الشرعية", "ruqya") {
-        if (data == null) { EmptyState("الرقية غير متاحة", "لم تجهز حزمة المحتوى في هذه النسخة"); return@ToolPage }
-        if (data.first.isNotBlank()) Text(data.first, style = MaterialTheme.typography.titleMedium, color = b.ink)
-        BrandButton("استمع للرقية كاملة", Modifier.fillMaxWidth(), icon = Icons.Filled.PlayArrow) {
-            data.second.firstOrNull()?.let { Recitation.play(ctx, content, reciter, it.s, it.a, it.b) }
+        if (passages.isEmpty() && sunnah.isEmpty()) { EmptyState("الرقية غير متاحة", "لم تجهز حزمة المحتوى في هذه النسخة"); return@ToolPage }
+        if (!data?.first.isNullOrBlank()) Text(data!!.first, style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+        AppCard {
+            Text("استمع للرقية كاملة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("${passages.size} موضعا من القرآن متتابعة بصوت القارئ المختار", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            Row(Modifier.padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(1, 3, 7).forEach { n -> Chip(if (n == 1) "مرة" else "$n مرات", times == n, { times = n }) }
+            }
+            BrandButton("تشغيل", Modifier.fillMaxWidth(), icon = Icons.Filled.PlayArrow) {
+                Recitation.playPassages(ctx, content, reciter, passages.map { Triple(it.s, it.a, it.b) }, times)
+            }
         }
-        data.second.forEach { q ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+            Chip("من القرآن", tab == 0, { tab = 0 })
+            if (sunnah.isNotEmpty()) Chip("من السنة", tab == 1, { tab = 1 })
+        }
+        if (tab == 0) passages.forEach { q ->
             val ayat = remember(q) { content.ayat(q.s, q.a, q.b) }
             val name = content.surah(q.s).shortName
             AppCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (q.a == q.b) "$name · ${q.a}" else "$name · ${q.a}–${q.b}", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.weight(1f))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (q.a == q.b) "سورة $name · ${q.a}" else "سورة $name · ${q.a}–${q.b}", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.weight(1f))
                     Box(Modifier.size(40.dp).clip(CircleShape).background(b.tint).clickable { Recitation.play(ctx, content, reciter, q.s, q.a, q.b) }, contentAlignment = Alignment.Center) {
                         Icon(Icons.Filled.PlayArrow, "استمع", tint = b.primaryInk)
                     }
                 }
                 Text(
                     ayat.joinToString(" ") { it.text + " " + Num.ayahMark(it.ayah) },
-                    fontFamily = Fonts.quran, fontSize = 21.sp, lineHeight = 40.sp, color = b.ink, modifier = Modifier.padding(top = 6.dp),
+                    fontFamily = Fonts.quran, fontSize = 21.sp, lineHeight = 40.sp, color = b.ink, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
+            }
+        } else sunnah.forEach { (cat, items) ->
+            Text(cat.title, style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+            items.forEach { z ->
+                AppCard {
+                    Text(z.text, fontFamily = Fonts.naskh, fontSize = 19.sp, lineHeight = 36.sp, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    if (z.count > 1) Text("يقال ${z.count} مرات", style = MaterialTheme.typography.labelMedium, color = b.primaryInk, modifier = Modifier.padding(top = 6.dp))
+                    if (!z.reference.isNullOrBlank()) Text(z.reference, style = MaterialTheme.typography.labelSmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                }
             }
         }
     }

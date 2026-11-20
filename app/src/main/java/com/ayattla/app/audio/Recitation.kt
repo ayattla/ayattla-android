@@ -199,6 +199,31 @@ object Recitation {
         if (controller == null) { pending = { run() }; connect(context) } else run()
     }
 
+    /** A list of passages, one after another (the full ruqya); [times] repeats the whole list. */
+    fun playPassages(context: Context, content: ContentStore, reciter: Reciter, passages: List<Triple<Int, Int, Int>>, times: Int = 1) {
+        if (passages.isEmpty()) return
+        error = null
+        appContext = context.applicationContext
+        lastContent = content
+        val (fs, fa, fb) = passages.first()
+        session = Session(reciter, fs, fb, 1, false)
+        val items = buildList {
+            repeat(times.coerceIn(1, 7)) {
+                passages.forEach { (sId, a, b) ->
+                    val s = content.surah(sId)
+                    if (a == 1 && s.hasBasmala && sId != 1) add(item(reciter, sId, 0, "بسم الله الرحمن الرحيم", "1:1", s.shortName))
+                    for (x in a..minOf(b, s.ayahCount)) add(item(reciter, sId, x, "سورة ${s.shortName} - آية $x", "$sId:$x", s.shortName))
+                }
+            }
+        }
+        val run = {
+            controller?.run {
+                setMediaItems(items); setPlaybackSpeed(speed); repeatMode = Player.REPEAT_MODE_OFF; prepare(); play()
+            }
+        }
+        if (controller == null) { pending = { run() }; connect(context) } else run()
+    }
+
     private var appContext: Context? = null
 
     private fun item(r: Reciter, surah: Int, ayah: Int, title: String, fileKey: String, album: String): MediaItem {
