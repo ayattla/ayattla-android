@@ -182,8 +182,8 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize()) {
                         AppRoot(startScreen, pendingOpen)
                         // «الافتتاحية»: only on a normal launch (not a deep link, notification or CI screen).
-                        var intro by remember { mutableStateOf(startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity)) }
-                        if (intro) com.ayattla.app.ui.components.IntroOverlay { com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch = true; intro = false }
+                        var intro by remember { mutableStateOf(startScreen == "intro" || startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity)) }
+                        if (intro) com.ayattla.app.ui.components.IntroOverlay(force = startScreen == "intro") { com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch = true; intro = false }
                     }
                 }
             }
@@ -294,6 +294,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("ayah-today") { com.ayattla.app.screens.AyahTodayScreen(nav) }
             composable("text-card") { com.ayattla.app.studio.TextCardScreen(nav) }
             composable("status") { com.ayattla.app.studio.StatusScreen(nav) }
+            composable("status/{slug}") { e -> com.ayattla.app.studio.StatusOccasionScreen(nav, e.arguments?.getString("slug").orEmpty()) }
             composable("prayer") { PrayerTimesScreen(nav) }
             composable("qibla") { QiblaScreen(nav) }
             composable("hijri") { HijriScreen(nav) }

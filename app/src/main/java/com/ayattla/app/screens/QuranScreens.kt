@@ -194,7 +194,7 @@ fun QuranIndexScreen(nav: NavHostController) {
                         ) {
                             NumberBadge(j.juz)
                             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                Text("الجزء ${j.juz}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                                Text("الجزء ${j.juz}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                                 Text("يبدأ من سورة ${content.surah(j.surah).shortName} آية ${j.ayah} · صفحة ${j.page}", style = MaterialTheme.typography.bodySmall, color = b.muted)
                             }
                             Chevron()
@@ -283,7 +283,7 @@ private fun SurahBlock(list: List<com.ayattla.app.data.Surah>, nav: NavHostContr
             ) {
                 NumberBadge(s.id)
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text("سورة ${s.shortName}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                    Text("سورة ${s.shortName}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                     Text("${s.revelationAr} · ${s.ayahCount} آية", style = MaterialTheme.typography.bodySmall, color = b.muted)
                 }
                 Text(s.nameAr, fontFamily = Fonts.quran, fontSize = 20.sp, color = b.primaryInk)
@@ -403,7 +403,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     selected?.let { a ->
         ModalBottomSheet(onDismissRequest = { selected = null }, containerColor = b.surface) {
             Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
-                Text("سورة ${surah.shortName} · آية ${a.ayah}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("سورة ${surah.shortName} · آية ${a.ayah}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(vertical = 8.dp))
                 val share = a.text + "\n\n[سورة ${surah.shortName} ${a.ayah}]\nayattla.com"
                 SheetAction(Icons.Filled.PlayArrow, "استمع من هنا") { Recitation.play(ctx, content, reciter, surahId, a.ayah, continuous = true); selected = null }
@@ -421,7 +421,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     if (showFont) {
         ModalBottomSheet(onDismissRequest = { showFont = false }, containerColor = b.surface) {
             Column(Modifier.padding(20.dp)) {
-                Text("حجم خط المصحف: ${prefs.quranFontSize.toInt()}", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("حجم خط المصحف: ${prefs.quranFontSize.toInt()}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Slider(value = prefs.quranFontSize, onValueChange = { prefs.setQuranFont(it) }, valueRange = 18f..44f, steps = 12)
                 Text(ayat.first().text, fontFamily = Fonts.quran, fontSize = prefs.quranFontSize.sp, lineHeight = (prefs.quranFontSize * 1.9f).sp, color = b.ink, maxLines = 2)
                 Spacer(Modifier.height(16.dp))

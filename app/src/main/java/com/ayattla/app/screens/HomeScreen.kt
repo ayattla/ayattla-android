@@ -586,7 +586,6 @@ private fun HomeFooter(nav: NavHostController) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.fillMaxWidth().surface(b)) {
             FooterRow("عن آيات تتلى", Icons.Outlined.Info, 0) { nav.navigate("about") }
-            FooterRow("الإعدادات", Icons.Outlined.Settings, 4) { nav.navigate("settings") }
             FooterRow("شارك التطبيق", Icons.Outlined.Share, 6, chevron = false, divider = false) {
                 shareText(ctx, "آيات تتلى: مقاطع وبطاقات قرآنية وأدوات يومية، مجانا وبلا تسجيل\nhttps://ayattla.com")
             }
@@ -600,7 +599,6 @@ private fun HomeFooter(nav: NavHostController) {
                 Modifier.size(76.dp).clip(RoundedCornerShape(20.dp)).background(b.surface).border(1.dp, b.line, RoundedCornerShape(20.dp)).padding(10.dp),
             )
             Text("صانع مقاطع وبطاقات قرآنية مجاني، صدقة جارية لكل من شارك", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = b.ink, textAlign = TextAlign.Center)
-            BrandButton("ابدأ مقطعك الآن", icon = Icons.Filled.SmartDisplay) { nav.navigate(Routes.studioMode(video = true)) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("دليل الاستخدام" to "/guide", "المصادر والتراخيص" to "/sources", "منهجية التوثيق" to "/methodology", "الخصوصية" to "/privacy", "الشروط" to "/terms", "تواصل معنا" to "/contact").forEach { (t, p) ->
                     Box(

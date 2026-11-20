@@ -65,7 +65,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Text for a card made on another screen (hadith, a name of Allah, a zikr). */
-data class CardText(val title: String, val text: String, val reference: String, val naskh: Boolean = true, val ratio: CardRatio = CardRatio.Square)
+data class CardText(
+    val title: String, val text: String, val reference: String, val naskh: Boolean = true, val ratio: CardRatio = CardRatio.Square,
+    /** Occasion name drawn at the top («يوم الجمعة»); the user can switch it off. */
+    val header: String? = null,
+    val style: CardStyle = CardStyle.Emerald,
+    val ornament: Ornament = Ornament.Classic,
+    /** Start on the colour design rather than a photo (statuses). */
+    val colourFirst: Boolean = false,
+)
 
 object PendingText { var value: CardText? = null }
 
@@ -77,16 +85,21 @@ fun TextCardScreen(nav: NavHostController) {
     val scope = rememberCoroutineScope()
     val card = remember { PendingText.value } ?: run { LaunchedEffect(Unit) { nav.popBackStack() }; return }
     var ratio by remember { mutableStateOf(card.ratio) }
-    var style by remember { mutableStateOf(CardStyle.Emerald) }
+    var style by remember { mutableStateOf(card.style) }
+    var ornament by remember { mutableStateOf(card.ornament) }
+    var showHeader by remember { mutableStateOf(card.header != null) }
     var bg by remember { mutableStateOf(PendingMedia.take()) }
-    var touched by remember { mutableStateOf(bg != null) }
+    var touched by remember { mutableStateOf(bg != null || card.colourFirst) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(Unit) { if (!touched) bg = defaultMedia(ctx, video = false) }
-    LaunchedEffect(ratio, style, bg) {
+    LaunchedEffect(ratio, style, bg, ornament, showHeader) {
         bitmap = null
         val photo = bg?.still?.let { RemoteImages.load(ctx, it, 1400) }
         bitmap = withContext(Dispatchers.Default) {
-            CardRenderer.renderText(ctx, card.text, card.reference, ratio, style, photo = photo, naskh = card.naskh)
+            runCatching {
+                CardRenderer.renderText(ctx, card.text, card.reference, ratio, style, photo = photo, naskh = card.naskh,
+                    ornament = ornament, header = if (showHeader) card.header else null)
+            }.getOrNull()
         }
     }
     val save: () -> Unit = {
@@ -126,41 +139,38 @@ fun TextCardScreen(nav: NavHostController) {
                 }
             }
             AppCard {
-                Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("التصميم", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                BackgroundPicker(bg, allowVideo = false) { bg = it; touched = true }
-                if (bg == null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-                    CardStyle.entries.forEach { st -> Chip(st.label, st == style, { style = st }) }
+                if (bg == null) {
+                    Text("الألوان", style = MaterialTheme.typography.labelLarge, color = b.muted)
+                    PalettePicker(style) { style = it }
+                    Spacer(Modifier.height(10.dp))
+                }
+                Text("الزخرفة", style = MaterialTheme.typography.labelLarge, color = b.muted)
+                OrnamentPicker(ornament, if (bg == null) style else CardStyle.Night) { ornament = it }
+                if (card.header != null) {
+                    Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Chip("اسم المناسبة أعلى البطاقة", showHeader, { showHeader = !showHeader })
+                    }
                 }
             }
             AppCard {
-                Text("المقاس", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                    Chip("لون وزخرفة", bg == null, { bg = null; touched = true })
+                }
+                BackgroundPicker(bg, allowVideo = false) { bg = it; touched = true }
+            }
+            AppCard {
+                Text("المقاس", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                     CardRatio.entries.filter { it != CardRatio.Wide }.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
                 }
             }
-            Text("النص كما في مصدره دون أي تعديل.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            Text("النص كما في مصدره دون أي تعديل.", style = MaterialTheme.typography.bodySmall, color = b.muted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
-/** «حالات واتساب»: where the status starts (as the iOS StatusSourceView). */
-@Composable
-fun StatusScreen(nav: NavHostController) {
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        AppTopBar("حالة", onBack = { nav.popBackStack() })
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = LocalBottomInset.current + 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            HeroHeader("صمم حالتك", eyebrow = "حالات واتساب", subtitle = "صورة بمقاس الحالة 9:16 بخلفية حقيقية، أو مقطع متحرك بالتلاوة")
-            Text("من أين تبدأ؟", style = MaterialTheme.typography.titleLarge, color = LocalBrand.current.ink, modifier = Modifier.padding(top = 8.dp))
-            ServiceRow("آية", "بالرسم العثماني من المصحف الموثق", Icons.Outlined.AutoStories, style = TileStyle.Emerald) {
-                nav.navigate(Routes.studioMode(video = false))
-            }
-            ServiceRow("ذكر", "من حصن المسلم، ثم «اصنع حالة» تحت الذكر", Icons.Outlined.WbSunny, style = TileStyle.Gradient(2)) { nav.navigate("azkar-all") }
-            ServiceRow("حديث صحيح أو حسن", "بالراوي والمصدر والحكم من الدرر السنية", Icons.Outlined.Book, style = TileStyle.Gradient(1)) { nav.navigate("hadith") }
-            ServiceRow("مقطع متحرك", "آيات بصوت القارئ فوق فيديو حقيقي", Icons.Outlined.AutoStories, style = TileStyle.Gradient(0)) { nav.navigate(Routes.studioMode(video = true)) }
-        }
-    }
-}

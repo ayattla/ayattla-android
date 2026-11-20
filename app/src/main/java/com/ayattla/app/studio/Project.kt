@@ -45,6 +45,7 @@ data class Style(
     val anim: Anim = Anim.Fade,
     val animMs: Int = 600,
     val wordPace: Float = 0.8f,     // share of each ayah over which its words appear (Words)
+    val ornament: Ornament = Ornament.Classic, // drawn only when [frame] is on
 )
 
 sealed interface Background {
@@ -88,7 +89,7 @@ fun parseText(o: JSONObject?) = o?.let {
 
 fun Style.json(): JSONObject = JSONObject().put("colors", colors.name).put("text", text.json())
     .put("ref", JSONObject().put("show", ref.show).put("size", ref.size.toDouble()).put("color", ref.color ?: JSONObject.NULL).put("y", ref.posY.toDouble()))
-    .put("watermark", watermark).put("frame", frame).put("veil", veil.toDouble()).put("anim", anim.name).put("animMs", animMs).put("wordPace", wordPace.toDouble())
+    .put("watermark", watermark).put("frame", frame).put("veil", veil.toDouble()).put("anim", anim.name).put("animMs", animMs).put("wordPace", wordPace.toDouble()).put("ornament", ornament.name)
 
 fun parseStyle(o: JSONObject?): Style = o?.let {
     val r = it.optJSONObject("ref")
@@ -97,6 +98,7 @@ fun parseStyle(o: JSONObject?): Style = o?.let {
         if (r == null) RefLayer() else RefLayer(r.optBoolean("show", true), r.optDouble("size", 1.0).toFloat(), r.optLongOrNull("color"), r.optDouble("y", 0.0).toFloat()),
         it.optBoolean("watermark", true), it.optBoolean("frame", true), it.optDouble("veil", 0.45).toFloat(),
         runCatching { Anim.valueOf(it.optString("anim")) }.getOrDefault(Anim.Fade), it.optInt("animMs", 600), it.optDouble("wordPace", 0.8).toFloat(),
+        runCatching { Ornament.valueOf(it.optString("ornament")) }.getOrDefault(Ornament.Classic),
     )
 } ?: Style()
 
@@ -166,6 +168,16 @@ object TemplateStore {
         Template("عاجي هادئ", Style(colors = CardStyle.Ivory, frame = true, anim = Anim.Slide), true),
         Template("سينمائي", Style(text = TextLayer(size = 1.1f, posY = 0.15f), frame = false, veil = 0.55f, anim = Anim.Zoom, animMs = 900), true),
         Template("كلمة كلمة", Style(anim = Anim.Words, wordPace = 0.75f, frame = false), true),
+        Template("محراب زمردي", Style(ornament = Ornament.Arch, anim = Anim.Fade, animMs = 800), true),
+        Template("ملكي مزخرف", Style(colors = CardStyle.Royal, ornament = Ornament.Corners, anim = Anim.Slide), true),
+        Template("رمضاني بالقناديل", Style(colors = CardStyle.Violet, ornament = Ornament.Lantern, text = TextLayer(posY = 0.08f), anim = Anim.Fade, animMs = 900), true),
+        Template("فيروزي للعيد", Style(colors = CardStyle.Teal, ornament = Ornament.Bands, anim = Anim.Zoom), true),
+        Template("عنابي فاخر", Style(colors = CardStyle.Burgundy, ornament = Ornament.Medallion, anim = Anim.Fade), true),
+        Template("رملي هادئ", Style(colors = CardStyle.Sand, ornament = Ornament.Arch, anim = Anim.Slide), true),
+        Template("وردي ناعم", Style(colors = CardStyle.Blush, ornament = Ornament.Corners, anim = Anim.Fade), true),
+        Template("سماوي صاف", Style(colors = CardStyle.Sky, ornament = Ornament.Medallion, anim = Anim.Words, wordPace = 0.7f), true),
+        Template("زيتوني", Style(colors = CardStyle.Olive, ornament = Ornament.Bands, anim = Anim.Slide), true),
+        Template("فحمي ذهبي", Style(colors = CardStyle.Charcoal, ornament = Ornament.Classic, ref = RefLayer(color = 0xFFCBAE6E), anim = Anim.Zoom, animMs = 800), true),
     )
     private fun file(c: Context) = File(c.filesDir, "templates.json")
     fun mine(c: Context): List<Template> = runCatching {

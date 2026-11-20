@@ -18,8 +18,38 @@ data class PrayerGuide(val lead: String, val source: String, val sourceUrl: Stri
     data class Item(val text: String, val source: String, val grade: String, val url: String)
 }
 
+/** «حالات واتساب» by occasion, as published on ayattla.com/status/<slug>. */
+data class StatusOccasion(val slug: String, val title: String, val intro: String, val color: Long?, val items: List<Item>) {
+    data class Item(
+        val type: String, val tag: String, val text: String, val ref: String, val src: String,
+        val url: String, val sharh: String, val ayah: QuranRef?,
+    )
+}
+
 /** Extra content stored as JSON in the pack's meta table (same keys as the iOS app). */
 class Library(private val content: ContentStore) {
+
+    val status: List<StatusOccasion> by lazy {
+        runCatching {
+            val a = JSONArray(content.meta("status")?.ifBlank { null } ?: "[]")
+            List(a.length()) { i ->
+                val o = a.getJSONObject(i)
+                val items = o.getJSONArray("items")
+                StatusOccasion(
+                    o.getString("slug"), o.optString("title"), o.optString("intro"),
+                    o.optString("color").takeIf { it.length == 7 }?.let { 0xFF000000 or it.drop(1).toLong(16) },
+                    List(items.length()) { j ->
+                        val it = items.getJSONObject(j)
+                        StatusOccasion.Item(
+                            it.optString("type"), it.optString("tag"), it.optString("text"), it.optString("ref"), it.optString("src"),
+                            it.optString("url"), it.optString("sharh"),
+                            if (it.has("s")) QuranRef(it.getInt("s"), it.getInt("a"), it.optInt("b", it.getInt("a"))) else null,
+                        )
+                    },
+                )
+            }
+        }.getOrDefault(emptyList())
+    }
 
     val topics: List<Topic> by lazy {
         runCatching {

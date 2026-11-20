@@ -68,6 +68,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -120,11 +122,25 @@ fun TasbihScreen(nav: NavHostController) {
         Row(Modifier.padding(16.dp, 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(33, 100, 1000, 0).forEach { t -> Chip(if (t == 0) "بلا هدف" else "$t", target == t, { target = t }) }
         }
+        val stats = remember { ctx.getSharedPreferences("tasbih.stats", android.content.Context.MODE_PRIVATE) }
+        val todayKey = "d." + LocalDate.now()
+        var today by remember { mutableIntStateOf(stats.getInt(todayKey, 0)) }
+        var total by remember { mutableIntStateOf(stats.getInt("total", 0)) }
+        fun bump(delta: Int) {
+            count = (count + delta).coerceAtLeast(0)
+            prefs.setTasbihCount(phrase, count)
+            if (delta > 0) { today += delta; total += delta; stats.edit().putInt(todayKey, today).putInt("total", total).apply() }
+        }
+        val progress = if (target > 0) (count % target).toFloat() / target else 0f
+        val ring by androidx.compose.animation.core.animateFloatAsState(if (target > 0 && count > 0 && count % target == 0) 1f else progress, label = "tasbihRing")
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            androidx.compose.material3.CircularProgressIndicator(
+                progress = { ring }, modifier = Modifier.size(286.dp), color = b.accent, trackColor = b.tint, strokeWidth = 8.dp, gapSize = 0.dp,
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+            )
             Box(
                 Modifier.size(260.dp).clip(CircleShape).background(b.primary).clickable {
-                    count += 1
-                    prefs.setTasbihCount(phrase, count)
+                    bump(1)
                     vibrate(ctx, strong = target > 0 && count % target == 0)
                 },
                 contentAlignment = Alignment.Center,
@@ -137,6 +153,21 @@ fun TasbihScreen(nav: NavHostController) {
                         style = MaterialTheme.typography.bodyMedium, color = b.onPrimary.copy(alpha = 0.8f),
                     )
                 }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf("اليوم" to today, "المجموع" to total).forEach { (t, v) ->
+                Column(Modifier.weight(1f).clip(SmallShape).background(b.surface2).padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(t, style = MaterialTheme.typography.labelMedium, color = b.muted)
+                    Text("$v", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            Column(
+                Modifier.weight(1f).clip(SmallShape).background(b.surface2).clickable { bump(-1) }.padding(vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("تراجع", style = MaterialTheme.typography.labelMedium, color = b.muted)
+                Text("−١", style = MaterialTheme.typography.titleMedium, color = b.primaryInk)
             }
         }
     }
@@ -182,7 +213,47 @@ fun PrayerTimesScreen(nav: NavHostController) {
                     }
                 }
             }
-            Text("المدينة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            // The night and the fast (computed from the same times): midnight and the last third of the night
+            // between Maghrib and the next Fajr, and the length of the day from Fajr to Maghrib.
+            val nextFajr = loc.times(day.plusDays(1)).fajr + 24
+            val night = nextFajr - times.maghrib
+            val fast = times.maghrib - times.fajr
+            AppCard {
+                Text("الليل والنهار", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.size(10.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        "منتصف الليل" to PrayerTimes.hm12((times.maghrib + night / 2) % 24),
+                        "الثلث الأخير" to PrayerTimes.hm12((times.maghrib + night * 2 / 3) % 24),
+                        "مدة الصيام" to Num.duration((fast * 60).roundToInt()),
+                    ).forEach { (t, v) ->
+                        Column(Modifier.weight(1f).clip(SmallShape).background(b.surface2).padding(vertical = 12.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(t, style = MaterialTheme.typography.labelMedium, color = b.muted)
+                            Text(v, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = b.ink)
+                        }
+                    }
+                }
+            }
+            // The week ahead at a glance.
+            AppCard {
+                Text("مواقيت الأسبوع", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.size(8.dp))
+                val five = com.ayattla.app.calc.Prayer.entries.filter { it.isPrayer }
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Text("اليوم", style = MaterialTheme.typography.labelMedium, color = b.muted, modifier = Modifier.weight(1.3f))
+                    five.forEach { Text(it.title, style = MaterialTheme.typography.labelMedium, color = b.muted, modifier = Modifier.weight(1f)) }
+                }
+                (0 until 7).forEach { i ->
+                    val d = day.plusDays(i.toLong())
+                    val t = remember(loc, d) { loc.times(d) }
+                    Row(Modifier.fillMaxWidth().clip(SmallShape).background(if (i == 0) b.tint else b.surface).padding(vertical = 8.dp)) {
+                        Text(d.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.forLanguageTag("ar")) + " ${d.dayOfMonth}",
+                            style = MaterialTheme.typography.labelMedium, color = b.ink, modifier = Modifier.weight(1.3f))
+                        five.forEach { p -> Text(PrayerTimes.hm12(t.hours(p)).substringBefore(" "), style = MaterialTheme.typography.labelMedium, color = b.ink, modifier = Modifier.weight(1f)) }
+                    }
+                }
+            }
+            Text("المدينة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Button(onClick = request, colors = ButtonDefaults.buttonColors(containerColor = b.primary), modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.MyLocation, null); Spacer(Modifier.size(8.dp)); Text("استخدم موقعي")
             }
@@ -197,6 +268,50 @@ fun PrayerTimesScreen(nav: NavHostController) {
                 style = MaterialTheme.typography.bodySmall, color = b.muted,
             )
         }
+    }
+}
+
+/** The Hijri month as a calendar: Gregorian date under each day, the white days (13–15) and today marked. */
+@Composable
+private fun HijriMonthGrid(h: Hijri.Date, onPick: (LocalDate) -> Unit) {
+    val b = LocalBrand.current
+    val first = Hijri.toGregorian(Hijri.Date(h.year, h.month, 1)) ?: return
+    val len = Hijri.monthLength(h.year, h.month)
+    val today = LocalDate.now()
+    // Saturday-first week, as in Saudi calendars.
+    val lead = (first.dayOfWeek.value + 1) % 7
+    AppCard {
+        Text("${Hijri.months[h.month - 1]} ${h.year}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.size(8.dp))
+        Row(Modifier.fillMaxWidth()) {
+            listOf("سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة").forEach {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = b.muted, modifier = Modifier.weight(1f))
+            }
+        }
+        val cells: List<Int?> = List(lead) { null } + (1..len).map { it }
+        cells.chunked(7).forEach { week ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                week.forEach { d ->
+                    if (d == null) Spacer(Modifier.weight(1f)) else {
+                        val g = first.plusDays((d - 1).toLong())
+                        val isToday = g == today
+                        val white = d in 13..15
+                        Column(
+                            Modifier.weight(1f).padding(1.dp).clip(SmallShape)
+                                .background(when { isToday -> b.green; white -> b.goldSoft; d == h.day -> b.tint; else -> b.surface })
+                                .clickable { onPick(g) }.padding(vertical = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text("$d", style = MaterialTheme.typography.labelLarge, color = if (isToday) Color.White else b.ink)
+                            Text("${g.dayOfMonth}", style = MaterialTheme.typography.labelSmall, color = if (isToday) Color.White.copy(alpha = 0.85f) else b.muted)
+                        }
+                    }
+                }
+                repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+        Spacer(Modifier.size(6.dp))
+        Text("الأيام البيض ١٣–١٥ مظللة بالذهبي", style = MaterialTheme.typography.labelSmall, color = b.muted)
     }
 }
 
@@ -304,11 +419,12 @@ fun HijriScreen(nav: NavHostController) {
                 OutlinedButton(onClick = { date = date.plusMonths(1) }, modifier = Modifier.weight(1f)) { Text("شهر بعد") }
             }
             AppCard {
-                Text("الشهر الهجري الحالي", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("الشهر الهجري الحالي", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Text("${Hijri.months[h.month - 1]}: ${Hijri.monthLength(h.year, h.month)} يومًا", style = MaterialTheme.typography.bodyMedium, color = b.muted)
                 val ramadan = Hijri.toGregorian(Hijri.Date(if (h.month <= 9) h.year else h.year + 1, 9, 1))
                 ramadan?.let { Text("أول رمضان القادم: $it م", style = MaterialTheme.typography.bodyMedium, color = b.muted) }
             }
+            HijriMonthGrid(h, onPick = { date = it })
             Text("تقويم أم القرى، وقد يختلف يومًا عن رؤية الهلال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         }
     }
@@ -339,14 +455,14 @@ fun ZakatScreen(nav: NavHostController) {
                 Text(Num.money(r.due), style = MaterialTheme.typography.displaySmall, color = b.onPrimary)
                 Text("صافي المال ${Num.money(r.total)} · النصاب ${Num.money(r.nisab)}", style = MaterialTheme.typography.bodySmall, color = b.onPrimary.copy(alpha = 0.8f))
             }
-            Text("الأسعار", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("الأسعار", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Field("gp", "سعر جرام الذهب عيار 24")
             Field("sp", "سعر جرام الفضة")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Chip("النصاب بالذهب (85 جم)", basis == Zakat.Basis.Gold, { basis = Zakat.Basis.Gold })
                 Chip("بالفضة (595 جم)", basis == Zakat.Basis.Silver, { basis = Zakat.Basis.Silver })
             }
-            Text("الأموال", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("الأموال", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Field("cash", "النقد والأرصدة")
             Field("trade", "عروض التجارة")
             Field("g24", "ذهب عيار 24 (جرام)")
@@ -407,7 +523,7 @@ fun SettingsScreen(nav: NavHostController) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("الإعدادات", onBack = { nav.popBackStack() })
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("المظهر", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("المظهر", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Chip("فاتح", prefs.themeMode == ThemeMode.Light, { prefs.setTheme(ThemeMode.Light) })
                 Chip("حسب الجهاز", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
@@ -424,7 +540,7 @@ fun SettingsScreen(nav: NavHostController) {
                     androidx.compose.material3.Switch(introOn, { introOn = it; com.ayattla.app.ui.components.IntroPrefs.setEnabled(sctx, it) })
                 }
             }
-            Text("التنبيهات", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("التنبيهات", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             AppCard(onClick = { nav.navigate("notifications") }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.NotificationsActive, null, tint = b.goldInk)
@@ -438,7 +554,7 @@ fun SettingsScreen(nav: NavHostController) {
                 Text("حساب مواقيت الصلاة", style = MaterialTheme.typography.bodyLarge, color = b.ink)
                 Text("طريقة الحساب والعصر والتعديل اليدوي", style = MaterialTheme.typography.bodySmall, color = b.muted)
             }
-            Text("القارئ", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("القارئ", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             AppCard(padding = 4.dp) {
                 content.reciters.forEach { r ->
                     Row(
@@ -469,7 +585,7 @@ fun AboutScreen(nav: NavHostController) {
                 Text("الإصدار $version", style = MaterialTheme.typography.bodySmall, color = b.accent)
             }
             AppCard {
-                Text("المصادر", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("المصادر", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 listOf(
                     "نص القرآن: الرسم العثماني من مشروع Tanzil، منقول حرفيًا دون تعديل (${content.meta("ayah_count") ?: "6236"} آية).",
                     "الأذكار: أبواب حصن المسلم.",
@@ -479,7 +595,7 @@ fun AboutScreen(nav: NavHostController) {
                 ).forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium, color = b.muted, modifier = Modifier.padding(top = 6.dp)) }
             }
             AppCard {
-                Text("الخصوصية", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("الخصوصية", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Text("بلا إعلانات ولا حساب. كل بياناتك (المحفوظات، العدادات، الإعدادات) على جهازك فقط.", style = MaterialTheme.typography.bodyMedium, color = b.muted)
             }
             Button(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ayattla.com"))) }, colors = ButtonDefaults.buttonColors(containerColor = b.primary), modifier = Modifier.fillMaxWidth()) {

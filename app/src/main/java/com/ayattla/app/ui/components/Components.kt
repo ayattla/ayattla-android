@@ -197,6 +197,7 @@ fun Modifier.pressable(onClick: () -> Unit): Modifier {
 
 @Composable
 fun AppCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, padding: Dp = 16.dp, level: Surface = Surface.Raised, content: @Composable ColumnScope.() -> Unit) {
+    // Contents centred by default; full-width rows are unaffected.
     val b = LocalBrand.current
     Column(
         modifier
@@ -204,6 +205,7 @@ fun AppCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, paddin
             .then(if (onClick != null) Modifier.pressable(onClick) else Modifier)
             .surface(b, level)
             .padding(padding),
+        horizontalAlignment = Alignment.CenterHorizontally,
         content = content,
     )
 }
@@ -299,18 +301,21 @@ fun Pill(text: String, modifier: Modifier = Modifier) = Badge(text, modifier, go
 /** Large title of a tab root (iOS .large title). */
 @Composable
 fun LargeTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold), color = LocalBrand.current.ink, modifier = modifier.padding(top = 6.dp, bottom = 4.dp))
+    Text(text, style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold), color = LocalBrand.current.ink,
+        textAlign = TextAlign.Center, modifier = modifier.padding(top = 6.dp, bottom = 4.dp))
 }
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null, trailing: (@Composable () -> Unit)? = null) {
     val b = LocalBrand.current
-    Row(modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted)
+    // Centred title; an action, if any, keeps its place at the end.
+    Box(modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)) {
+        Column(Modifier.align(Alignment.Center).padding(horizontal = if (trailing != null) 56.dp else 0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink, textAlign = TextAlign.Center)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
         }
-        trailing?.invoke()
+        if (trailing != null) Box(Modifier.align(Alignment.CenterEnd)) { trailing() }
     }
 }
 
@@ -512,9 +517,9 @@ fun <T> SiteSegmented(items: List<Pair<T, String>>, selection: T, onSelect: (T) 
 fun GroupedSection(modifier: Modifier = Modifier, header: String? = null, footer: String? = null, content: @Composable ColumnScope.() -> Unit) {
     val b = LocalBrand.current
     Column(modifier.fillMaxWidth()) {
-        if (header != null) Text(header, style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
+        if (header != null) Text(header, style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp))
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card)).background(b.surface).border(1.dp, b.line, RoundedCornerShape(Radius.card)), content = content)
-        if (footer != null) Text(footer, style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp))
+        if (footer != null) Text(footer, style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp))
     }
 }
 

@@ -27,6 +27,8 @@ shot() {
   adb exec-out screencap -p > "shots/$1.png"
   echo "$1 $(stat -c %s shots/$1.png) bytes"
 }
+shot 00-intro-a intro 0.2
+shot 00-intro-b intro 2
 shot 01-home home 9
 shot 02-quran quran
 shot 03-reader-baqara-255 reader/2/255
@@ -64,6 +66,8 @@ shot 35-kids kids
 shot 36-kids-surah kids/112
 shot 37-ayah-today ayah-today 8
 shot 38-status status
+shot 38b-status-jumuah status/jumuah
+shot 38c-status-marriage status/marriage
 shot 39-more-all 'more?group=Daily'
 # Real clip on the device: Al-Kawthar, 3 ayat, 9:16.
 adb logcat -c

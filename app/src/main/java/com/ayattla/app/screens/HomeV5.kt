@@ -126,13 +126,15 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), Tracker("صلواتي اليوم"), Quick("الوصول السريع"), Services("خدمات المسلم"),
+    Prayer("الصلاة القادمة"), Tracker("صلواتي اليوم"), Quick("الوصول السريع"),
     Continue("تابع من حيث توقفت"), Wird("الورد والختمة"), Azkar("أذكار اليوم"), Dhikr("الذكر السريع"),
     Quiz("مسابقة اليوم"), Tools("أدواتي"), Occasion("المناسبات"), Ayah("آية اليوم"),
     Create("صناعة المحتوى"), Gallery("معرض الخلفيات"), All("كل الأدوات"),
 }
 
 object HomeLayout {
+    /** Sections off until the user turns them on: the full launcher repeats «الوصول السريع» and «أدواتي». */
+    val hiddenByDefault = setOf(HomeSection.All)
     private fun sp(c: Context) = c.getSharedPreferences("home.layout", Context.MODE_PRIVATE)
 
     /** Ordered sections with their visibility. New sections (from updates) join at the end, shown. */
@@ -141,7 +143,7 @@ object HomeLayout {
             val (n, v) = e.split(":").let { it.getOrNull(0) to it.getOrNull(1) }
             HomeSection.entries.firstOrNull { it.name == n }?.let { it to (v != "0") }
         }.orEmpty()
-        return saved + HomeSection.entries.filter { s -> saved.none { it.first == s } }.map { it to true }
+        return saved + HomeSection.entries.filter { s -> saved.none { it.first == s } }.map { it to (it !in hiddenByDefault) }
     }
 
     fun save(c: Context, l: List<Pair<HomeSection, Boolean>>) =
@@ -202,9 +204,8 @@ fun HomeScreenV5(nav: NavHostController) {
 private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: List<String>) {
     when (s) {
         HomeSection.Prayer -> PrayerHero(nav)
-        HomeSection.Quick -> QuickActions(nav)
+        HomeSection.Quick -> MuslimServices(nav)
         HomeSection.Tracker -> PrayerTracker()
-        HomeSection.Services -> MuslimServices(nav)
         HomeSection.Dhikr -> QuickDhikr(nav)
         HomeSection.Continue -> ContinueStrip(nav)
         HomeSection.Wird -> WirdCard(nav)
@@ -346,29 +347,6 @@ private fun HeroPill(icon: ImageVector, text: String, onClick: () -> Unit) {
 
 // ───────────── Quick actions ─────────────
 
-@Composable
-private fun QuickActions(nav: NavHostController) {
-    val b = LocalBrand.current
-    data class Q(val title: String, val icon: ImageVector, val tile: Int, val go: () -> Unit)
-    val items = listOf(
-        Q("المصحف", Icons.AutoMirrored.Outlined.MenuBook, 0) { nav.goTab("quran") },
-        Q("الاستماع", Icons.Outlined.Headphones, 1) { nav.goTab("quran") },
-        Q("الأذكار", Icons.Outlined.WbTwilight, 2) { nav.goTab("azkar") },
-        Q("المسبحة", Icons.Outlined.NightsStay, 3) { nav.navigate("tasbih") },
-    )
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items.forEach { q ->
-            Column(
-                Modifier.weight(1f).pressable(q.go).surface(b).padding(vertical = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                IconTile(q.icon, style = TileStyle.Gradient(q.tile), size = 46.dp)
-                Text(q.title, style = MaterialTheme.typography.labelLarge, color = b.ink, maxLines = 1)
-            }
-        }
-    }
-}
-
 // ───────────── Continue ─────────────
 
 @Composable
@@ -400,10 +378,10 @@ private fun ContinueStrip(nav: NavHostController) {
         }
         if (lastTool != null) Row(
             Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { openTool(nav, ctx, lastTool) }.surface(b).padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
             IconTile(lastTool.icon, style = TileStyle.Accent(ToolAccent.color(lastTool.id, b.dark)), size = 34.dp)
-            Text("آخر أداة: ${lastTool.title}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("آخر أداة: ${lastTool.title}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("افتح", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
         }
     }
@@ -412,10 +390,10 @@ private fun ContinueStrip(nav: NavHostController) {
 @Composable
 private fun ContinueCard(icon: ImageVector, tile: Int, title: String, line: String, modifier: Modifier, progress: Float? = null, onClick: () -> Unit) {
     val b = LocalBrand.current
-    Column(modifier.heightIn(min = 138.dp).pressable(onClick).surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.heightIn(min = 138.dp).pressable(onClick).surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         IconTile(icon, style = TileStyle.Gradient(tile), size = 40.dp)
-        Text(title, style = MaterialTheme.typography.titleSmall, color = b.ink)
-        Text(line, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, style = MaterialTheme.typography.titleSmall, color = b.ink, textAlign = TextAlign.Center)
+        Text(line, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         if (progress != null) LinearProgressIndicator(
             progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
             color = b.green, trackColor = b.tint, drawStopIndicator = {}, gapSize = 0.dp,
@@ -435,22 +413,22 @@ private fun WirdCard(nav: NavHostController) {
     val hifz = Hifz.plan
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         CenteredTitle("الورد والختمة")
-        Row(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val done = plan?.completedDays?.size ?: 0
             val total = plan?.days ?: 0
             val frac = if (total > 0) done.toFloat() / total else 0f
             ProgressRing(frac, if (plan != null) "${(frac * 100).toInt()}٪" else "—")
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (plan == null) {
-                    Text("لا توجد خطة ختمة", style = MaterialTheme.typography.titleMedium, color = b.ink)
-                    Text("حدد مدة الختمة ويقسمها التطبيق وردا يوميا", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                    Text("لا توجد خطة ختمة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+                    Text("حدد مدة الختمة ويقسمها التطبيق وردا يوميا", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
                     Text("ابدأ خطة", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.padding(top = 4.dp).clickable { nav.navigate("khatma") })
                 } else {
                     val day = plan.dayOn(LocalDate.now()).coerceIn(1, plan.days)
                     val r = plan.range(day)
                     val todayDone = day in plan.completedDays
                     Text(if (plan.isFinished) "أتممت الختمة" else "ورد اليوم ${if (todayDone) "✓" else ""}", style = MaterialTheme.typography.titleMedium, color = b.ink)
-                    if (r != null && !plan.isFinished) Text("من صفحة ${r.first} إلى ${r.last} · اليوم $day من ${plan.days}", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                    if (r != null && !plan.isFinished) Text("من صفحة ${r.first} إلى ${r.last} · اليوم $day من ${plan.days}", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 4.dp)) {
                         if (r != null && !plan.isFinished) Text("اقرأ الورد", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.clickable { nav.navigate("page/${r.first}") })
                         Text("الخطة", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.clickable { nav.navigate("khatma") })
@@ -460,9 +438,9 @@ private fun WirdCard(nav: NavHostController) {
         }
         if (hifz != null) Row(
             Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { nav.navigate("hifz-plan") }.surface(b).padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
-            Text("الحفظ: ${Hifz.memorisedAyat()} آية · مراجعات اليوم ${Hifz.due().size}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, modifier = Modifier.weight(1f))
+            Text("الحفظ: ${Hifz.memorisedAyat()} آية · مراجعات اليوم ${Hifz.due().size}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, textAlign = TextAlign.Center)
             Text(if (Hifz.learnedToday()) "✓" else "احفظ", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
         }
     }
@@ -507,12 +485,10 @@ private fun AzkarStatus(nav: NavHostController) {
                     Modifier.weight(1f).pressable { nav.navigate(Routes.azkar(c.id)) }
                         .then(if (now) Modifier.border(1.5.dp, b.accent.copy(alpha = 0.7f), RoundedCornerShape(Radius.card)) else Modifier)
                         .surface(b).padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IconTile(if (i == 0) Icons.Outlined.WbSunny else Icons.Outlined.NightsStay, style = TileStyle.Gradient(if (i == 0) 2 else 4), size = 34.dp)
-                        Text(c.title, style = MaterialTheme.typography.titleSmall, color = b.ink, maxLines = 1)
-                    }
+                    IconTile(if (i == 0) Icons.Outlined.WbSunny else Icons.Outlined.NightsStay, style = TileStyle.Gradient(if (i == 0) 2 else 4), size = 40.dp)
+                    Text(c.title, style = MaterialTheme.typography.titleSmall, color = b.ink, maxLines = 1, textAlign = TextAlign.Center)
                     LinearProgressIndicator(
                         progress = { frac.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
                         color = b.green, trackColor = b.tint, drawStopIndicator = {}, gapSize = 0.dp,
@@ -645,7 +621,7 @@ private fun NextOccasion(nav: NavHostController) {
                     Modifier.weight(1f).pressable { nav.navigate("occasions") }.clip(RoundedCornerShape(Radius.card))
                         .background(Brush.linearGradient(listOf(b.goldSoft, b.surface))).border(1.dp, b.accent.copy(alpha = 0.4f), RoundedCornerShape(Radius.card))
                         .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(next.first, style = MaterialTheme.typography.titleMedium, color = b.ink)
                     Text(if (days == 0L) "اليوم" else "بعد $days يوما", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = b.goldInk)
@@ -654,7 +630,7 @@ private fun NextOccasion(nav: NavHostController) {
             }
             Column(
                 Modifier.weight(1f).pressable { nav.navigate(if (friday) Routes.reader(18, 1) else "sawm") }.surface(b).padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(if (friday) "يوم الجمعة" else "صيام التطوع", style = MaterialTheme.typography.titleMedium, color = b.ink)
                 Text(if (friday) "سورة الكهف" else nextSunnahFast(today), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.primaryInk)
@@ -755,8 +731,8 @@ private fun PrayerTracker() {
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("${done.size} من 5 اليوم", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.weight(1f))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Text("${done.size} من 5 اليوم", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.padding(end = 10.dp))
                 (6 downTo 0).forEach { i ->
                     val d = today.minusDays(i.toLong())
                     val n = if (i == 0) done.size else sp.getStringSet(key(d), emptySet()).orEmpty().size
@@ -777,23 +753,23 @@ private fun MuslimServices(nav: NavHostController) {
     val b = LocalBrand.current
     data class S(val title: String, val icon: ImageVector, val tile: Int, val route: String)
     val items = listOf(
-        S("القبلة", Icons.Outlined.Explore, 0, "qibla"),
-        S("المساجد", Icons.Outlined.Mosque, 1, "mosques"),
-        S("الإذاعات", Icons.Outlined.Radio, 2, "radios"),
-        S("الأدعية", Icons.Outlined.VolunteerActivism, 3, "duas"),
-        S("الرقية", Icons.Outlined.Shield, 4, "ruqya"),
-        S("الهجري", Icons.Outlined.CalendarMonth, 5, "hijri"),
+        S("المصحف", Icons.AutoMirrored.Outlined.MenuBook, 0, "tab:quran"),
+        S("الاستماع", Icons.Outlined.Headphones, 1, "tab:quran"),
+        S("المساجد", Icons.Outlined.Mosque, 2, "mosques"),
+        S("الإذاعات", Icons.Outlined.Radio, 3, "radios"),
+        S("الأدعية", Icons.Outlined.VolunteerActivism, 4, "duas"),
+        S("الرقية", Icons.Outlined.Shield, 5, "ruqya"),
         S("الزكاة", Icons.Outlined.Calculate, 0, "zakat"),
         S("الأطفال", Icons.Outlined.ChildCare, 1, "kids"),
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        CenteredTitle("خدمات المسلم", "المزيد") { nav.goTab("more") }
+        CenteredTitle("الوصول السريع", "كل الأدوات") { nav.goTab("more") }
         Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             items.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth()) {
                     row.forEach { s ->
                         Column(
-                            Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { nav.navigate(s.route) }.padding(vertical = 4.dp),
+                            Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { if (s.route.startsWith("tab:")) nav.goTab(s.route.removePrefix("tab:")) else nav.navigate(s.route) }.padding(vertical = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             IconTile(s.icon, style = TileStyle.Gradient(s.tile), size = 46.dp)
@@ -837,7 +813,7 @@ private fun QuickDhikr(nav: NavHostController) {
             ) {
                 Text("$count", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(phrase, fontFamily = Fonts.naskh, fontSize = 20.sp, color = b.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 LinearProgressIndicator(
                     progress = { (count % 33) / 33f }, modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
