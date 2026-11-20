@@ -7,31 +7,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Save the site's maker pages and print their text and data
+      - name: Status occasion pages
         shell: bash {0}
         run: |
           mkdir p; cd p
-          curl -sSL -m 30 -A "Mozilla/5.0" https://ayattla.com/ -o index.html
-          grep -o 'href="/[^"#?]*"' index.html | sort -u | tr '\n' ' '; echo
-          for u in status whatsapp-status statuses cards ayah-card tools/ayah-card tools/whatsapp-status tools/statuses; do
-            c=$(curl -s -o /dev/null -w '%{http_code}' -A "Mozilla/5.0" "https://ayattla.com/$u"); echo "$u -> $c"
+          curl -sSL -m 30 -A "Mozilla/5.0" https://ayattla.com/status/ -o status.html
+          grep -o 'href="/status/[^"#?]*"' status.html | sort -u | tr '\n' ' '; echo
+          for u in $(grep -o 'href="/status/[^"#?]*"' status.html | sed 's/href="//; s/"//' | sort -u); do
+            n=$(echo $u | tr / _); curl -sSL -m 30 -A "Mozilla/5.0" "https://ayattla.com$u" -o "$n.html"; echo "$u $(wc -c < $n.html)"
           done
-          for u in $(grep -o 'href="/[^"#?]*"' index.html | sed 's/href="\///; s/"//' | grep -iE 'status|card|clip|hal|whats|occasion|eid|ramadan|jumu' | sort -u) ""; do
-            n=$(echo $u | tr / _); curl -sSL -m 30 -A "Mozilla/5.0" "https://ayattla.com/$u" -o $n.html; echo "$u $(wc -c < $n.html)"
-          done
-          python3 - <<'PY'
-          import re,glob,html
-          for f in sorted(glob.glob('*.html')):
-              s=open(f,encoding='utf-8',errors='ignore').read()
-              print('\n=====',f,'=====')
-              # inline JSON-ish arrays with Arabic text
-              for m in re.finditer(r'(const|let|var)\s+(\w+)\s*=\s*(\[[^;]{40,6000}?\]|\{[^;]{40,6000}?\});',s):
-                  if re.search('[؀-ۿ]',m.group(3)): print('JS',m.group(2),':',m.group(3)[:6000].replace('\n',' '))
-              t=re.sub(r'<script.*?</script>|<style.*?</style>','',s,flags=re.S)
-              t=html.unescape(re.sub(r'<[^>]+>','\n',t))
-              lines=[l.strip() for l in t.split('\n') if l.strip()]
-              print('TEXT:',' | '.join(lines)[:8000])
-              print('SCRIPTS:',re.findall(r'<script[^>]+src="([^"]+)"',s))
-          PY
+          ls
+          f=$(ls _status_*jumu* _status_*friday* 2>/dev/null | head -1); [ -n "$f" ] || f=$(ls _status_*.html | head -1)
+          echo "== SAMPLE $f"; python3 -c "
+          import re,sys
+          s=open('$f',encoding='utf-8').read()
+          i=s.find('<main'); j=s.find('</main>')
+          print(re.sub(r'\s+',' ',s[i:j])[:14000])
+          "
+          grep -o '/api/[a-z0-9/_-]*' status.html _status_*.html | sort -u | head -20
       - uses: actions/upload-artifact@v7
         with: { name: pages, path: p }
