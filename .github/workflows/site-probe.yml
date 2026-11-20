@@ -11,7 +11,12 @@ jobs:
         shell: bash {0}
         run: |
           mkdir p; cd p
-          for u in tools/status tools/ayah-card tools/clip tools/occasions tools/hadith-card tools; do
+          curl -sSL -m 30 -A "Mozilla/5.0" https://ayattla.com/ -o index.html
+          grep -o 'href="/[^"#?]*"' index.html | sort -u | tr '\n' ' '; echo
+          for u in status whatsapp-status statuses cards ayah-card tools/ayah-card tools/whatsapp-status tools/statuses; do
+            c=$(curl -s -o /dev/null -w '%{http_code}' -A "Mozilla/5.0" "https://ayattla.com/$u"); echo "$u -> $c"
+          done
+          for u in $(grep -o 'href="/[^"#?]*"' index.html | sed 's/href="\///; s/"//' | grep -iE 'status|card|clip|hal|whats|occasion|eid|ramadan|jumu' | sort -u) ""; do
             n=$(echo $u | tr / _); curl -sSL -m 30 -A "Mozilla/5.0" "https://ayattla.com/$u" -o $n.html; echo "$u $(wc -c < $n.html)"
           done
           python3 - <<'PY'
