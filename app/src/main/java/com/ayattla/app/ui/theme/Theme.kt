@@ -125,8 +125,11 @@ object Fonts {
 /** iOS text styles in IBM Plex Sans Arabic: largeTitle 34, title 28, title2 22, title3 20, headline 17,
  *  body 17, callout 16, subheadline 15, footnote 13, caption 12, caption2 11. */
 private fun typography(): Typography {
+    // Centred by default (the owner's rule: text and icons sit in the middle, not at the right edge).
+    // A text that must start at the edge (a list row's title, a field) sets textAlign itself.
     fun t(size: Int, w: FontWeight = FontWeight.Normal, lh: Float = 1.35f) =
-        TextStyle(fontFamily = Fonts.ui, fontSize = size.sp, fontWeight = w, lineHeight = (size * lh).sp)
+        TextStyle(fontFamily = Fonts.ui, fontSize = size.sp, fontWeight = w, lineHeight = (size * lh).sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     return Typography(
         displayLarge = t(40, FontWeight.Bold), displayMedium = t(36, FontWeight.Bold), displaySmall = t(34, FontWeight.Bold),
         headlineLarge = t(34, FontWeight.SemiBold), headlineMedium = t(28, FontWeight.Bold), headlineSmall = t(22, FontWeight.Bold),
