@@ -182,7 +182,7 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize()) {
                         AppRoot(startScreen, pendingOpen)
                         // «الافتتاحية»: only on a normal launch (not a deep link, notification or CI screen).
-                        var intro by remember { mutableStateOf(startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity)) }
+                        var intro by remember { mutableStateOf(startScreen == "intro" || startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity)) }
                         if (intro) com.ayattla.app.ui.components.IntroOverlay { com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch = true; intro = false }
                     }
                 }

@@ -27,6 +27,8 @@ shot() {
   adb exec-out screencap -p > "shots/$1.png"
   echo "$1 $(stat -c %s shots/$1.png) bytes"
 }
+shot 00-intro-a intro 0.3
+shot 00-intro-b intro 1.1
 shot 01-home home 9
 shot 02-quran quran
 shot 03-reader-baqara-255 reader/2/255
