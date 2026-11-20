@@ -66,6 +66,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -415,23 +417,68 @@ fun NextPrayerCard(nav: NavHostController) {
 
 // ───────────── Tool launcher ─────────────
 
+/** Every tool, by section (as before), each section a framed panel with its own colour band. */
 @Composable
 private fun HomeToolLauncher(nav: NavHostController) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
+    data class G(val icon: ImageVector, val top: Color, val bottom: Color)
+    val look = mapOf(
+        ToolGroup.Content to G(Icons.Filled.SmartDisplay, Color(0xFF1F7A4E), Color(0xFF0E3B2C)),
+        ToolGroup.Quran to G(Icons.Outlined.Book, Color(0xFF2A5C8A), Color(0xFF13304D)),
+        ToolGroup.Daily to G(Icons.Outlined.WbSunny, Color(0xFFB0832F), Color(0xFF6B4A12)),
+        ToolGroup.Hadith to G(Icons.Outlined.School, Color(0xFF6B3F8E), Color(0xFF3A1F55)),
+    )
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SiteSectionHead("كل الأدوات في مكان واحد", eyebrow = "الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية، اضغط أي أداة لتفتحها")
+        SiteSectionHead("أقسام الأدوات", eyebrow = "الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية في ${ToolGroup.entries.size} أقسام")
         ToolGroup.entries.forEach { g ->
-            val tools = SiteTool.all.filter { it.group == g && it.id !in SiteTool.featured }
+            val tools = SiteTool.all.filter { it.group == g }
             if (tools.isEmpty()) return@forEach
-            Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                GroupTitle(g.title, tools.size) { nav.navigate("more?group=${g.name}") }
-                tools.chunked(4).forEach { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        row.forEach { t ->
-                            LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew) { openTool(nav, ctx, t) }
+            val l = look[g] ?: G(Icons.Outlined.Apps, b.green, b.primary)
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card)).surface(b)) {
+                // Colour band with the section's icon, name and count.
+                Row(
+                    Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(l.top, l.bottom))).clickable { nav.navigate("more?group=${g.name}") }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(Color.White.copy(alpha = 0.16f))
+                        .border(1.dp, Color(0xFFE3CB8E).copy(alpha = 0.55f), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
+                        Icon(l.icon, null, tint = Color(0xFFF3DFA2), modifier = Modifier.size(22.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(g.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White, textAlign = TextAlign.Start)
+                        Text("${tools.size} أداة", style = MaterialTheme.typography.labelMedium, color = Color(0xFFF3DFA2), textAlign = TextAlign.Start)
+                    }
+                    Text("عرض الكل", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.9f))
+                    Chevron(Modifier.size(16.dp), Color.White.copy(alpha = 0.9f))
+                }
+                // Makers first, large, in the content section.
+                if (g == ToolGroup.Content) {
+                    val makers = tools.filter { it.id in SiteTool.featured }
+                    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        makers.forEachIndexed { i, t ->
+                            Column(
+                                Modifier.weight(1f).pressable { openTool(nav, ctx, t) }.clip(RoundedCornerShape(18.dp))
+                                    .background(Brush.verticalGradient(listOf(listOf(Color(0xFF1F7A4E), Color(0xFF2A5C8A), Color(0xFFB0832F))[i % 3], Color(0xFF0E2A20))))
+                                    .padding(vertical = 14.dp, horizontal = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(t.icon, null, tint = Color(0xFFF3DFA2), modifier = Modifier.size(28.dp))
+                                Text(t.short, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1)
+                            }
                         }
-                        repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+                val rest = if (g == ToolGroup.Content) tools.filter { it.id !in SiteTool.featured } else tools
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    rest.chunked(4).forEach { row ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            row.forEach { t ->
+                                LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew) { openTool(nav, ctx, t) }
+                            }
+                            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                 }
             }
@@ -550,7 +597,7 @@ private fun HomeMediaGallery(nav: NavHostController) {
         loading = false
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SiteSectionHead("خلفيات ومقاطع حقيقية", eyebrow = "المعرض", subtitle = "من مكتبة الموقع (Pixabay وPexels). اضغط أي خلفية لتبدأ بها")
+        SiteSectionHead("خلفيات ومقاطع حقيقية", eyebrow = "المعرض", subtitle = "اضغط أي خلفية لتبدأ بها")
         CategorySelector(cats, cat, { cat = it }, Modifier.padding(horizontal = 0.dp), contentPadding = 0.dp)
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
             if (items.isEmpty()) repeat(5) { i ->

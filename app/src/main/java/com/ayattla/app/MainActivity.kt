@@ -310,6 +310,8 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("duas") { com.ayattla.app.screens.DuasScreen(nav) }
             composable("guide") { com.ayattla.app.screens.GuideScreen(nav) }
             composable("khatma") { com.ayattla.app.screens.KhatmaScreen(nav) }
+            composable("kaffarah") { com.ayattla.app.screens.KaffarahScreen(nav) }
+            composable("crypto-zakat") { com.ayattla.app.screens.CryptoZakatScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->
                 com.ayattla.app.screens.MushafScreen(nav, e.arguments!!.getInt("page"))
             }

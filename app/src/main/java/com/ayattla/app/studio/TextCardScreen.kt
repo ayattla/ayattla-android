@@ -168,8 +168,6 @@ fun TextCardScreen(nav: NavHostController) {
                     CardRatio.entries.filter { it != CardRatio.Wide }.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
                 }
             }
-            Text("النص كما في مصدره دون أي تعديل.", style = MaterialTheme.typography.bodySmall, color = b.muted,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
     }
 }

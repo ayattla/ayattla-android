@@ -302,10 +302,6 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
         }
 
         if (project.video) ClipExport(project, engine, reciter) else CardsExport(project, parts, onMedia)
-        Text(
-            "النص من المصحف كما هو. التلاوة: EveryAyah. الخلفيات: Pixabay وPexels أو جهازك.",
-            style = MaterialTheme.typography.bodySmall, color = b.muted,
-        )
     }
 
     if (showProjects) ModalBottomSheet(onDismissRequest = { showProjects = false }, containerColor = b.surface) {

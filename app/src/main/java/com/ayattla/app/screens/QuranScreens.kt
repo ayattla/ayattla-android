@@ -329,7 +329,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     // Remember the reading position.
     val visiblePage = pages.getOrNull((list.firstVisibleItemIndex - header).coerceIn(0, pages.size - 1)) ?: ayat
     LaunchedEffect(list.firstVisibleItemIndex) { prefs.setLastRead(surahId, visiblePage.first().ayah) }
-    val paper = if (b.dark) b.background else Color(0xFFFCF9F1)
+    val paper = if (b.dark) b.background else Color(0xFFF4EFE2)
     val highlight = if (b.dark) Color(0xFF3A3317) else Color(0xFFF5E6B0)
 
     Column(Modifier.fillMaxSize().background(paper).statusBarsPadding()) {
@@ -345,20 +345,22 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
             Chip("عرض الصفحات", false, { nav.navigate("page/" + (visiblePage.first().page ?: 1)) })
             Chip("استمع", false, { Recitation.play(ctx, content, reciter, surahId, visiblePage.first().ayah, continuous = true) })
         }
-        LazyColumn(state = list, contentPadding = PaddingValues(20.dp, 0.dp, 20.dp, if (Recitation.active) 230.dp else 32.dp), modifier = Modifier.fillMaxSize()) {
+        // Reading progress through the surah.
+        val progress = if (pages.size <= 1) 1f else ((list.firstVisibleItemIndex - header).coerceIn(0, pages.size - 1) + 1).toFloat() / pages.size
+        androidx.compose.material3.LinearProgressIndicator(
+            progress = { progress }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(3.dp).clip(CircleShape),
+            color = MushafColors.gold(), trackColor = b.line, drawStopIndicator = {}, gapSize = 0.dp,
+        )
+        LazyColumn(state = list, contentPadding = PaddingValues(12.dp, 0.dp, 12.dp, if (Recitation.active) 230.dp else 32.dp), modifier = Modifier.fillMaxSize()) {
             item {
-                Column(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f).height(1.dp).background(b.green.copy(alpha = 0.25f)))
-                        Text("سورة ${surah.shortName}", fontFamily = Fonts.naskh, fontSize = 24.sp, color = b.primaryInk, modifier = Modifier.padding(horizontal = 14.dp))
-                        Box(Modifier.weight(1f).height(1.dp).background(b.green.copy(alpha = 0.25f)))
-                    }
+                Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    SurahBanner(surah)
                     if (surah.hasBasmala) {
                         // The basmala text as printed in Al-Fatiha 1:1 of the pack.
                         val basmala = remember { content.ayah(1, 1)?.text.orEmpty() }
                         Text(
-                            basmala, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize * 0.9f).sp, color = b.ink,
-                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                            basmala, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize * 0.9f).sp, color = MushafColors.ink(),
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         )
                     }
                 }
@@ -378,16 +380,12 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
                         append(" ")
                     }
                 }
-                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                // Each mushaf page in its own frame; text centred, the playing ayah lit.
+                MushafFrame(surah.shortName, pageAyat.first().juz, pageAyat.first().page, Modifier.padding(vertical = 8.dp)) {
                     Text(
                         text, fontFamily = Fonts.quran, fontSize = prefs.quranFontSize.sp, lineHeight = (prefs.quranFontSize * 2.1f).sp,
-                        textAlign = TextAlign.Justify, modifier = Modifier.fillMaxWidth(),
+                        color = MushafColors.ink(), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     )
-                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f).height(0.5.dp).background(b.line))
-                        Text("${pageAyat.first().page ?: ""}", style = MaterialTheme.typography.labelMedium, color = b.muted, modifier = Modifier.padding(horizontal = 10.dp))
-                        Box(Modifier.weight(1f).height(0.5.dp).background(b.line))
-                    }
                 }
             }
             item {
