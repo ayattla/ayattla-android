@@ -101,7 +101,7 @@ fun BackgroundPicker(selected: SiteMedia?, allowVideo: Boolean, onSelect: (SiteM
             }
         }
         if (!loading && items.isEmpty()) Text("تعذر تحميل الخلفيات الآن. تحقق من الاتصال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
-        else Text("من مكتبة الموقع (Pixabay وPexels)", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted)
+        else Text("من مكتبة الموقع", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted)
     }
 }
 

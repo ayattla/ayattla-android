@@ -9,7 +9,7 @@ mkdir -p shots; : > "$OUT"
 FAIL=0
 
 ROUTES=(
-  home quran azkar azkar/1 azkar/5 azkar-all tasbih tajweed word-by-word hifz-test ruqya asma occasions
+  home search quran azkar azkar/1 azkar/5 azkar-all tasbih tajweed word-by-word hifz-test ruqya asma occasions
   qada sawm mosques kids kids/112 kids/78 hifz-plan downloads kids-quiz ayah-today text-card status
   prayer notifications prayer-settings qibla hijri zakat saved settings about radios hadith hadith-check topics duas guide khatma
   page/1 page/50 page/604 reader/1/1 reader/2/1 reader/2/255 reader/26/1 reader/114/1

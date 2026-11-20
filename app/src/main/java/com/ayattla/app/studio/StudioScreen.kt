@@ -44,6 +44,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
@@ -175,6 +176,9 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
         if (project.background == Background.Color && !prefs.studioColorChosen) defaultMedia(ctx, project.video)?.let { m -> update { it.copy(background = Background.Library(m)) } }
     }
     LaunchedEffect(project) { delay(400); withContext(Dispatchers.IO) { ProjectStore.save(ctx, project) } }
+    // Leaving within the autosave delay never loses the last edit.
+    val latest = androidx.compose.runtime.rememberUpdatedState(project)
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { val snap = latest.value; Thread { runCatching { ProjectStore.save(ctx, snap) } }.start() } }
 
     val reciter = content.reciters.firstOrNull { it.id == (project.reciterId ?: prefs.reciterId) } ?: content.reciters.first()
     val engine = remember { ClipEngine(ctx, content) }
@@ -213,13 +217,18 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Opened from another page (a tool, an ayah): a back button; the project is saved first.
+            if (nav.previousBackStackEntry?.destination?.route.let { it != null && it != "home" }) androidx.compose.material3.IconButton(onClick = {
+                val snap = project
+                Thread { runCatching { ProjectStore.save(ctx, snap) } }.start()
+                nav.popBackStack()
+            }) { androidx.compose.material3.Icon(Icons.AutoMirrored.Filled.ArrowBackIos, "رجوع", tint = b.primaryInk) }
             LargeTitle("صناعة المحتوى", Modifier.weight(1f))
             BrandButton("مشاريعي", icon = Icons.Outlined.FolderOpen, kind = BtnKind.Secondary) { showProjects = true }
         }
         HeroHeader(
             if (project.video) "مقطع قرآني" else "بطاقات آيات", eyebrow = "الاستوديو",
-            subtitle = if (project.video) "طبقات مستقلة للنص والمرجع والخلفية، حركة وتوقيت لكل آية، وتصدير حتى 4K"
-            else "بطاقة أو مجموعة بطاقات دفعة واحدة، بخلفية حقيقية أو من جهازك",
+
         ) {
             SiteSegmented(listOf(false to "بطاقات", true to "مقطع فيديو"), project.video, { v ->
                 update { it.copy(video = v, ratio = if (v && it.ratio == CardRatio.Portrait) CardRatio.Story else it.ratio) }

@@ -188,5 +188,10 @@ open reader/2/1; scrollAll; scrollAll; alive && ok "القارئ: البقرة �
 open page/1; for i in 1 2 3 4 5; do adb shell input swipe 900 1200 150 1200 120; sleep 0.6; done; alive && ok "المصحف: تقليب الصفحات" || bad "المصحف: تقليب"
 open quran; scrollAll; alive && ok "فهرس السور: التمرير" || bad "فهرس السور"
 
+# ── Home v5 and the unified search.
+open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; scrollAll
+$UI tap "تخصيص الرئيسية"; sleep 2; expect "الرئيسية: التخصيص" "إعادة الترتيب الافتراضي" 5; shot home-customize; adb shell input keyevent 4
+open search; $UI field 0; typeAr "الكهف"; sleep 3; expect "البحث الشامل: نتائج" "سورة الكهف" 6; shot search
+
 echo "النتيجة: $(grep -c '^✓' "$OUT") نجحت، $FAIL فشلت" | tee -a "$OUT"
 [ "$FAIL" -eq 0 ]

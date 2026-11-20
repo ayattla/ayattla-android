@@ -103,7 +103,7 @@ fun AzkarListScreen(nav: NavHostController) {
         cats.firstOrNull { "الاستيقاظ" in it.title },
     ).distinctBy { it.id }
     Column(Modifier.fillMaxSize()) {
-        AppTopBar("الأذكار والحديث")
+        AppTopBar("الأذكار والحديث", onBack = if (nav.previousBackStackEntry?.destination?.route.let { it != null && it != "home" }) ({ nav.popBackStack() }) else null)
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 8.dp, bottom = LocalBottomInset.current),
             verticalArrangement = Arrangement.spacedBy(24.dp),

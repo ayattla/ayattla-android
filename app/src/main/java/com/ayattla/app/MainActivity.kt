@@ -1,5 +1,29 @@
 package com.ayattla.app
 
+import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
 import com.ayattla.app.ui.components.softShadow
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -158,14 +182,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
+private data class Tab(val route: String, val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
 
 private val tabs = listOf(
-    Tab("home", "الرئيسية", Icons.Outlined.Home),
-    Tab("quran", "القرآن", Icons.AutoMirrored.Outlined.MenuBook),
-    Tab("studio", "اصنع", Icons.Outlined.SmartDisplay),
-    Tab("azkar", "الأذكار", Icons.Outlined.WbSunny),
-    Tab("more", "المزيد", Icons.Outlined.GridView),
+    Tab("home", "الرئيسية", Icons.Outlined.Home, Icons.Filled.Home),
+    Tab("quran", "القرآن", Icons.AutoMirrored.Outlined.MenuBook, Icons.AutoMirrored.Filled.MenuBook),
+    Tab("studio", "اصنع", Icons.Outlined.SmartDisplay, Icons.Filled.SmartDisplay),
+    Tab("azkar", "الأذكار", Icons.Outlined.WbSunny, Icons.Filled.WbSunny),
+    Tab("more", "المزيد", Icons.Outlined.GridView, Icons.Filled.GridView),
 )
 
 /** Space a tab screen leaves at its bottom for the floating tab bar (and the player above it). */
@@ -192,12 +216,26 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route?.substringBefore("?")
     val onTab = tabs.any { route == it.route }
-    val inset = if (onTab) (if (Recitation.active) 190.dp else 120.dp) else 0.dp
+    val inset = if (onTab) (if (Recitation.active) 200.dp else 112.dp) else 0.dp
     Box(Modifier.fillMaxSize().patternedScreen(b)) {
         Column(Modifier.fillMaxSize()) {
           CompositionLocalProvider(LocalBottomInset provides inset) {
-            NavHost(nav, startDestination = "home", modifier = Modifier.weight(1f).fillMaxWidth()) {
-            composable("home") { HomeScreen(nav) }
+            NavHost(
+                nav, startDestination = "home", modifier = Modifier.weight(1f).fillMaxWidth(),
+                // Tabs cross-fade; a tool slides in from the reading side (RTL) and back out.
+                enterTransition = {
+                    if (isTabSwitch()) fadeIn(tween(180))
+                    else fadeIn(tween(220)) + slideInHorizontally(tween(280, easing = FastOutSlowInEasing)) { -it / 10 }
+                },
+                exitTransition = { fadeOut(tween(160)) },
+                popEnterTransition = { fadeIn(tween(200)) },
+                popExitTransition = {
+                    if (isTabSwitch()) fadeOut(tween(160))
+                    else fadeOut(tween(200)) + slideOutHorizontally(tween(260, easing = FastOutSlowInEasing)) { -it / 10 }
+                },
+            ) {
+            composable("home") { com.ayattla.app.screens.HomeScreenV5(nav) }
+            composable("search") { com.ayattla.app.screens.UnifiedSearchScreen(nav) }
             composable("quran") { QuranIndexScreen(nav) }
             composable(
                 "studio?s={s}&a={a}&b={b}&v={v}",
@@ -269,36 +307,74 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
           }
             if (!onTab && Recitation.active) PlayerBar()
         }
-        if (onTab) Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
-            if (Recitation.active) Box(Modifier.padding(horizontal = 12.dp)) { PlayerBar() }
-            FloatingTabBar(route) { nav.goTab(it) }
+        if (onTab) Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+            if (Recitation.active) Box(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) { PlayerBar() }
+            BrandTabBar(route) { nav.goTab(it) }
         }
     }
 }
 
-/** iOS-style floating tab bar: white rounded bar, the chosen tab filled with the site gradient. */
+private fun androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation.NavBackStackEntry>.isTabSwitch(): Boolean {
+    val from = initialState.destination.route?.substringBefore("?")
+    val to = targetState.destination.route?.substringBefore("?")
+    return tabs.any { it.route == from } && tabs.any { it.route == to }
+}
+
+/**
+ * The bottom bar: docked, rounded on top, under the system navigation bar. The chosen tab gets a
+ * tinted capsule behind its filled icon; «اصنع» (the studio) is a raised gold button in the middle,
+ * so the five tabs are not all alike.
+ */
 @Composable
-private fun FloatingTabBar(route: String?, onSelect: (String) -> Unit) {
+private fun BrandTabBar(route: String?, onSelect: (String) -> Unit) {
     val b = LocalBrand.current
-    val shape = RoundedCornerShape(30.dp)
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
-            .softShadow(shape, 24.dp, Color(0xFF0F1F17).copy(alpha = if (b.dark) 0.5f else 0.16f), DpOffset(0.dp, 10.dp))
-            .clip(shape).background(b.surface.copy(alpha = 0.97f)).border(1.dp, b.line, shape).padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        tabs.forEach { t ->
-            val on = route == t.route
-            Column(
-                Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(24.dp))
-                    .then(if (on) Modifier.background(Brush.linearGradient(b.siteGradient)) else Modifier)
-                    .clickable { onSelect(t.route) },
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-            ) {
-                Icon(t.icon, t.label, tint = if (on) Color.White else b.muted, modifier = Modifier.size(25.dp))
-                Text(t.label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium), color = if (on) Color.White else b.muted, maxLines = 1)
+    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    Box(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 18.dp)
+                .softShadow(shape, 20.dp, Color(0xFF0F1F17).copy(alpha = if (b.dark) 0.55f else 0.14f), DpOffset(0.dp, (-4).dp))
+                .clip(shape).background(b.surface).border(1.dp, b.line, shape)
+                .navigationBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            tabs.forEach { t ->
+                val on = route == t.route
+                if (t.route == "studio") {
+                    Column(Modifier.weight(1f).height(64.dp).clickable(remember { MutableInteractionSource() }, null) { onSelect(t.route) },
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                        Text(t.label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = if (on) b.goldInk else b.muted, maxLines = 1, modifier = Modifier.padding(bottom = 4.dp))
+                    }
+                } else {
+                    val tint by animateColorAsState(if (on) b.primaryInk else b.muted, tween(220), label = "tabTint")
+                    val pill by animateColorAsState(if (on) b.green.copy(alpha = if (b.dark) 0.28f else 0.14f) else Color.Transparent, tween(220), label = "tabPill")
+                    val w by animateDpAsState(if (on) 58.dp else 40.dp, spring(dampingRatio = 0.7f, stiffness = 500f), label = "tabW")
+                    Column(
+                        Modifier.weight(1f).height(64.dp).clip(RoundedCornerShape(20.dp))
+                            .clickable { onSelect(t.route) }.semantics { selected = on; role = Role.Tab },
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box(Modifier.width(w).height(32.dp).clip(RoundedCornerShape(16.dp)).background(pill), contentAlignment = Alignment.Center) {
+                            Icon(if (on) t.selectedIcon else t.icon, null, tint = tint, modifier = Modifier.size(24.dp))
+                        }
+                        Text(t.label, style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.Medium),
+                            color = tint, maxLines = 1, modifier = Modifier.padding(top = 3.dp))
+                    }
+                }
             }
         }
+        // The raised create button.
+        val on = route == "studio"
+        val scale by animateFloatAsState(if (on) 1.06f else 1f, spring(dampingRatio = 0.6f), label = "fab")
+        Box(
+            Modifier.align(Alignment.TopCenter).size(60.dp).graphicsLayer { scaleX = scale; scaleY = scale }
+                .softShadow(androidx.compose.foundation.shape.CircleShape, 16.dp, Color(0xFF8A6A1F).copy(alpha = 0.35f), DpOffset(0.dp, 6.dp))
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Brush.linearGradient(listOf(Color(0xFFE3CB8E), Color(0xFFC3A66B), Color(0xFFA9893F))))
+                .border(3.dp, b.surface, androidx.compose.foundation.shape.CircleShape)
+                .clickable { onSelect("studio") }.semantics { selected = on; role = Role.Tab; contentDescription = "اصنع" },
+            contentAlignment = Alignment.Center,
+        ) { Icon(if (on) Icons.Filled.SmartDisplay else Icons.Outlined.SmartDisplay, null, tint = Color(0xFF102D27), modifier = Modifier.size(28.dp)) }
     }
 }
 
