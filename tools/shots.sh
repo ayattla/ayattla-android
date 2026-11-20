@@ -28,7 +28,7 @@ shot() {
   echo "$1 $(stat -c %s shots/$1.png) bytes"
 }
 shot 00-intro-a intro 0.2
-shot 00-intro-b intro 0.8
+shot 00-intro-b intro 2
 shot 01-home home 9
 shot 02-quran quran
 shot 03-reader-baqara-255 reader/2/255

@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -110,39 +114,28 @@ private fun DrawScope.trace(path: Path, t: Float, brush: Brush, width: Float, al
 @Composable
 fun IntroOverlay(force: Boolean = false, onDone: () -> Unit) {
     val ctx = LocalContext.current
-    val ring = remember { Animatable(0f) }
-    val star = remember { Animatable(0f) }
-    val rays = remember { Animatable(0f) }
-    val bloom = remember { Animatable(0f) }
-    val book = remember { Animatable(0f) }
-    val sheen = remember { Animatable(-0.4f) }
-    val word = remember { Animatable(0f) }
-    val tag = remember { Animatable(0f) }
-    val exit = remember { Animatable(0f) }
-    val drift = remember { Animatable(0f) }
-
+    // One clock drives every element (real time from frame timestamps), so the sequence is exact and
+    // does not depend on the system animation scale.
+    var elapsed by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         val scale = runCatching { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }.getOrDefault(1f)
         if (scale == 0f && !force) { onDone(); return@LaunchedEffect }
-        coroutineScope {
-            val d = async { drift.animateTo(1f, tween(3200, easing = LinearEasing)) }
-            val steps = listOf(
-                async { ring.animateTo(1f, tween(700, easing = EaseInOut)) },
-                async { delay(120); star.animateTo(1f, tween(900, easing = EaseInOut)) },
-                async { delay(420); rays.animateTo(1f, tween(700, easing = EaseOut)) },
-                async { delay(300); bloom.animateTo(1f, tween(1100, easing = EaseOut)) },
-                async { delay(640); book.animateTo(1f, tween(800, easing = EaseOut)) },
-                async { delay(1150); sheen.animateTo(1.4f, tween(750, easing = EaseInOut)) },
-                async { delay(1050); word.animateTo(1f, tween(650, easing = EaseOut)) },
-                async { delay(1450); tag.animateTo(1f, tween(500, easing = EaseOut)) },
-            )
-            steps.forEach { it.await() }
-            delay(420)
-            exit.animateTo(1f, tween(420, easing = EaseInOut))
-            d.cancel()
-        }
-        onDone()
+        val start = withFrameNanos { it }
+        val end = if (force) 2300f else 2800f   // the debug screen holds the final frame
+        while (elapsed < end) { elapsed = (withFrameNanos { it } - start) / 1_000_000f }
+        if (!force) onDone()
     }
+    fun seg(from: Float, dur: Float, easing: androidx.compose.animation.core.Easing) = easing.transform(((elapsed - from) / dur).coerceIn(0f, 1f))
+    val ring = object { val value = seg(0f, 700f, EaseInOut) }
+    val star = object { val value = seg(120f, 900f, EaseInOut) }
+    val rays = object { val value = seg(420f, 700f, EaseOut) }
+    val bloom = object { val value = seg(300f, 1100f, EaseOut) }
+    val book = object { val value = seg(640f, 800f, EaseOut) }
+    val sheen = object { val value = -0.4f + 1.8f * seg(1150f, 750f, EaseInOut) }
+    val word = object { val value = seg(1050f, 650f, EaseOut) }
+    val tag = object { val value = seg(1450f, 500f, EaseOut) }
+    val exit = object { val value = seg(2370f, 420f, EaseInOut) }
+    val drift = object { val value = elapsed / 3200f }
 
     Box(
         Modifier.fillMaxSize()
