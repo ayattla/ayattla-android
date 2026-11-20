@@ -2,6 +2,8 @@ package com.ayattla.app.screens
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CurrencyBitcoin
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AutoStories
@@ -94,6 +96,8 @@ data class SiteTool(
             SiteTool("group-khatma", "الختمة الجماعية", "الختمة الجماعية", "وزع الأجزاء على المجموعة برابط واحد", Icons.Outlined.Groups, ToolGroup.Quran, true, "khatma"),
             SiteTool("qada-salah", "متتبع قضاء الصلوات", "قضاء الصلوات", "عداد لكل صلاة وخطة يومية", Icons.Outlined.Checklist, ToolGroup.Daily, true, "qada"),
             SiteTool("sawm-tracker", "متتبع الصيام", "متتبع الصيام", "قضاء رمضان والتطوع على تقويم هجري وميلادي", Icons.Outlined.DarkMode, ToolGroup.Daily, true, "sawm"),
+            SiteTool("kaffarah", "حاسبة الكفارات", "الكفارات", "كفارة اليمين وفدية الصيام وكفارة رمضان مع الدليل", Icons.Outlined.Calculate, ToolGroup.Daily, true, "kaffarah"),
+            SiteTool("crypto-zakat", "زكاة العملات الرقمية", "زكاة الرقمية", "قيمة عملاتك مقابل نصاب الذهب وربع العشر", Icons.Outlined.CurrencyBitcoin, ToolGroup.Daily, true, "crypto-zakat"),
             SiteTool("nearby-mosques", "المساجد القريبة", "المساجد القريبة", "أقرب المساجد مع المسافة والاتجاهات", Icons.Outlined.Place, ToolGroup.Daily, true, "mosques"),
         )
 
