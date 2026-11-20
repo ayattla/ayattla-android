@@ -195,3 +195,25 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash tools/launch-test.sh
+
+  # After the checks pass on main: the APK as a public «preview» release, to install and review on a phone.
+  preview:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build, screenshots]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: ayattla-android-${{ github.run_number }}
+          path: out
+      - name: Publish the preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk=$(ls out/apk/release/*.apk 2>/dev/null | head -1); [ -n "$apk" ] || apk=$(ls out/apk/debug/*.apk | head -1)
+          cp "$apk" ayattla-preview.apk
+          gh release delete preview --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create preview ayattla-preview.apk --repo "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" \
+            --title "نسخة المعاينة" --notes "آخر نسخة من الفرع الرئيسي بعد نجاح الفحوص ($(date -u +%F))."

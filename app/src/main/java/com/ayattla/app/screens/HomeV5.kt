@@ -65,6 +65,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.Mosque
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -117,8 +126,9 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), Quick("الوصول السريع"), Continue("تابع من حيث توقفت"), Wird("الورد والختمة"),
-    Azkar("أذكار اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Occasion("المناسبات"), Ayah("آية اليوم"),
+    Prayer("الصلاة القادمة"), Tracker("صلواتي اليوم"), Quick("الوصول السريع"), Services("خدمات المسلم"),
+    Continue("تابع من حيث توقفت"), Wird("الورد والختمة"), Azkar("أذكار اليوم"), Dhikr("الذكر السريع"),
+    Quiz("مسابقة اليوم"), Tools("أدواتي"), Occasion("المناسبات"), Ayah("آية اليوم"),
     Create("صناعة المحتوى"), Gallery("معرض الخلفيات"), All("كل الأدوات"),
 }
 
@@ -193,6 +203,9 @@ private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: L
     when (s) {
         HomeSection.Prayer -> PrayerHero(nav)
         HomeSection.Quick -> QuickActions(nav)
+        HomeSection.Tracker -> PrayerTracker()
+        HomeSection.Services -> MuslimServices(nav)
+        HomeSection.Dhikr -> QuickDhikr(nav)
         HomeSection.Continue -> ContinueStrip(nav)
         HomeSection.Wird -> WirdCard(nav)
         HomeSection.Azkar -> AzkarStatus(nav)
@@ -700,6 +713,138 @@ private fun HomeCustomizeSheet(
                 SiteTool.all.forEach { t ->
                     val on = t.id in pinned
                     Chip(t.short, on, { onChange(layout, if (on) pinned - t.id else (pinned + t.id).take(8)) })
+                }
+            }
+        }
+    }
+}
+
+// ───────────── Today's prayers tracker ─────────────
+
+/** «صلواتي اليوم»: tick each prayer once prayed; a 7-day dot strip shows the week. On the device only. */
+@Composable
+private fun PrayerTracker() {
+    val b = LocalBrand.current
+    val ctx = LocalContext.current
+    val sp = remember { ctx.getSharedPreferences("prayer.tracker", Context.MODE_PRIVATE) }
+    val today = LocalDate.now()
+    val five = listOf(Prayer.Fajr, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha)
+    fun key(d: LocalDate) = "d.$d"
+    var done by remember { mutableStateOf(sp.getStringSet(key(today), emptySet()).orEmpty()) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("صلواتي اليوم")
+        Column(Modifier.fillMaxWidth().surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                five.forEach { p ->
+                    val on = p.name in done
+                    val bg by animateColorAsState(if (on) b.green else b.surface2, tween(220), label = "pt")
+                    Column(
+                        Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(bg)
+                            .border(1.dp, if (on) b.green else b.line, RoundedCornerShape(14.dp))
+                            .clickable {
+                                done = if (on) done - p.name else done + p.name
+                                sp.edit().putStringSet(key(today), done).apply()
+                                vibrate(ctx)
+                            }
+                            .padding(vertical = 10.dp)
+                            .semantics { contentDescription = "${p.title} ${if (on) "صليت" else "لم تسجل"}" },
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(Icons.Filled.Check, null, tint = if (on) Color.White else b.line, modifier = Modifier.size(18.dp))
+                        Text(p.title, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = if (on) Color.White else b.ink, maxLines = 1)
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("${done.size} من 5 اليوم", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.weight(1f))
+                (6 downTo 0).forEach { i ->
+                    val d = today.minusDays(i.toLong())
+                    val n = if (i == 0) done.size else sp.getStringSet(key(d), emptySet()).orEmpty().size
+                    Box(
+                        Modifier.padding(start = 5.dp).size(12.dp).clip(CircleShape)
+                            .background(if (n >= 5) b.green else if (n > 0) b.green.copy(alpha = 0.35f) else b.tint),
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ───────────── Muslim services ─────────────
+
+@Composable
+private fun MuslimServices(nav: NavHostController) {
+    val b = LocalBrand.current
+    data class S(val title: String, val icon: ImageVector, val tile: Int, val route: String)
+    val items = listOf(
+        S("القبلة", Icons.Outlined.Explore, 0, "qibla"),
+        S("المساجد", Icons.Outlined.Mosque, 1, "mosques"),
+        S("الإذاعات", Icons.Outlined.Radio, 2, "radios"),
+        S("الأدعية", Icons.Outlined.VolunteerActivism, 3, "duas"),
+        S("الرقية", Icons.Outlined.Shield, 4, "ruqya"),
+        S("الهجري", Icons.Outlined.CalendarMonth, 5, "hijri"),
+        S("الزكاة", Icons.Outlined.Calculate, 0, "zakat"),
+        S("الأطفال", Icons.Outlined.ChildCare, 1, "kids"),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("خدمات المسلم", "المزيد") { nav.goTab("more") }
+        Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            items.chunked(4).forEach { row ->
+                Row(Modifier.fillMaxWidth()) {
+                    row.forEach { s ->
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { nav.navigate(s.route) }.padding(vertical = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            IconTile(s.icon, style = TileStyle.Gradient(s.tile), size = 46.dp)
+                            Text(s.title, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ───────────── Quick dhikr ─────────────
+
+/** A small tasbih right on the home page; shares its counts with «المسبحة». */
+@Composable
+private fun QuickDhikr(nav: NavHostController) {
+    val b = LocalBrand.current
+    val ctx = LocalContext.current
+    val content = LocalContent.current
+    val prefs = LocalPrefs.current
+    val phrases = content.tasbihPhrases
+    var phrase by remember { mutableStateOf(phrases.first()) }
+    var count by remember(phrase) { mutableIntStateOf(prefs.tasbihCount(phrase)) }
+    val pulse by animateFloatAsState(if (count % 2 == 0) 1f else 0.97f, tween(120), label = "dhikr")
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("الذكر السريع", "المسبحة") { nav.navigate("tasbih") }
+        Row(
+            Modifier.fillMaxWidth().surface(b).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                Modifier.size(96.dp).graphicsLayer { scaleX = pulse; scaleY = pulse }.clip(CircleShape)
+                    .background(Brush.linearGradient(listOf(Color(0xFF2E9145), Color(0xFF102D27))))
+                    .clickable {
+                        count += 1; prefs.setTasbihCount(phrase, count)
+                        vibrate(ctx, strong = count % 33 == 0)
+                    }
+                    .semantics { contentDescription = "سبّح: $phrase، العدد $count" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("$count", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(phrase, fontFamily = Fonts.naskh, fontSize = 20.sp, color = b.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                LinearProgressIndicator(
+                    progress = { (count % 33) / 33f }, modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
+                    color = b.accent, trackColor = b.tint, drawStopIndicator = {}, gapSize = 0.dp,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    phrases.take(4).forEach { p -> Chip(p, p == phrase, { phrase = p }) }
                 }
             }
         }

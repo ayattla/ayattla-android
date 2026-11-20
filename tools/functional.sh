@@ -191,6 +191,8 @@ open quran; scrollAll; alive && ok "فهرس السور: التمرير" || bad 
 # ── Home v5 and the unified search.
 open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; scrollAll
 $UI tap "تخصيص الرئيسية"; sleep 2; expect "الرئيسية: التخصيص" "إعادة الترتيب الافتراضي" 5; shot home-customize; adb shell input keyevent 4
+open home; $UI tap "الفجر" && alive && ok "الرئيسية: صلواتي اليوم" || bad "الرئيسية: صلواتي اليوم"
+open settings; expect "الإعدادات: الافتتاحية" "الافتتاحية عند فتح التطبيق" 5
 open search; $UI field 0; typeAr "الكهف"; sleep 3; expect "البحث الشامل: نتائج" "سورة الكهف" 6; shot search
 
 echo "النتيجة: $(grep -c '^✓' "$OUT") نجحت، $FAIL فشلت" | tee -a "$OUT"
