@@ -542,10 +542,13 @@ private fun LayersSection(p: Project, onMedia: Boolean, set: (Style) -> Unit) {
         ColorRow(s.ref.color) { set(s.copy(ref = s.ref.copy(color = it))) }
     }
     SwitchRow("العلامة المائية «آيات تتلى»", s.watermark) { set(s.copy(watermark = it)) }
-    SwitchRow("الإطار الذهبي", s.frame) { set(s.copy(frame = it)) }
+    Text("الزخرفة والإطار", style = MaterialTheme.typography.bodyMedium, color = b.ink)
+    OrnamentPicker(if (s.frame) s.ornament else Ornament.None, if (onMedia) CardStyle.Night else s.colors) { o ->
+        set(if (o == Ornament.None) s.copy(frame = false) else s.copy(frame = true, ornament = o))
+    }
     if (!onMedia) {
         Text("ألوان الخلفية", style = MaterialTheme.typography.bodyMedium, color = b.ink)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { CardStyle.entries.forEach { st -> Chip(st.label, st == s.colors, { set(s.copy(colors = st)) }) } }
+        PalettePicker(s.colors) { set(s.copy(colors = it)) }
     }
 }
 
@@ -600,9 +603,7 @@ private fun TemplatesSection(current: Style, apply: (Style) -> Unit) {
     var mine by remember { mutableStateOf(TemplateStore.mine(ctx)) }
     var name by remember { mutableStateOf("") }
     Text("قوالب جاهزة", style = MaterialTheme.typography.bodyMedium, color = b.ink)
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        TemplateStore.builtIn.forEach { t -> Chip(t.name, t.style == current, { apply(t.style) }) }
-    }
+    TemplatePicker(TemplateStore.builtIn, current, apply)
     Text("قوالبي", style = MaterialTheme.typography.bodyMedium, color = b.ink)
     if (mine.isEmpty()) Text("لا قوالب بعد. صمم ثم احفظ التصميم باسم.", style = MaterialTheme.typography.bodySmall, color = b.muted)
     mine.forEach { t ->

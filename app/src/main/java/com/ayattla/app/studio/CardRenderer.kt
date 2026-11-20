@@ -37,6 +37,15 @@ enum class CardStyle(val label: String, val top: Int, val bottom: Int, val text:
     Emerald("زمردي", 0xFF17392F.toInt(), 0xFF0B211C.toInt(), 0xFFF6F2E9.toInt(), 0xFFC3A66B.toInt()),
     Ivory("عاجي", 0xFFFBF8F1.toInt(), 0xFFEFE9DC.toInt(), 0xFF202823.toInt(), 0xFF7A5F28.toInt()),
     Night("ليلي", 0xFF14202B.toInt(), 0xFF070C12.toInt(), 0xFFEDE7DA.toInt(), 0xFFD9C28E.toInt()),
+    Royal("ملكي", 0xFF1B2A5C.toInt(), 0xFF0B1230.toInt(), 0xFFF3EEDF.toInt(), 0xFFE0C27A.toInt()),
+    Burgundy("عنابي", 0xFF5A1A2B.toInt(), 0xFF2A0A14.toInt(), 0xFFF7EDE4.toInt(), 0xFFE2C07C.toInt()),
+    Violet("رمضاني", 0xFF3A2160.toInt(), 0xFF170B2E.toInt(), 0xFFF4EEFB.toInt(), 0xFFF0CF83.toInt()),
+    Teal("فيروزي", 0xFF0F5A5E.toInt(), 0xFF06292C.toInt(), 0xFFEFF8F6.toInt(), 0xFFE6C77E.toInt()),
+    Sand("رملي", 0xFFF2E6CF.toInt(), 0xFFDCC7A1.toInt(), 0xFF3B2A14.toInt(), 0xFF8A5E1E.toInt()),
+    Blush("وردي", 0xFFFBEDEC.toInt(), 0xFFF1D3D1.toInt(), 0xFF4A2730.toInt(), 0xFFA8794A.toInt()),
+    Sky("سماوي", 0xFFEAF4FA.toInt(), 0xFFCFE3F0.toInt(), 0xFF173248.toInt(), 0xFF8E6C2C.toInt()),
+    Olive("زيتوني", 0xFF3E4A1F.toInt(), 0xFF1C230C.toInt(), 0xFFF4F1E2.toInt(), 0xFFD9BE74.toInt()),
+    Charcoal("فحمي", 0xFF2A2A2E.toInt(), 0xFF0E0E10.toInt(), 0xFFF2EFE8.toInt(), 0xFFCBAE6E.toInt()),
 }
 
 /** Draws an ayah card: Quran text exactly as in the pack, Amiri Quran, centered, auto-fitted. */
@@ -54,9 +63,10 @@ object CardRenderer {
     fun renderText(
         context: Context, text: String, reference: String, ratio: CardRatio, style0: CardStyle,
         photo: Bitmap? = null, overlay: Boolean = false, naskh: Boolean = false, footer: String? = null,
+        ornament: Ornament = Ornament.Classic, header: String? = null, keepStyleOnPhoto: Boolean = false,
     ): Bitmap {
         val onPhoto = photo != null || overlay
-        val style = if (onPhoto) OnPhoto else style0
+        val style = if (onPhoto && !keepStyleOnPhoto) OnPhoto else style0
         val bmp = Bitmap.createBitmap(ratio.w, ratio.h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val w = ratio.w.toFloat()
@@ -69,13 +79,21 @@ object CardRenderer {
             c.drawRect(0f, 0f, w, h, Paint().apply { shader = LinearGradient(0f, 0f, w * 0.3f, h, style.top, style.bottom, Shader.TileMode.CLAMP) })
         }
 
-        // Gold frame, like the site's emerald panel.
-        val frame = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.style = Paint.Style.STROKE; strokeWidth = 3f; color = withAlpha(style.accent, 150) }
-        c.drawRoundRect(RectF(36f, 36f, w - 36f, h - 36f), 40f, 40f, frame)
-        c.drawRoundRect(RectF(52f, 52f, w - 52f, h - 52f), 30f, 30f, frame.apply { strokeWidth = 1.5f; color = withAlpha(style.accent, 80) })
+        // Decoration (the gold frame by default, like the site's emerald panel).
+        Ornaments.draw(c, w, h, 1f, style.accent, ornament)
 
         val quran = ResourcesCompat.getFont(context, if (naskh) R.font.amiri else R.font.amiri_quran) ?: Typeface.SERIF
         val ui = ResourcesCompat.getFont(context, R.font.plex_semibold) ?: Typeface.DEFAULT_BOLD
+        // Optional occasion name at the top (e.g. «يوم الجمعة»), never a phrase of worship.
+        if (!header.isNullOrBlank() && ratio != CardRatio.Wide) {
+            val hp = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = ui; color = style.accent; textSize = 44f; textAlign = Paint.Align.CENTER
+                if (onPhoto) setShadowLayer(10f, 0f, 2f, Color.argb(140, 0, 0, 0)) }
+            val y = if (ratio == CardRatio.Story) 250f else 170f
+            c.drawText(header, w / 2, y, hp)
+            val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = withAlpha(style.accent, 150); strokeWidth = 2f }
+            val tw = hp.measureText(header) / 2 + 30f
+            c.drawLine(w / 2 - tw - 90f, y - 14f, w / 2 - tw, y - 14f, lp); c.drawLine(w / 2 + tw, y - 14f, w / 2 + tw + 90f, y - 14f, lp)
+        }
 
         val wide = ratio == CardRatio.Wide
         val padX = if (wide) 90f else 120f

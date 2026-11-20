@@ -195,5 +195,11 @@ open home; $UI tap "الفجر" && alive && ok "الرئيسية: صلواتي �
 open settings; expect "الإعدادات: الافتتاحية" "الافتتاحية عند فتح التطبيق" 5
 open search; $UI field 0; typeAr "الكهف"; sleep 3; expect "البحث الشامل: نتائج" "سورة الكهف" 6; shot search
 
+# ── WhatsApp statuses by occasion.
+open status; expect "الحالات: المناسبات" "المناسبات" 8
+open status/jumuah; expect "الحالات: يوم الجمعة" "صممها حالة" 8
+$UI tap "صممها حالة"; sleep 4; expect "الحالات: محرر البطاقة" "الزخرفة" 8; shot status-card; adb shell input keyevent 4
+open status/marriage; expect "الحالات: الزواج" "صممها حالة" 8
+
 echo "النتيجة: $(grep -c '^✓' "$OUT") نجحت، $FAIL فشلت" | tee -a "$OUT"
 [ "$FAIL" -eq 0 ]

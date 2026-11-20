@@ -294,6 +294,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("ayah-today") { com.ayattla.app.screens.AyahTodayScreen(nav) }
             composable("text-card") { com.ayattla.app.studio.TextCardScreen(nav) }
             composable("status") { com.ayattla.app.studio.StatusScreen(nav) }
+            composable("status/{slug}") { e -> com.ayattla.app.studio.StatusOccasionScreen(nav, e.arguments?.getString("slug").orEmpty()) }
             composable("prayer") { PrayerTimesScreen(nav) }
             composable("qibla") { QiblaScreen(nav) }
             composable("hijri") { HijriScreen(nav) }

@@ -28,6 +28,14 @@ for slug in $(sed -n '/<nav class="tools"/,/<\/nav>/p' "$SRC/ayat.html" | grep -
   get "https://ayattla.com/ayat/$slug" "$SRC/ayat/$slug.html"
 done
 echo "topics: $(ls "$SRC/ayat" | wc -l)"
+# WhatsApp statuses by occasion: the list page, then each occasion page it links to.
+get https://ayattla.com/status/ "$SRC/status.html"
+rm -rf "$SRC/status"; mkdir -p "$SRC/status"
+for slug in $(grep -o 'href="/status/[a-z0-9-]\+"' "$SRC/status.html" | sed 's|href="/status/||;s|"||' | sort -u); do
+  [ "$slug" = editor ] && continue
+  get "https://ayattla.com/status/$slug" "$SRC/status/$slug.html" || echo "status $slug failed"
+done
+echo "status pages: $(ls "$SRC/status" | wc -l)"
 get "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&tatweel=false&quranType=uthmani&outType=txt-2&agree=true" "$SRC/tanzil.txt" || echo "tanzil download failed"
 
 echo "== pack"
@@ -35,7 +43,7 @@ rm -f app/src/main/assets/content-v1.sqlite
 python3 tools/content/normalize_azkar.py "$SRC/azkar-db/azkar.json" --source "osamayy/azkar-db@$AZ" --out "$SRC/azkar.json"
 python3 tools/content/build_content_pack.py --version 1 --quran "$SRC/quran-uthmani.json" --azkar "$SRC/azkar.json" \
   --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" \
-  --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --ruqya "$SRC/ruqya.json" --asma-html "$SRC/asma.html" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --out app/src/main/assets/content-v1.sqlite
+  --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --ruqya "$SRC/ruqya.json" --asma-html "$SRC/asma.html" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --status-html "$SRC/status.html" --status-dir "$SRC/status" --out app/src/main/assets/content-v1.sqlite
 python3 - <<'PY'
 import sqlite3
 db = sqlite3.connect("app/src/main/assets/content-v1.sqlite")
@@ -44,9 +52,9 @@ n = q("select count(*) from ayah")
 print("surahs", q("select count(*) from surah"), "ayat", n, "reciters", q("select count(*) from reciter"),
       "azkar", q("select count(*) from azkar"), "categories", q("select count(*) from azkar_category"))
 import json
-for k in ("topics", "duas", "prayer_guide"):
+for k in ("topics", "status", "duas", "prayer_guide"):
     r = db.execute("select value from meta where key=?", (k,)).fetchone()
-    print(k, "missing" if not r else len(json.loads(r[0]) if k == "topics" else r[0]))
+    print(k, "missing" if not r else len(json.loads(r[0]) if k in ("topics", "status") else r[0]))
 assert n == 6236, n
 PY
 if [ -s "$SRC/tanzil.txt" ]; then python3 tools/content/compare_tanzil.py app/src/main/assets/content-v1.sqlite "$SRC/tanzil.txt"; fi

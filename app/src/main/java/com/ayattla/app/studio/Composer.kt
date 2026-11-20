@@ -63,11 +63,7 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
                 shader = LinearGradient(0f, 0f, 0f, h.toFloat(), Color.argb((a * 0.65f).toInt(), 0, 0, 0), Color.argb(a, 0, 0, 0), Shader.TileMode.CLAMP)
             })
         }
-        if (style.frame) {
-            val frame = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.style = Paint.Style.STROKE; strokeWidth = 3f * k; color = alpha(palette.accent, 150) }
-            c.drawRoundRect(RectF(36f * k, 36f * k, w - 36f * k, h - 36f * k), 40f * k, 40f * k, frame)
-            c.drawRoundRect(RectF(52f * k, 52f * k, w - 52f * k, h - 52f * k), 30f * k, 30f * k, frame.apply { strokeWidth = 1.5f * k; color = alpha(palette.accent, 80) })
-        }
+        if (style.frame) Ornaments.draw(c, w.toFloat(), h.toFloat(), k, palette.accent, style.ornament)
         if (style.watermark) {
             val p = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = ui; color = alpha(textColor, 150); textSize = 30f * k; textAlign = Paint.Align.CENTER }
             c.drawText("آيات تتلى · ayattla.com", w / 2f, h - 110f * k * (h / (w * 1f)).coerceAtMost(1.4f), p)
