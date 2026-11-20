@@ -672,12 +672,14 @@ private fun HomeCustomizeSheet(
     onChange: (List<Pair<HomeSection, Boolean>>, List<String>) -> Unit, onReset: () -> Unit, onDismiss: () -> Unit,
 ) {
     val b = LocalBrand.current
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = b.background) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = b.background, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth()) {
                 Text("تخصيص الرئيسية", style = MaterialTheme.typography.titleLarge, color = b.ink, modifier = Modifier.align(Alignment.Center))
                 IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterEnd)) { Icon(Icons.Outlined.Close, "إغلاق", tint = b.muted) }
             }
+            Text("إعادة الترتيب الافتراضي", style = MaterialTheme.typography.labelLarge, color = b.goldInk,
+                modifier = Modifier.align(Alignment.CenterHorizontally).clip(CircleShape).clickable(onClick = onReset).padding(10.dp))
             Text("الأقسام", style = MaterialTheme.typography.labelLarge, color = b.muted)
             Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 4.dp)) {
                 layout.forEachIndexed { i, (s, on) ->
@@ -700,8 +702,6 @@ private fun HomeCustomizeSheet(
                     Chip(t.short, on, { onChange(layout, if (on) pinned - t.id else (pinned + t.id).take(8)) })
                 }
             }
-            Text("إعادة الترتيب الافتراضي", style = MaterialTheme.typography.labelLarge, color = b.goldInk,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp).clip(CircleShape).clickable(onClick = onReset).padding(10.dp))
         }
     }
 }
