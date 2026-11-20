@@ -413,6 +413,17 @@ fun SettingsScreen(nav: NavHostController) {
                 Chip("حسب الجهاز", prefs.themeMode == ThemeMode.System, { prefs.setTheme(ThemeMode.System) })
                 Chip("داكن", prefs.themeMode == ThemeMode.Dark, { prefs.setTheme(ThemeMode.Dark) })
             }
+            val sctx = androidx.compose.ui.platform.LocalContext.current
+            var introOn by remember { mutableStateOf(com.ayattla.app.ui.components.IntroPrefs.enabled(sctx)) }
+            AppCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("الافتتاحية عند فتح التطبيق", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                        Text("حركة الشعار القصيرة في بداية كل تشغيل", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                    }
+                    androidx.compose.material3.Switch(introOn, { introOn = it; com.ayattla.app.ui.components.IntroPrefs.setEnabled(sctx, it) })
+                }
+            }
             Text("التنبيهات", style = MaterialTheme.typography.titleMedium, color = b.ink)
             AppCard(onClick = { nav.navigate("notifications") }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
