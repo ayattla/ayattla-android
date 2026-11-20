@@ -62,37 +62,32 @@ fun MushafScreen(nav: NavHostController, startPage: Int) {
         HorizontalPager(state = pager, modifier = Modifier.weight(1f), beyondViewportPageCount = 1, key = { it }) { index ->
             val page = index + 1
             val ayat = remember(page) { content.page(page) }
-            Column(
-                Modifier.fillMaxSize().padding(12.dp)
-                    .border(1.dp, b.accent.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                    .background(b.surface, RoundedCornerShape(14.dp))
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-            ) {
-                ayat.groupBy { it.surah }.forEach { (s, list) ->
-                    val surah = content.surah(s)
-                    if (list.first().ayah == 1) {
-                        Text(
-                            surah.nameAr, fontFamily = Fonts.quran, fontSize = 24.sp, color = b.primaryInk, textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).background(b.goldSoft, RoundedCornerShape(10.dp)).padding(vertical = 4.dp),
-                        )
-                        if (surah.hasBasmala) Text(
-                            content.ayah(1, 1)?.text.orEmpty(), fontFamily = Fonts.quran, fontSize = 22.sp, color = b.ink,
-                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                        )
-                    }
-                    val text = buildAnnotatedString {
-                        list.forEachIndexed { i, a ->
-                            val playing = Recitation.current == a.key
-                            withStyle(SpanStyle(background = if (playing) b.tint else androidx.compose.ui.graphics.Color.Transparent)) { append(a.text) }
-                            withStyle(SpanStyle(color = b.goldInk)) { append(" " + Num.ayahMark(a.ayah)) }
-                            if (i < list.size - 1) append(" ")
+            val head = ayat.firstOrNull()
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)) {
+                MushafFrame(head?.let { content.surah(it.surah).shortName } ?: "", head?.juz, page) {
+                    // Surahs on the same page are separated by their own titles.
+                    ayat.groupBy { it.surah }.forEach { (s, list) ->
+                        val surah = content.surah(s)
+                        if (list.first().ayah == 1) {
+                            SurahBanner(surah)
+                            if (surah.hasBasmala) Text(
+                                content.ayah(1, 1)?.text.orEmpty(), fontFamily = Fonts.quran, fontSize = 22.sp, color = MushafColors.ink(),
+                                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                            )
                         }
+                        val text = buildAnnotatedString {
+                            list.forEachIndexed { i, a ->
+                                val playing = Recitation.current == a.key
+                                withStyle(SpanStyle(background = if (playing) b.tint else androidx.compose.ui.graphics.Color.Transparent)) { append(a.text) }
+                                withStyle(SpanStyle(color = b.goldInk)) { append(" " + Num.ayahMark(a.ayah)) }
+                                if (i < list.size - 1) append(" ")
+                            }
+                        }
+                        Text(
+                            text, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize - 2).sp, lineHeight = ((prefs.quranFontSize - 2) * 1.95f).sp,
+                            color = MushafColors.ink(), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        )
                     }
-                    Text(
-                        text, fontFamily = Fonts.quran, fontSize = (prefs.quranFontSize - 2).sp, lineHeight = ((prefs.quranFontSize - 2) * 1.95f).sp,
-                        color = b.ink, textAlign = TextAlign.Justify, modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             }
         }
