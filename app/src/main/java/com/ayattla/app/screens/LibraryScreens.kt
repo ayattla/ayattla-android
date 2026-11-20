@@ -267,7 +267,7 @@ fun DuasScreen(nav: NavHostController) {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (duas.quran.isNotEmpty()) item {
                     AppCard(onClick = { need = Int.MAX_VALUE }) {
-                        Text("أدعية من القرآن", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                        Text("أدعية من القرآن", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                         Text("${duas.quran.size} دعاء بالرسم العثماني", style = MaterialTheme.typography.bodySmall, color = b.muted)
                     }
                 }
@@ -356,7 +356,7 @@ fun KhatmaScreen(nav: NavHostController) {
         }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (plan == null) {
-                Text("مدة الختمة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("مدة الختمة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 FlowChips(KhatmaPlan.presets.map { "$it يومًا" }, "$days يومًا") { days = it.substringBefore(" ").toInt() }
                 AppCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -400,14 +400,14 @@ fun KhatmaScreen(nav: NavHostController) {
                         prefs.saveKhatma(plan.copy(completedDays = if (doneToday) plan.completedDays - today else plan.completedDays + today).encode())
                     }, modifier = Modifier.fillMaxWidth()) { Text(if (doneToday) "أتممت ورد اليوم ✓ (تراجع)" else "أتممت ورد اليوم", color = b.primaryInk) }
                     AppCard {
-                        Text("مقسّمًا على الصلوات", style = MaterialTheme.typography.titleSmall, color = b.ink)
+                        Text("مقسّمًا على الصلوات", style = MaterialTheme.typography.titleSmall, color = b.ink, modifier = Modifier.fillMaxWidth())
                         val names = listOf("بعد الفجر", "بعد الظهر", "بعد العصر", "بعد المغرب", "بعد العشاء")
                         KhatmaPlan.splitOverPrayers(r).forEachIndexed { i, part ->
                             if (part != null) Text("${names[i]}: صفحات ${part.first} - ${part.last}", style = MaterialTheme.typography.bodyMedium, color = b.muted, modifier = Modifier.padding(top = 4.dp))
                         }
                     }
                 }
-                Text("الأيام", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("الأيام", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 AppCard(padding = 4.dp) {
                     (1..plan.days).forEach { d ->
                         val done = d in plan.completedDays

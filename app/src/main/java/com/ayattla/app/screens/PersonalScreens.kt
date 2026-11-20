@@ -68,7 +68,7 @@ fun NoteSheet(key: String, title: String, onDismiss: () -> Unit) {
     var tag by remember { mutableStateOf(old?.tag.orEmpty()) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = b.background) {
         Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("ملاحظة تدبر · $title", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("ملاحظة تدبر · $title", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Box(Modifier.fillMaxWidth().heightIn(min = 120.dp).clip(RoundedCornerShape(12.dp)).background(b.surface2).padding(12.dp)) {
                 if (note.isEmpty()) Text("اكتب ما تدبرته في هذه الآية…", color = b.muted)
                 BasicTextField(note, { note = it.take(2000) }, textStyle = MaterialTheme.typography.bodyLarge.copy(color = b.ink),
@@ -105,7 +105,7 @@ fun HifzPlanScreen(nav: NavHostController) {
             var forward by remember { mutableStateOf(false) }
             var daily by remember { mutableIntStateOf(3) }
             AppCard {
-                Text("ابدأ خطة حفظ", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("ابدأ خطة حفظ", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Text("الترتيب", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.padding(top = 10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip("من سورة الناس صعودا", !forward, { forward = false })
@@ -126,7 +126,7 @@ fun HifzPlanScreen(nav: NavHostController) {
             LinearProgressIndicator(progress = { Hifz.memorisedAyat() / 6236f }, color = b.accent, trackColor = b.tint, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
             Text("مراجعات اليوم: ${due.size} · المقدار اليومي: ${plan.daily} آيات", style = MaterialTheme.typography.bodyMedium, color = b.muted)
         }
-        Text("حفظ اليوم", style = MaterialTheme.typography.titleMedium, color = b.ink)
+        Text("حفظ اليوم", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
         when {
             unit == null -> AppCard { Text("أتممت القرآن كاملا في هذه الخطة. بارك الله فيك.", color = b.ink) }
             Hifz.learnedToday() -> AppCard { Text("أنجزت حفظ اليوم ✓ — المقطع التالي غدا: سورة ${content.surah(unit.surah).shortName} ${unit.from}–${unit.to}", color = b.ink) }
@@ -134,7 +134,7 @@ fun HifzPlanScreen(nav: NavHostController) {
                 BrandButton("حفظته", Modifier.fillMaxWidth(), kind = BtnKind.Gold) { Hifz.learned(content) }
             }
         }
-        Text("المراجعة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+        Text("المراجعة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
         if (due.isEmpty()) Text("لا مراجعة مستحقة اليوم.", style = MaterialTheme.typography.bodyMedium, color = b.muted)
         due.forEach { r ->
             UnitCard(content, r.unit, nav) {
@@ -148,7 +148,7 @@ fun HifzPlanScreen(nav: NavHostController) {
         }
         val upcoming = plan.reviews.filter { it.due > Hifz.today() }.sortedBy { it.due }.take(5)
         if (upcoming.isNotEmpty()) {
-            Text("القادم", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("القادم", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             AppCard {
                 upcoming.forEach { r ->
                     val days = r.due - Hifz.today()

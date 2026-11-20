@@ -359,7 +359,7 @@ fun WordByWordScreen(nav: NavHostController) {
     LazyToolPage(nav, "معاني الكلمات", "word-by-word") {
         block("controls") {
             SurahPicker(surah) { surah = it }
-            Text("لغة المعنى", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("لغة المعنى", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 WordLanguages.forEach { (id, t) -> Chip(t, id == lang, { lang = id }) }
             }
@@ -593,7 +593,7 @@ fun QadaScreen(nav: NavHostController) {
     val daysLeft = if (worst == 0) 0 else (worst + per - 1) / per
     ToolPage(nav, "قضاء الصلوات", "qada-salah") {
         AppCard {
-            Text("عدد الأيام الفائتة تقريبا", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("عدد الأيام الفائتة تقريبا", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 NumberField(days, "مثال: 30", Modifier.weight(1f)) { days = it }
                 BrandButton("أضف للعداد", enabled = (days.toIntOrNull() ?: 0) > 0) {
@@ -617,7 +617,7 @@ fun QadaScreen(nav: NavHostController) {
                 }
             }
         }
-        Text("كم صلاة تقضي يوميا مع كل فرض؟", style = MaterialTheme.typography.titleMedium, color = b.ink)
+        Text("كم صلاة تقضي يوميا مع كل فرض؟", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
         SiteSegmented(listOf(1 to "واحدة", 2 to "اثنتان", 3 to "ثلاث", 5 to "خمس"), per, { save(Triple(left, done, it)) })
         if (daysLeft > 0) Text("بقضاء $per مع كل فرض تنتهي خلال نحو $daysLeft يوما بإذن الله", style = MaterialTheme.typography.bodyLarge, color = b.primaryInk)
         BrandButton(if (confirm) "اضغط مرة أخرى للتصفير" else "تصفير العداد", Modifier.fillMaxWidth(), kind = BtnKind.Secondary, enabled = left.sum() > 0 || done > 0) {
@@ -649,7 +649,7 @@ fun SawmScreen(nav: NavHostController) {
     ToolPage(nav, "متتبع الصيام", "sawm-tracker") {
         Text("القضاء: $qadaDone من $required — التطوع هذا العام: $tat يوما", style = MaterialTheme.typography.titleMedium, color = b.primaryInk)
         AppCard {
-            Text("عدد أيام القضاء المطلوبة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("عدد أيام القضاء المطلوبة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 NumberField(reqText, "$required", Modifier.weight(1f)) { reqText = it }
                 BrandButton("حفظ", kind = BtnKind.Secondary, enabled = reqText.isNotEmpty()) { required = reqText.toIntOrNull() ?: 0; reqText = ""; persist() }
@@ -751,7 +751,7 @@ fun MosquesScreen(nav: NavHostController) {
             }
             else -> if (list.isEmpty()) EmptyState("لا توجد مساجد ضمن $radius كم", if (radius < 5) "جرب نصف قطر أكبر" else "لم تعثر الخرائط على مساجد قريبة")
             else {
-                Text("${list.size} مسجدا ضمن $radius كم", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("${list.size} مسجدا ضمن $radius كم", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 GroupedSection {
                     list.take(60).forEachIndexed { i, m ->
                         GroupedRow(
@@ -853,7 +853,7 @@ fun KidsSurahScreen(nav: NavHostController, surah: Int) {
     val s = content.surah(surah)
     val playing = Recitation.active && Recitation.current?.startsWith("$surah:") == true
     ToolPage(nav, "سورة ${s.shortName}") {
-        Text("تكرار كل آية", style = MaterialTheme.typography.titleMedium, color = b.ink)
+        Text("تكرار كل آية", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
         SiteSegmented(listOf(1 to "مرة", 3 to "3 مرات", 5 to "5 مرات"), repeatEach, { repeatEach = it; sp(ctx).edit().putInt("kids.repeat", it).apply() })
         BrandButton(if (playing) "إيقاف" else "استمع وكرر", Modifier.fillMaxWidth(), icon = if (playing) Icons.Filled.Stop else Icons.Filled.PlayArrow, kind = BtnKind.Dark) {
             if (playing) Recitation.stop() else Recitation.play(ctx, content, reciter, surah, 1, repeatEach = repeatEach)
@@ -908,7 +908,7 @@ fun AyahTodayScreen(nav: NavHostController) {
             prefs.toggleFavorite("${pick.surah}:${pick.from}")
         }
         if (tafsir.isNotEmpty()) AppCard {
-            Text("التفسير الميسر", style = MaterialTheme.typography.titleMedium, color = b.ink)
+            Text("التفسير الميسر", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
             tafsir.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, color = b.ink, modifier = Modifier.padding(top = 6.dp)) }
         }
     }

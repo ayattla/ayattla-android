@@ -420,7 +420,7 @@ private fun WirdCard(nav: NavHostController) {
             ProgressRing(frac, if (plan != null) "${(frac * 100).toInt()}٪" else "—")
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (plan == null) {
-                    Text("لا توجد خطة ختمة", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                    Text("لا توجد خطة ختمة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                     Text("حدد مدة الختمة ويقسمها التطبيق وردا يوميا", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
                     Text("ابدأ خطة", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.padding(top = 4.dp).clickable { nav.navigate("khatma") })
                 } else {

@@ -139,7 +139,7 @@ fun TextCardScreen(nav: NavHostController) {
                 }
             }
             AppCard {
-                Text("التصميم", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("التصميم", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 if (bg == null) {
                     Text("الألوان", style = MaterialTheme.typography.labelLarge, color = b.muted)
@@ -155,7 +155,7 @@ fun TextCardScreen(nav: NavHostController) {
                 }
             }
             AppCard {
-                Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("الخلفية", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
                     Chip("لون وزخرفة", bg == null, { bg = null; touched = true })
@@ -163,7 +163,7 @@ fun TextCardScreen(nav: NavHostController) {
                 BackgroundPicker(bg, allowVideo = false) { bg = it; touched = true }
             }
             AppCard {
-                Text("المقاس", style = MaterialTheme.typography.titleMedium, color = b.ink)
+                Text("المقاس", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                     CardRatio.entries.filter { it != CardRatio.Wide }.forEach { r -> Chip(r.label, r == ratio, { ratio = r }) }
                 }
