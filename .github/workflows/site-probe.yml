@@ -1,0 +1,32 @@
+name: Site probe
+on:
+  push:
+    branches: [site-probe]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Save the site's maker pages and print their text and data
+        shell: bash {0}
+        run: |
+          mkdir p; cd p
+          for u in tools/status tools/ayah-card tools/clip tools/occasions tools/hadith-card tools; do
+            n=$(echo $u | tr / _); curl -sSL -m 30 -A "Mozilla/5.0" "https://ayattla.com/$u" -o $n.html; echo "$u $(wc -c < $n.html)"
+          done
+          python3 - <<'PY'
+          import re,glob,html
+          for f in sorted(glob.glob('*.html')):
+              s=open(f,encoding='utf-8',errors='ignore').read()
+              print('\n=====',f,'=====')
+              # inline JSON-ish arrays with Arabic text
+              for m in re.finditer(r'(const|let|var)\s+(\w+)\s*=\s*(\[[^;]{40,6000}?\]|\{[^;]{40,6000}?\});',s):
+                  if re.search('[؀-ۿ]',m.group(3)): print('JS',m.group(2),':',m.group(3)[:6000].replace('\n',' '))
+              t=re.sub(r'<script.*?</script>|<style.*?</style>','',s,flags=re.S)
+              t=html.unescape(re.sub(r'<[^>]+>','\n',t))
+              lines=[l.strip() for l in t.split('\n') if l.strip()]
+              print('TEXT:',' | '.join(lines)[:8000])
+              print('SCRIPTS:',re.findall(r'<script[^>]+src="([^"]+)"',s))
+          PY
+      - uses: actions/upload-artifact@v7
+        with: { name: pages, path: p }
