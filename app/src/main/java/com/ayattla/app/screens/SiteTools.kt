@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.EventRepeat
@@ -98,6 +99,7 @@ data class SiteTool(
             SiteTool("sawm-tracker", "متتبع الصيام", "متتبع الصيام", "قضاء رمضان والتطوع على تقويم هجري وميلادي", Icons.Outlined.DarkMode, ToolGroup.Daily, true, "sawm"),
             SiteTool("kaffarah", "حاسبة الكفارات", "الكفارات", "كفارة اليمين وفدية الصيام وكفارة رمضان مع الدليل", Icons.Outlined.Calculate, ToolGroup.Daily, true, "kaffarah"),
             SiteTool("crypto-zakat", "زكاة العملات الرقمية", "زكاة الرقمية", "قيمة عملاتك مقابل نصاب الذهب وربع العشر", Icons.Outlined.CurrencyBitcoin, ToolGroup.Daily, true, "crypto-zakat"),
+            SiteTool("offline", "الاستخدام بدون إنترنت", "بدون إنترنت", "ما يعمل بلا اتصال، وتجهيز التطبيق والتلاوات", Icons.Outlined.CloudDone, ToolGroup.Daily, true, "offline"),
             SiteTool("nearby-mosques", "المساجد القريبة", "المساجد القريبة", "أقرب المساجد مع المسافة والاتجاهات", Icons.Outlined.Place, ToolGroup.Daily, true, "mosques"),
         )
 
@@ -120,9 +122,17 @@ object ToolUsage {
     }
 }
 
+/** Offline and the tool needs internet: its tile is shown dimmed with a «cloud off» mark. */
+fun SiteTool.dimmedOffline(): Boolean =
+    !com.ayattla.app.data.Net.isOnline && com.ayattla.app.data.OfflineTools.level(id) == com.ayattla.app.data.OfflineLevel.Online
+
 /** Opens a tool: tab roots switch tabs, the rest push a screen. Counts the use. */
 fun openTool(nav: androidx.navigation.NavHostController, c: Context, t: SiteTool) {
     ToolUsage.record(c, t.id)
+    // Offline, a tool that needs internet opens the offline centre, which says so and offers what works.
+    if (!com.ayattla.app.data.Net.isOnline && com.ayattla.app.data.OfflineTools.level(t.id) == com.ayattla.app.data.OfflineLevel.Online) {
+        nav.navigate("offline?from=${t.id}"); return
+    }
     val r = t.route
     if (r == "home" || r == "quran" || r == "azkar" || r == "more" || r.startsWith("studio")) {
         if (r.startsWith("studio")) nav.navigate(r) { launchSingleTop = true } else nav.goTab(r)

@@ -48,6 +48,10 @@ object Downloads {
             if (f.length() > 1000) return@forEachIndexed
             val done = runCatching {
                 f.parentFile?.mkdirs()
+                // Already heard: copied from the kept file, no download needed.
+                val url = Recitation.url(folder, s, a)
+                if (AudioCache.has(c, url) && AudioCache.copyTo(c, url, f)) return@runCatching
+                if (!com.ayattla.app.data.Net.isOnline) error("offline")
                 val conn = URL(Recitation.url(folder, s, a)).openConnection() as HttpURLConnection
                 conn.connectTimeout = 15_000; conn.readTimeout = 30_000
                 try {

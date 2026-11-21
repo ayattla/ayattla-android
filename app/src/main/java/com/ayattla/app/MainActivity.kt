@@ -172,6 +172,8 @@ class MainActivity : ComponentActivity() {
         if (debuggable && intent.getStringExtra("selftest") == "clip") selfTestClip()
         if (debuggable && intent.getStringExtra("selftest") == "clipvideo") selfTestClip(video = true)
         val startScreen = openTarget(intent) ?: if (debuggable) intent.getStringExtra("screen") else null
+        // Debug builds: «-e offline 1» shows the app as it is without internet (CI screenshots and checks).
+        if (debuggable && intent.getStringExtra("offline") == "1") com.ayattla.app.data.Net.simulateOffline = true
         setContent {
             AyatTheme(app.prefs.themeMode) {
                 CompositionLocalProvider(
@@ -225,7 +227,8 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route?.substringBefore("?")
     val onTab = tabs.any { route == it.route }
-    val inset = if (onTab) (if (Recitation.active) 190.dp else 120.dp) else 0.dp
+    val stripShown = !com.ayattla.app.data.Net.isOnline && !offlineStripClosed.value
+    val inset = if (onTab) (if (Recitation.active) 190.dp else 120.dp) + (if (stripShown) 64.dp else 0.dp) else 0.dp
     Box(Modifier.fillMaxSize().patternedScreen(b)) {
         Column(Modifier.fillMaxSize()) {
           CompositionLocalProvider(LocalBottomInset provides inset) {
@@ -310,6 +313,9 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("duas") { com.ayattla.app.screens.DuasScreen(nav) }
             composable("guide") { com.ayattla.app.screens.GuideScreen(nav) }
             composable("khatma") { com.ayattla.app.screens.KhatmaScreen(nav) }
+            composable("offline?from={from}", arguments = listOf(navArgument("from") { type = NavType.StringType; nullable = true; defaultValue = null })) { e ->
+                com.ayattla.app.screens.OfflineScreen(nav, e.arguments?.getString("from"))
+            }
             composable("kaffarah") { com.ayattla.app.screens.KaffarahScreen(nav) }
             composable("crypto-zakat") { com.ayattla.app.screens.CryptoZakatScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->
@@ -320,9 +326,29 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             if (!onTab && Recitation.active) PlayerBar()
         }
         if (onTab) Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
+            OfflineStrip(route, nav)
             if (Recitation.active) Box(Modifier.padding(horizontal = 12.dp)) { PlayerBar() }
             FloatingTabBar(route) { nav.goTab(it) }
+        } else Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(bottom = if (Recitation.active) 84.dp else 12.dp)) {
+            OfflineStrip(route, nav)
         }
+    }
+}
+
+/** Session flag: the offline strip was closed (it shows again the next time the connection drops). */
+private val offlineStripClosed = androidx.compose.runtime.mutableStateOf(false)
+
+/** «أنت بدون إنترنت» above the tab bar while there is no connection, except in the offline centre itself. */
+@Composable
+private fun OfflineStrip(route: String?, nav: NavHostController) {
+    val offline = !com.ayattla.app.data.Net.isOnline
+    androidx.compose.runtime.LaunchedEffect(offline) { if (!offline) offlineStripClosed.value = false }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = offline && !offlineStripClosed.value && route != "offline",
+        enter = fadeIn(tween(220)) + androidx.compose.animation.expandVertically(),
+        exit = fadeOut(tween(160)) + androidx.compose.animation.shrinkVertically(),
+    ) {
+        com.ayattla.app.ui.components.OfflinePill(Modifier.padding(bottom = 6.dp), onOpen = { nav.navigate("offline") }) { offlineStripClosed.value = true }
     }
 }
 

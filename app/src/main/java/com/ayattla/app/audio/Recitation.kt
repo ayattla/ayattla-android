@@ -56,7 +56,9 @@ object Recitation {
             c.addListener(object : Player.Listener {
                 override fun onEvents(player: Player, events: Player.Events) = sync(player)
                 override fun onPlayerError(e: PlaybackException) {
-                    error = "تعذر تشغيل التلاوة. تحقق من اتصال الإنترنت."
+                    error = if (!com.ayattla.app.data.Net.isOnline)
+                        "هذه الآيات غير محفوظة على جهازك. حمّلها من «التلاوات المحمّلة» لتسمعها بدون إنترنت."
+                    else "تعذر تشغيل التلاوة. تحقق من اتصال الإنترنت."
                 }
             })
             sync(c)

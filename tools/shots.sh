@@ -38,6 +38,7 @@ shot 06-azkar-morning azkar/1
 shot 07-studio 'studio?s=2\&a=255\&b=255' 7
 shot 08-more more
 shot 09-tasbih tasbih
+shot 09b-offline offline 6
 shot 10-prayer prayer
 shot 11-qibla qibla
 shot 12-hijri hijri

@@ -84,7 +84,9 @@ class ClipEngine(private val context: Context, private val content: ContentStore
             onStage(Stage.Downloading(i, parts.size))
             com.ayattla.app.audio.Downloads.local(context, reciter.folder, audio.first, audio.second) ?: run {
                 val f = File(audioDir, "${reciter.folder}_${audio.first}_${audio.second}.mp3")
-                if (!f.exists() || f.length() < 1000) download(Recitation.url(reciter.folder, audio.first, audio.second), f)
+                val url = Recitation.url(reciter.folder, audio.first, audio.second)
+                // Heard before: taken from the kept recitations (works offline); otherwise downloaded and kept.
+                if (!f.exists() || f.length() < 1000) { if (!com.ayattla.app.audio.AudioCache.copyTo(context, url, f)) download(url, f) }
                 f
             }
         }
