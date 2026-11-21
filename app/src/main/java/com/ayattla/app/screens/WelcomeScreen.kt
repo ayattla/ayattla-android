@@ -278,9 +278,9 @@ private fun Hello(onStart: () -> Unit, onEnter: () -> Unit) {
 // ───────────── A question ─────────────
 
 private val titles = mapOf(
-    Step.Uses to ("ما الذي تريد استخدام آيات تتلى من أجله؟" to "اختر ما يهمك، وسنقدّمه لك في الرئيسية"),
+    Step.Uses to ("ما الذي تريد استخدام آيات تتلى من أجله؟" to "اختر ما يهمك، وسنقدمه لك في الرئيسية"),
     Step.Likes to ("ما نوع المحتوى الذي تفضله؟" to "يساعدنا في اقتراح ما يناسبك"),
-    Step.Listen to ("كيف تفضل الاستماع إلى القرآن؟" to "يُستخدم في المصحف المسموع وصانع المقاطع"),
+    Step.Listen to ("كيف تفضل الاستماع إلى القرآن؟" to "يستخدم في المصحف المسموع وصانع المقاطع"),
     Step.Remind to ("ما التذكيرات التي ترغب فيها؟" to "تذكيرات لطيفة، وتستطيع تغييرها في أي وقت"),
     Step.Look to ("كيف تفضل عرض التطبيق؟" to "يتغير المظهر فورا لترى الفرق"),
 )
@@ -307,7 +307,7 @@ private fun Question(
                 }
             }
             Text(
-                "تخطَّ", style = MaterialTheme.typography.titleSmall, color = b.primaryInk,
+                "تخطي", style = MaterialTheme.typography.titleSmall, color = b.primaryInk,
                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onSkip).padding(horizontal = 14.dp, vertical = 12.dp),
             )
         }
@@ -420,7 +420,7 @@ private fun ListenStep(value: String, onChange: (String) -> Unit) {
             }
         }
         RowOption("قراء متنوعون", "أتنقل بين القراء", Icons.Outlined.Shuffle, value == "various") { onChange("various") }
-        RowOption("لا أفضّل خيارا الآن", null, Icons.Outlined.Schedule, value == "later") { onChange("later") }
+        RowOption("لا أفضل خيارا الآن", null, Icons.Outlined.Schedule, value == "later") { onChange("later") }
     }
 }
 
@@ -437,7 +437,7 @@ private fun RemindStep(selected: Set<String>, onChange: (Set<String>) -> Unit) {
                 "morning" -> "بعد الفجر بنصف ساعة"
                 "evening" -> "بعد العصر بنصف ساعة"
                 "journey" -> "التاسعة مساء، ولا يصلك إن أكملت هدفك"
-                "khatma" -> "حين تُنشئ خطة ختمتك"
+                "khatma" -> "حين تنشئ خطة ختمتك"
                 else -> "التاسعة صباحا"
             }
             Row(
@@ -495,7 +495,7 @@ private fun Done(uses: Set<String>, notifyDenied: Boolean, onStart: () -> Unit) 
             Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(46.dp))
         }
         Spacer(Modifier.height(24.dp))
-        Text("أهلاً بك في آيات تتلى", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = b.ink, textAlign = TextAlign.Center)
+        Text("أهلا بك في آيات تتلى", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = b.ink, textAlign = TextAlign.Center)
         Text("جهزنا لك تجربة تناسب اهتماماتك", style = MaterialTheme.typography.bodyLarge, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
         val picked = Welcome.uses.filter { it.id in uses }
         if (picked.isNotEmpty()) FlowRow(
@@ -508,13 +508,13 @@ private fun Done(uses: Set<String>, notifyDenied: Boolean, onStart: () -> Unit) 
             }
         }
         if (notifyDenied) Text(
-            "لم تُفعَّل التذكيرات لأن إذن الإشعارات لم يُمنح، ويمكنك تفعيلها لاحقا من مركز التنبيهات.",
+            "لم تفعل التذكيرات لأن إذن الإشعارات لم يمنح، ويمكنك تفعيلها لاحقا من مركز التنبيهات.",
             style = MaterialTheme.typography.bodySmall, color = b.goldInk, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 460.dp).padding(top = 16.dp),
         )
         Spacer(Modifier.height(40.dp))
         BrandButton("ابدأ الآن", Modifier.widthIn(max = 460.dp).fillMaxWidth().heightIn(min = 54.dp)) { onStart() }
         Text(
-            "نرسل إحصاءات استخدام مجهولة بلا أي بيانات شخصية لنحسّن التطبيق، ويمكنك إيقافها من الإعدادات.",
+            "نرسل إحصاءات استخدام مجهولة بلا أي بيانات شخصية لنحسن التطبيق، ويمكنك إيقافها من الإعدادات.",
             style = MaterialTheme.typography.labelMedium, color = b.muted, textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(max = 460.dp).padding(top = 12.dp, bottom = 16.dp),
         )

@@ -256,14 +256,14 @@ $UI tap "التالي"; sleep 2; expect "البداية: سؤال المحتوى
 adb shell am force-stop $PKG; adb shell am start -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 6
 expect "البداية: يكمل من حيث توقف بعد الإغلاق" "ما نوع المحتوى" 8
 $UI tap "رجوع"; sleep 2; expect "البداية: الرجوع يحفظ الإجابات" "ما الذي تريد استخدام" 6
-$UI tap "التالي"; sleep 2; $UI tap "تخطَّ"; sleep 2; expect "البداية: تخطي سؤال" "كيف تفضل الاستماع" 6
+$UI tap "التالي"; sleep 2; $UI tap "تخطي"; sleep 2; expect "البداية: تخطي سؤال" "كيف تفضل الاستماع" 6
 $UI tap "قارئ مفضل"; sleep 1; shot welcome-listen; $UI tap "التالي"; sleep 2
 expect "البداية: سؤال التذكيرات" "ما التذكيرات التي ترغب فيها" 6; shot welcome-reminders
 $UI tap "آية اليوم كل صباح"; $UI tap "التالي"; sleep 3
 $UI tap "Allow" >/dev/null 2>&1 || $UI tap "السماح" >/dev/null 2>&1 || true; sleep 2
 expect "البداية: إذن الإشعارات عند اختيار تذكير فقط" "كيف تفضل عرض التطبيق" 8
 $UI tap "الوضع الداكن"; sleep 2; shot welcome-theme-dark; $UI tap "الوضع الفاتح"; sleep 1
-$UI tap "إنهاء"; sleep 2; expect "البداية: صفحة النجاح" "أهلاً بك في آيات تتلى" 6; shot welcome-done
+$UI tap "إنهاء"; sleep 2; expect "البداية: صفحة النجاح" "أهلا بك في آيات تتلى" 6; shot welcome-done
 if adb shell run-as $PKG cat files/notify.json 2>/dev/null | grep -q '"ayah":true'; then ok "البداية: التذكير المختار مفعّل في مركز التنبيهات"; else bad "البداية: التذكير المختار مفعّل في مركز التنبيهات"; fi
 $UI tap "ابدأ الآن"; sleep 3; expect "البداية: الرئيسية حسب الاهتمامات" "مختارات تناسب اهتماماتك" 10; shot welcome-home
 plain; absent "البداية: لا تتكرر عند كل تشغيل" "ابدأ رحلتك" 4

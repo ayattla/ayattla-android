@@ -557,7 +557,7 @@ fun SettingsScreen(nav: NavHostController) {
                     Column(Modifier.weight(1f)) {
                         Text("الإحصاءات المجهولة", style = MaterialTheme.typography.bodyLarge, color = b.ink)
                         Text(
-                            "أعداد استخدام الأدوات والخطوات فقط لتحسين التطبيق، بلا اسم ولا رقم ولا موقع ولا أي معرّف لجهازك",
+                            "أعداد استخدام الأدوات والخطوات فقط لتحسين التطبيق، بلا اسم ولا رقم ولا موقع ولا أي معرف لجهازك",
                             style = MaterialTheme.typography.bodySmall, color = b.muted,
                         )
                     }

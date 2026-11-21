@@ -677,7 +677,7 @@ private fun StatsNotice(onOk: () -> Unit, onOff: () -> Unit) {
     Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("ساعدنا في تحسين آيات تتلى", style = MaterialTheme.typography.titleSmall, color = b.ink)
         Text(
-            "نجمع أعدادا مجهولة لاستخدام الأدوات والخطوات، بلا اسم ولا رقم ولا موقع ولا أي معرّف لجهازك. يمكنك إيقافها الآن أو من الإعدادات.",
+            "نجمع أعدادا مجهولة لاستخدام الأدوات والخطوات، بلا اسم ولا رقم ولا موقع ولا أي معرف لجهازك. يمكنك إيقافها الآن أو من الإعدادات.",
             style = MaterialTheme.typography.bodySmall, color = b.muted,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -705,7 +705,7 @@ private fun ForYou(nav: NavHostController) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(greeting, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = b.ink)
             Text(
-                if (picked.isEmpty()) "اختر اهتماماتك لنقدّم لك ما يناسبك أولا" else "مختارات تناسب اهتماماتك",
+                if (picked.isEmpty()) "اختر اهتماماتك لنقدم لك ما يناسبك أولا" else "مختارات تناسب اهتماماتك",
                 style = MaterialTheme.typography.bodyMedium, color = b.muted,
             )
         }
