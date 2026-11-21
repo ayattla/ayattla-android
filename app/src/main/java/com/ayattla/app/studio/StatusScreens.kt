@@ -157,6 +157,7 @@ fun openStatusCard(nav: NavHostController, content: ContentStore, occ: StatusOcc
             header = occ.title, style = l.palette, ornament = l.ornament, colourFirst = true)
     }
     PendingText.value = card
+    PendingText.source = "status"
     nav.navigate("text-card")
 }
 

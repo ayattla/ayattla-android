@@ -181,6 +181,7 @@ object Recitation {
     /** [repeatEach]: each ayah is heard that many times in a row (memorisation, kids' Juz Amma). */
     /** [continuous]: the mushaf and the listen buttons; only then does the next surah follow at the end. */
     fun play(context: Context, content: ContentStore, reciter: Reciter, surah: Int, from: Int, to: Int = Int.MAX_VALUE, repeatEach: Int = 1, continuous: Boolean = false) {
+        com.ayattla.app.data.Stats.event(context, "recitation_played")
         error = null
         appContext = context.applicationContext
         lastContent = content
