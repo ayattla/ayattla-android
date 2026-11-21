@@ -35,6 +35,7 @@ data class NotifyConfig(
     val ayah: Boolean = false, val ayahAt: Int = 9 * 60,
     val khatma: Boolean = false, val khatmaAt: Int = 20 * 60,
     val hifz: Boolean = false, val hifzAt: Int = 19 * 60,
+    val journey: Boolean = false, val journeyAt: Int = 21 * 60,  // only when today's goal is not met yet
     val friday: Boolean = false, val fridayAt: Int = 10 * 60,
     val fasting: Boolean = false, val fastingAt: Int = 21 * 60,  // eve of Monday/Thursday
     val whiteDays: Boolean = false,                               // eve of the 13th, 14th, 15th
@@ -47,7 +48,7 @@ data class NotifyConfig(
     val adjust: Map<Prayer, Int> = emptyMap(),
 ) {
     val anyOn: Boolean get() = prayers.values.any { it.on } || afterPrayer || morning || evening || sleep || wake || istighfar ||
-        ayah || khatma || hifz || friday || fasting || whiteDays || personal.isNotEmpty()
+        ayah || khatma || hifz || journey || friday || fasting || whiteDays || personal.isNotEmpty()
 
     companion object { val PRAYERS = Prayer.entries.filter { it.isPrayer } }
 }
@@ -71,6 +72,7 @@ class PlanInputs(
     val khatmaWird: (LocalDate) -> String? = { null },
     val hifzToday: (LocalDate) -> String? = { null },
     val hijriDay: (LocalDate) -> Int? = { null },
+    val journeyText: (LocalDate) -> String = { "وردك اليومي من القرآن" },
 )
 
 object Planner {
@@ -107,6 +109,7 @@ object Planner {
             if (c.ayah) out += Alert("ayah.$key", at(c.ayahAt), "آية اليوم", inp.ayahText(date) ?: "آية اليوم مع تفسيرها", Channels.QURAN, "route:ayah-today")
             if (c.khatma) inp.khatmaWird(date)?.let { out += Alert("khatma.$key", at(c.khatmaAt), "ورد الختمة", it, Channels.QURAN, "route:khatma") }
             if (c.hifz) inp.hifzToday(date)?.let { out += Alert("hifz.$key", at(c.hifzAt), "الحفظ والمراجعة", it, Channels.QURAN, "route:hifz-plan") }
+            if (c.journey) out += Alert("journey.$key", at(c.journeyAt), "وردك اليوم", inp.journeyText(date), Channels.QURAN, "route:journey")
             if (c.friday && date.dayOfWeek == DayOfWeek.FRIDAY)
                 out += Alert("friday.$key", at(c.fridayAt), "يوم الجمعة", "قراءة سورة الكهف", Channels.OCCASIONS, "route:reader/18/1")
             if (c.fasting) {

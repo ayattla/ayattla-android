@@ -63,6 +63,11 @@ object Scheduler {
                 else "مقطع اليوم ومراجعاتك في خطة الحفظ"
             },
             hijriDay = { d -> runCatching { Hijri.fromGregorian(d).day }.getOrNull() },
+            journeyText = { _ ->
+                com.ayattla.app.data.Journey.load(c)
+                val s = com.ayattla.app.data.Journey.streak()
+                "هدفك ${com.ayattla.app.data.Journey.goal} صفحة اليوم" + if (s > 1) " · حافظ على سلسلتك: $s أيام متتالية" else ""
+            },
         )
     }
 
@@ -188,6 +193,11 @@ class AlertReceiver : BroadcastReceiver() {
                 val pr = goAsync()
                 Thread {
                     try {
+                        val id = i.getStringExtra("id").orEmpty()
+                        if (id == "ongoing") { PrayerOngoing.refresh(c); return@Thread }
+                        // The evening reminder is skipped once today's goal is met.
+                        com.ayattla.app.data.Journey.load(c)
+                        if (id.startsWith("journey.") && com.ayattla.app.data.Journey.goalMet()) { Scheduler.reschedule(c); return@Thread }
                         Scheduler.show(c, i.getStringExtra("id") ?: "x", i.getStringExtra("title") ?: "", i.getStringExtra("body") ?: "",
                             i.getStringExtra("channel") ?: Channels.PERSONAL, i.getStringExtra("open") ?: "route:home")
                         if (i.getStringExtra("id")?.endsWith(".snooze") != true) Scheduler.reschedule(c)
@@ -203,6 +213,6 @@ class AlertReceiver : BroadcastReceiver() {
 class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
         val pr = goAsync()
-        Thread { try { Scheduler.reschedule(c) } finally { pr.finish() } }.start()
+        Thread { try { Scheduler.reschedule(c); PrayerOngoing.refresh(c) } finally { pr.finish() } }.start()
     }
 }

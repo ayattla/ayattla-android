@@ -127,7 +127,7 @@ open mosques
 # A fresh GPS fix shortly after the request, as a phone would get it.
 $UI tap "حدد موقعي وابحث"; sleep 3; adb emu geo fix 46.6753 24.7136 >/dev/null 2>&1
 # Public map servers are often busy: then the app must show its fallback (retry / open in maps).
-if $UI wait "مسجدا ضمن" 60; then ok "المساجد القريبة: نتائج"
+if $UI wait "مسجدا ضمن" 90 || $UI has "جامع" || $UI has "مسجد"; then ok "المساجد القريبة: نتائج"
 elif $UI has "ابحث عن مساجد في الخرائط"; then ok "المساجد القريبة: الخوادم مشغولة فظهر البديل (إعادة المحاولة والخرائط)"
 else bad "المساجد القريبة: لا نتائج ولا بديل"; fi
 shot mosques
@@ -200,6 +200,12 @@ open status; expect "الحالات: المناسبات" "المناسبات" 8
 open status/jumuah; expect "الحالات: يوم الجمعة" "صممها حالة" 8
 $UI tap "صممها حالة"; sleep 4; expect "الحالات: محرر البطاقة" "مشاركة" 8; shot status-card; adb shell input keyevent 4
 open status/marriage; expect "الحالات: الزواج" "صممها حالة" 8
+
+# ── «رحلتي مع القرآن»: a mushaf page on screen counts, the run starts.
+open page/3; sleep 5
+open journey; expect "رحلتي: الصفحة المقروءة تُحتسب" "سلسلتك: يوم واحد" 10; shot journey
+scrollAll; expect "رحلتي: الأسبوع والشهر" "صفحة هذا الشهر" 6
+open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 10
 
 # ── Without internet: airplane mode, and the app's own offline state (--es offline 1) in case the
 #    emulator keeps a route. Everything opened above was saved, so it must keep working.

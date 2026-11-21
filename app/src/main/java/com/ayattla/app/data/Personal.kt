@@ -102,6 +102,7 @@ object Hifz {
         val count = content.surah(u.surah).ayahCount
         val (ns, na) = if (u.to < count) u.surah to u.to + 1 else (if (p.forward) u.surah + 1 else u.surah - 1) to 1
         save(p.copy(nextSurah = ns, nextAyah = na, lastNewDay = today(), reviews = p.reviews + Review(u, 1, today() + 1, 0)))
+        Journey.hifzDone()
     }
 
     fun due(): List<Review> = plan?.reviews?.filter { it.due <= today() }?.sortedBy { it.due }.orEmpty()
@@ -111,6 +112,7 @@ object Hifz {
         val p = plan ?: return
         val next = when (grade) { 0 -> 1; 1 -> maxOf(2, (r.interval * 1.5).toInt()); else -> maxOf(3, (r.interval * 2.5).toInt()) }.coerceAtMost(60)
         save(p.copy(reviews = p.reviews.map { if (it.unit == r.unit) Review(it.unit, next, today() + next, it.reps + 1) else it }))
+        Journey.hifzDone()
     }
 
     fun memorisedAyat() = plan?.reviews?.sumOf { it.unit.count } ?: 0

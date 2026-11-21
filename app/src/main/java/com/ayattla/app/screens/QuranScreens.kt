@@ -328,7 +328,10 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
     }
     // Remember the reading position.
     val visiblePage = pages.getOrNull((list.firstVisibleItemIndex - header).coerceIn(0, pages.size - 1)) ?: ayat
-    LaunchedEffect(list.firstVisibleItemIndex) { prefs.setLastRead(surahId, visiblePage.first().ayah) }
+    LaunchedEffect(list.firstVisibleItemIndex) {
+        prefs.setLastRead(surahId, visiblePage.first().ayah)
+        visiblePage.first().page?.let { pg -> kotlinx.coroutines.delay(2000); com.ayattla.app.data.Journey.readPage(pg) }
+    }
     val paper = if (b.dark) b.background else Color(0xFFF4EFE2)
     val highlight = if (b.dark) Color(0xFF3A3317) else Color(0xFFF5E6B0)
 

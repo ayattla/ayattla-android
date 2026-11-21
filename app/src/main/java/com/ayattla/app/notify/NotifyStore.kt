@@ -45,6 +45,7 @@ object NotifyStore {
         put("morning", n.morning); put("morningOffset", n.morningOffset); put("evening", n.evening); put("eveningOffset", n.eveningOffset)
         put("sleep", n.sleep); put("sleepAt", n.sleepAt); put("wake", n.wake); put("istighfar", n.istighfar); put("istighfarAt", n.istighfarAt)
         put("ayah", n.ayah); put("ayahAt", n.ayahAt); put("khatma", n.khatma); put("khatmaAt", n.khatmaAt); put("hifz", n.hifz); put("hifzAt", n.hifzAt)
+        put("journey", n.journey); put("journeyAt", n.journeyAt)
         put("friday", n.friday); put("fridayAt", n.fridayAt); put("fasting", n.fasting); put("fastingAt", n.fastingAt); put("whiteDays", n.whiteDays)
         put("personal", JSONArray(n.personal.map { JSONObject().put("id", it.id).put("title", it.title).put("minute", it.minute).put("days", JSONArray(it.days.sorted())) }))
         put("quiet", n.quiet); put("quietFrom", n.quietFrom); put("quietTo", n.quietTo); put("snooze", n.snooze)
@@ -72,6 +73,7 @@ object NotifyStore {
             ayah = o.optBoolean("ayah"), ayahAt = o.optInt("ayahAt", d.ayahAt),
             khatma = o.optBoolean("khatma"), khatmaAt = o.optInt("khatmaAt", d.khatmaAt),
             hifz = o.optBoolean("hifz"), hifzAt = o.optInt("hifzAt", d.hifzAt),
+            journey = o.optBoolean("journey"), journeyAt = o.optInt("journeyAt", d.journeyAt),
             friday = o.optBoolean("friday"), fridayAt = o.optInt("fridayAt", d.fridayAt),
             fasting = o.optBoolean("fasting"), fastingAt = o.optInt("fastingAt", d.fastingAt), whiteDays = o.optBoolean("whiteDays"),
             personal = List(pa.length()) { i ->
