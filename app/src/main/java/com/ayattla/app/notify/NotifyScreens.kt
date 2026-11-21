@@ -160,6 +160,8 @@ fun NotificationsScreen(nav: NavHostController) {
             SwitchRow("كل الصلوات الخمس", "الشروق ليس صلاة فلا يُرسل له تنبيه", allOn) { v ->
                 set { c -> c.copy(prayers = c.prayers.mapValues { it.value.copy(on = v) }) }
             }
+            var ongoing by remember { mutableStateOf(PrayerOngoing.enabled(ctx)) }
+            SwitchRow("الصلاة القادمة على شاشة القفل", "عدّ تنازلي هادئ دائم للصلاة القادمة، بلا صوت", ongoing) { v -> ongoing = v; PrayerOngoing.setEnabled(ctx, v) }
             var open by remember { mutableStateOf<Prayer?>(null) }
             NotifyConfig.PRAYERS.forEach { p ->
                 val a = cfg.prayers[p] ?: PrayerAlert()
@@ -204,6 +206,8 @@ fun NotificationsScreen(nav: NavHostController) {
             if (cfg.khatma) TimeButton("الوقت", cfg.khatmaAt) { v -> set { it.copy(khatmaAt = v) } }
             SwitchRow("الحفظ والمراجعة", "${clock(cfg.hifzAt)} · عند وجود خطة حفظ", cfg.hifz) { v -> set { it.copy(hifz = v) } }
             if (cfg.hifz) TimeButton("الوقت", cfg.hifzAt) { v -> set { it.copy(hifzAt = v) } }
+            SwitchRow("هدفي اليومي من القرآن", "${clock(cfg.journeyAt)} · فقط إن لم تُكمل هدفك اليوم", cfg.journey) { v -> set { it.copy(journey = v) } }
+            if (cfg.journey) TimeButton("الوقت", cfg.journeyAt) { v -> set { it.copy(journeyAt = v) } }
         }
 
         // ── Friday and fasting

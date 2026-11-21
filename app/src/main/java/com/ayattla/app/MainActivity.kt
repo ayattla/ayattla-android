@@ -316,6 +316,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("offline?from={from}", arguments = listOf(navArgument("from") { type = NavType.StringType; nullable = true; defaultValue = null })) { e ->
                 com.ayattla.app.screens.OfflineScreen(nav, e.arguments?.getString("from"))
             }
+            composable("journey") { com.ayattla.app.screens.JourneyScreen(nav) }
             composable("kaffarah") { com.ayattla.app.screens.KaffarahScreen(nav) }
             composable("crypto-zakat") { com.ayattla.app.screens.CryptoZakatScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->

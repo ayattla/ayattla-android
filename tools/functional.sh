@@ -201,6 +201,12 @@ open status/jumuah; expect "الحالات: يوم الجمعة" "صممها ح�
 $UI tap "صممها حالة"; sleep 4; expect "الحالات: محرر البطاقة" "مشاركة" 8; shot status-card; adb shell input keyevent 4
 open status/marriage; expect "الحالات: الزواج" "صممها حالة" 8
 
+# ── «رحلتي مع القرآن»: a mushaf page on screen counts, the run starts.
+open page/3; sleep 5
+open journey; expect "رحلتي: الصفحة المقروءة تُحتسب" "سلسلتك: يوم واحد" 10; shot journey
+scrollAll; expect "رحلتي: الأسبوع والشهر" "صفحة هذا الشهر" 6
+open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 10
+
 # ── Without internet: airplane mode, and the app's own offline state (--es offline 1) in case the
 #    emulator keeps a route. Everything opened above was saved, so it must keep working.
 adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || adb shell settings put global airplane_mode_on 1

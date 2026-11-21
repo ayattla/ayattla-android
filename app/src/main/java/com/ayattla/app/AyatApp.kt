@@ -22,6 +22,8 @@ class AyatApp : Application() {
         // Every start plans the notifications again (cheap): times follow the city, settings and day.
         Thread { runCatching { com.ayattla.app.notify.Scheduler.reschedule(this) } }.start()
         com.ayattla.app.data.Hifz.load(this)
+        com.ayattla.app.data.Journey.load(this)
+        runCatching { com.ayattla.app.notify.PrayerOngoing.refresh(this) }
         com.ayattla.app.data.Net.start(this)
         // Once a week on Wi-Fi (release builds), the offline files are refreshed quietly.
         android.os.Handler(mainLooper).postDelayed({ runCatching { com.ayattla.app.data.OfflinePrep.maybeAuto(this) } }, 8_000)

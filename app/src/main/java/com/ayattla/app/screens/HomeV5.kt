@@ -126,7 +126,7 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
+    Prayer("الصلاة القادمة"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
     Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
     Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
     Quick("الوصول السريع"),
@@ -204,6 +204,7 @@ fun HomeScreenV5(nav: NavHostController) {
 private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: List<String>) {
     when (s) {
         HomeSection.Prayer -> PrayerHero(nav)
+        HomeSection.Journey -> JourneyHomeCard(nav)
         HomeSection.Quick -> MuslimServices(nav)
         HomeSection.Tracker -> PrayerTracker()
         HomeSection.Dhikr -> QuickDhikr(nav)
@@ -459,6 +460,38 @@ private fun ProgressRing(frac: Float, label: String) {
             strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
         )
         Text(label, style = MaterialTheme.typography.titleSmall, color = b.primaryInk)
+    }
+}
+
+// ───────────── «رحلتي مع القرآن» ─────────────
+
+/** Today's goal ring, the run of days, and one tap to continue reading. */
+@Composable
+private fun JourneyHomeCard(nav: NavHostController) {
+    val b = LocalBrand.current
+    val ctx = LocalContext.current
+    val prefs = LocalPrefs.current
+    LaunchedEffect(Unit) { com.ayattla.app.data.Journey.load(ctx) }
+    val j = com.ayattla.app.data.Journey
+    val days = j.days
+    val streak = remember(days) { j.streak() }
+    val today = j.day()
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("رحلتي مع القرآن", "التفاصيل") { nav.navigate("journey") }
+        Row(
+            Modifier.fillMaxWidth().surface(b).clickable { nav.navigate("journey") }.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            GoalRing(today.pages.size, j.goal, 78, b.primaryInk, b.tint, b.green)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(if (j.goalMet()) "أتممت هدفك اليوم" else "هدفك اليوم: ${goalLabel(j.goal)}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                Text(if (streak > 0) "سلسلتك: ${streakLabel(streak)}" else "اقرأ صفحة لتبدأ سلسلتك",
+                    style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                Text("تابع القراءة", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clickable { nav.navigate(continueRoute(prefs.lastRead)) })
+            }
+        }
     }
 }
 

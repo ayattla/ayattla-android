@@ -149,7 +149,10 @@ object Recitation {
         count = p.mediaItemCount
         isPlaying = p.isPlaying
         isBuffering = p.playbackState == Player.STATE_BUFFERING
+        val before = current
         current = p.currentMediaItem?.mediaId
+        // Each recited ayah that gives way to the next counts as heard (radio ids are not «surah:ayah»).
+        if (before != null && before != current && before.matches(Regex("\\d+:\\d+"))) com.ayattla.app.data.Journey.listened()
         title = p.mediaMetadata.title?.toString() ?: ""
         current?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }?.let { (s, a) -> saveLast(s, a) }
         if (p.playbackState == Player.STATE_ENDED || p.mediaItemCount == 0) {

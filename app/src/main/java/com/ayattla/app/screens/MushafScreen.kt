@@ -53,7 +53,11 @@ fun MushafScreen(nav: NavHostController, startPage: Int) {
     val current = pager.currentPage + 1
     val first = remember(current) { content.page(current).firstOrNull() }
 
-    LaunchedEffect(current) { first?.let { prefs.setLastRead(it.surah, it.ayah) } }
+    LaunchedEffect(current) {
+        first?.let { prefs.setLastRead(it.surah, it.ayah) }
+        // A page that stays on screen two seconds counts as read for «رحلتي مع القرآن».
+        kotlinx.coroutines.delay(2000); com.ayattla.app.data.Journey.load(ctx); com.ayattla.app.data.Journey.readPage(current)
+    }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar(first?.let { "سورة ${content.surah(it.surah).shortName}" } ?: "المصحف", onBack = { nav.popBackStack() }) {
