@@ -188,8 +188,8 @@ private fun WeekBars(goal: Int) {
             val bw = slot * 0.5f
             val goalY = size.height * (1 - goal.toFloat() / max)
             week.forEachIndexed { i, (_, d) ->
-                // Right to left: the oldest day at the right edge, today at the left, as Arabic reads.
-                val x = size.width - slot * (i + 1) + (slot - bw) / 2
+                // Same order as the labels under it (laid out right to left): today at the right edge.
+                val x = slot * i + (slot - bw) / 2
                 val h = size.height * d.pages.size / max
                 drawRoundRect(b.tint, Offset(x, 0f), Size(bw, size.height), CornerRadius(8f, 8f))
                 if (h > 0) drawRoundRect(if (d.pages.size >= goal) b.green else b.green.copy(alpha = 0.55f), Offset(x, size.height - h), Size(bw, h), CornerRadius(8f, 8f))
