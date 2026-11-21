@@ -75,7 +75,21 @@ class ClipEngine(private val context: Context, private val content: ContentStore
         }
     }
 
+    /** Whether [p] can be made with word highlighting for [reciter] (Quran.com timings, one surah). */
+    fun canHighlight(p: Project, reciter: Reciter): Boolean =
+        reciter.qfId != null && p.ranges.isNotEmpty() && p.ranges.all { it.surah == p.ranges.first().surah }
+
     suspend fun make(p: Project, reciter: Reciter, onStage: (Stage) -> Unit): File {
+        if (p.highlight && canHighlight(p, reciter)) {
+            // Without the timings (offline and never fetched, or a word count that does not fit) the
+            // clip is made the usual way, ayah by ayah, without highlighting.
+            runCatching { return makeHighlighted(p, reciter, onStage) }
+                .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
+        }
+        return makePlain(p, reciter, onStage)
+    }
+
+    private suspend fun makePlain(p: Project, reciter: Reciter, onStage: (Stage) -> Unit): File {
         val parts = parts(p).take(MAX_AYAT + p.ranges.size)
 
         // 1. Recitation files (cached), and the pauses as silence.
@@ -144,9 +158,82 @@ class ClipEngine(private val context: Context, private val content: ContentStore
             // 4K is not supported by every encoder: fall back to 1080p once.
             if (p.quality != Quality.Q2160) throw e
             out.delete()
-            return make(p.copy(quality = Quality.Q1080), reciter, onStage)
+            return makePlain(p.copy(quality = Quality.Q1080), reciter, onStage)
         }
         // Keep only the last few exports in the app (the user's copies are in the gallery).
+        ProjectStore.exportsDir(context).listFiles().orEmpty().sortedByDescending { it.lastModified() }.drop(6).forEach { it.delete() }
+        return out
+    }
+
+    /**
+     * Word highlighting as on the site and the iOS app: the reciter's chapter audio from Quran.com, cut
+     * to the chosen ayat, with each word lit at the moment it is recited. Ayat whose word count does
+     * not fit the timings are shown without highlighting. Pauses do not apply (one continuous audio).
+     */
+    private suspend fun makeHighlighted(p: Project, reciter: Reciter, onStage: (Stage) -> Unit): File {
+        val qf = reciter.qfId ?: error("no timings")
+        val surah = p.ranges.first().surah
+        onStage(Stage.Downloading(0, 2))
+        val rec = com.ayattla.app.data.QuranCom.recitation(context, qf, surah)
+        // Ayat only (the basmala before ayah 1 is outside the timed ayat).
+        val parts = parts(p).filter { it.first.keys.first().substringAfter(':') != "0" }.take(MAX_AYAT)
+        val stamps = parts.map { (part, _) -> rec.stamps[part.keys.first()] ?: error("no stamp ${part.keys.first()}") }
+        val audioFile = com.ayattla.app.data.QuranCom.audio(context, qf, surah, rec.audioUrl)
+        onStage(Stage.Downloading(2, 2))
+        val start = stamps.first().from
+        val end = stamps.last().to
+        if (end <= start) error("bad timings")
+        val durations = stamps.mapIndexed { i, st -> (if (i < stamps.lastIndex) stamps[i + 1].from else end) - st.from }
+        val words = parts.mapIndexed { i, (part, _) -> com.ayattla.app.data.QuranCom.tokenStarts(part.text, stamps[i]) }
+        if (words.all { it == null }) error("timings do not fit the text")
+
+        val (w, h) = Composer.size(p.ratio, p.quality)
+        val bg = p.background
+        onStage(Stage.Background)
+        val bgVideo: File? = when (bg) {
+            is Background.Local -> if (bg.isVideo) File(bg.path).takeIf { it.exists() } else null
+            is Background.Library -> if (bg.media.isVideo) bg.media.previewUrl?.let { url ->
+                val f = File(File(root, "bg").apply { mkdirs() }, "v-" + url.hashCode().toUInt().toString(16) + ".mp4")
+                runCatching { if (!f.exists() || f.length() < 10_000) download(url, f) }
+                f.takeIf { it.exists() && it.length() >= 10_000 }
+            } else null
+            Background.Color -> null
+        }
+        val photo: Bitmap? = when (bg) {
+            is Background.Local -> if (!bg.isVideo) com.ayattla.app.data.decodeScaled(bg.path, (maxOf(w, h) * 1.2f).toInt()) else null
+            is Background.Library -> if (!bg.media.isVideo) bg.media.still?.let { RemoteImages.load(context, it, (w * 1.2f).toInt()) } else null
+            Background.Color -> null
+        }
+        val composer = Composer(context, p.style, w, h, bgVideo != null || photo != null)
+        onStage(Stage.Drawing)
+        val frameDir = File(root, "frames").apply { deleteRecursively(); mkdirs() }
+        val stillBg = if (bgVideo == null) withContext(Dispatchers.Default) {
+            File(frameDir, "bg.png").also { f -> composer.backgroundBitmap(photo).let { b -> f.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }; b.recycle() } }
+        } else null
+        photo?.recycle()
+        val color = p.highlightColor?.toInt() ?: Composer.HIGHLIGHT
+        val overlay = AnimatedText(composer, parts.map { it.first }, durations, words, color)
+
+        val total = end - start
+        val bgItem = if (bgVideo != null) EditedMediaItem.Builder(MediaItem.fromUri(Uri.fromFile(bgVideo))).setRemoveAudio(true)
+        else EditedMediaItem.Builder(MediaItem.Builder().setUri(Uri.fromFile(stillBg)).setImageDurationMs(total).build()).setFrameRate(30)
+        bgItem.setEffects(Effects(listOf(), listOf(Presentation.createForWidthAndHeight(w, h, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP))))
+        val audio = EditedMediaItem.Builder(
+            MediaItem.Builder().setUri(Uri.fromFile(audioFile))
+                .setClippingConfiguration(MediaItem.ClippingConfiguration.Builder().setStartPositionMs(start).setEndPositionMs(end).build())
+                .build(),
+        ).build()
+        val videoSeq = EditedMediaItemSequence.Builder(listOf(bgItem.build())).apply { if (bgVideo != null) setIsLooping(true) }.build()
+        val composition = Composition.Builder(videoSeq, EditedMediaItemSequence.Builder(listOf(audio)).build())
+            .setEffects(Effects(listOf(), listOf(OverlayEffect(ImmutableList.of<TextureOverlay>(overlay))))).build()
+        val out = File(ProjectStore.exportsDir(context), "ayattla-$surah-${System.currentTimeMillis()}.mp4")
+        try {
+            encode(composition, out, p.quality.bitrate, onStage)
+        } catch (e: ExportException) {
+            if (p.quality != Quality.Q2160) throw e
+            out.delete()
+            return makeHighlighted(p.copy(quality = Quality.Q1080), reciter, onStage)
+        }
         ProjectStore.exportsDir(context).listFiles().orEmpty().sortedByDescending { it.lastModified() }.drop(6).forEach { it.delete() }
         return out
     }
@@ -155,7 +242,12 @@ class ClipEngine(private val context: Context, private val content: ContentStore
      * The text layer over time: per frame, which part is on screen and how far into it; only redrawn
      * while something moves (two buffers in turn, so the overlay sees a new bitmap when it changes).
      */
-    private class AnimatedText(private val composer: Composer, private val parts: List<Part>, durations: List<Long>) : BitmapOverlay() {
+    private class AnimatedText(
+        private val composer: Composer, private val parts: List<Part>, durations: List<Long>,
+        /** Per part: (ms into the part, token to light), or null for no highlighting. */
+        private val highlights: List<List<Pair<Long, Int>>?>? = null,
+        private val highlightColor: Int = Composer.HIGHLIGHT,
+    ) : BitmapOverlay() {
         private val starts = durations.runningFold(0L) { a, b -> a + b }
         private val durs = durations
         private val base = composer.baseLayer()
@@ -179,8 +271,9 @@ class ClipEngine(private val context: Context, private val content: ContentStore
                 val span = (d * style.wordPace).coerceAtLeast(1f)
                 ((t / span) * n).toInt().plus(1).coerceIn(1, n)
             } else Int.MAX_VALUE
-            val lk = "$i/$words"
-            if (lk != layerKey) { layer?.recycle(); layer = composer.textLayer(parts[i], words); layerKey = lk }
+            val lit = highlights?.getOrNull(i)?.lastOrNull { it.first <= t }?.second ?: -1
+            val lk = "$i/$words/$lit"
+            if (lk != layerKey) { layer?.recycle(); layer = composer.textLayer(parts[i], words, lit, highlightColor); layerKey = lk }
             val anim = style.anim
             val moving = anim != Anim.None && anim != Anim.Words &&
                 (t < style.animMs || (i < parts.lastIndex && d - t < style.animMs * 0.6f))

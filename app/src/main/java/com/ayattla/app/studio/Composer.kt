@@ -74,8 +74,11 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
     /** Number of words in [part] (for word-by-word). */
     fun words(part: Part) = part.text.split(' ').count { it.isNotBlank() }
 
-    /** Text and reference on a transparent frame. [visibleWords] < all: the rest is laid out but not drawn. */
-    fun textLayer(part: Part, visibleWords: Int = Int.MAX_VALUE): Bitmap {
+    /**
+     * Text and reference on a transparent frame. [visibleWords] < all: the rest is laid out but not drawn.
+     * [highlightToken] ≥ 0: that word (counted in space-separated tokens) is drawn in [highlightColor].
+     */
+    fun textLayer(part: Part, visibleWords: Int = Int.MAX_VALUE, highlightToken: Int = -1, highlightColor: Int = HIGHLIGHT): Bitmap {
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val padX = 120f * k
@@ -89,6 +92,21 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
                 if (part.text[i] != ' ' && (i == 0 || part.text[i - 1] == ' ')) {
                     count++
                     if (count > visibleWords) { spannable.setSpan(ForegroundColorSpan(Color.TRANSPARENT), i, part.text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); break }
+                }
+                i++
+            }
+        }
+        if (highlightToken >= 0) {
+            var count = -1
+            var i = 0
+            while (i < part.text.length) {
+                if (part.text[i] != ' ' && (i == 0 || part.text[i - 1] == ' ')) {
+                    count++
+                    if (count == highlightToken) {
+                        val end = part.text.indexOf(' ', i).let { if (it < 0) part.text.length else it }
+                        spannable.setSpan(ForegroundColorSpan(highlightColor), i, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        break
+                    }
                 }
                 i++
             }
@@ -188,5 +206,8 @@ class Composer(private val context: Context, val style: Style, val w: Int, val h
             return even(ratio.w * q.scale) to even(ratio.h * q.scale)
         }
         fun clear(c: Canvas) = c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+
+        /** Default colour of the word being recited (the brand gold, as on the site). */
+        val HIGHLIGHT = Color.rgb(0xE9, 0xC4, 0x6A)
     }
 }

@@ -78,6 +78,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -154,6 +155,7 @@ fun QuranIndexScreen(nav: NavHostController) {
                         BasicTextField(query, { query = it }, singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = b.ink), cursorBrush = SolidColor(b.green), modifier = Modifier.fillMaxWidth())
                     }
                     if (query.isNotEmpty()) Icon(Icons.Filled.Close, "مسح", tint = b.muted, modifier = Modifier.size(18.dp).clickable { query = "" })
+                    else Icon(Icons.Filled.Mic, "البحث بالصوت", tint = b.green, modifier = Modifier.size(22.dp).clickable { nav.navigate("voice-search") })
                 }
                 Spacer(Modifier.height(20.dp))
             }

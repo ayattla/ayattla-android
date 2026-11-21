@@ -12,7 +12,7 @@ class OfflineToolsTest {
     }
 
     @Test fun savedTools() {
-        listOf("listen", "clip", "hadith", "hadith-checker", "tajweed", "word-by-word", "ruqya").forEach {
+        listOf("listen", "clip", "hadith", "hadith-checker", "tajweed", "word-by-word", "ruqya", "tasmee", "voice-search").forEach {
             assertEquals(it, OfflineLevel.Saved, OfflineTools.level(it))
         }
     }

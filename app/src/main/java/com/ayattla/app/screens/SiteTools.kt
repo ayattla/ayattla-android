@@ -11,6 +11,8 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Timeline
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material.icons.outlined.KeyboardVoice
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.EventRepeat
@@ -100,6 +102,8 @@ data class SiteTool(
             SiteTool("sawm-tracker", "متتبع الصيام", "متتبع الصيام", "قضاء رمضان والتطوع على تقويم هجري وميلادي", Icons.Outlined.DarkMode, ToolGroup.Daily, true, "sawm"),
             SiteTool("kaffarah", "حاسبة الكفارات", "الكفارات", "كفارة اليمين وفدية الصيام وكفارة رمضان مع الدليل", Icons.Outlined.Calculate, ToolGroup.Daily, true, "kaffarah"),
             SiteTool("crypto-zakat", "زكاة العملات الرقمية", "زكاة الرقمية", "قيمة عملاتك مقابل نصاب الذهب وربع العشر", Icons.Outlined.CurrencyBitcoin, ToolGroup.Daily, true, "crypto-zakat"),
+            SiteTool("tasmee", "التسميع الذكي", "التسميع", "اقرأ من حفظك فتظهر الآيات مع قراءتك", Icons.Outlined.RecordVoiceOver, ToolGroup.Quran, true, "tasmee"),
+            SiteTool("voice-search", "البحث بالصوت", "بحث بالصوت", "اقرأ كلمات من آية فيجدها في المصحف", Icons.Outlined.KeyboardVoice, ToolGroup.Quran, true, "voice-search"),
             SiteTool("journey", "رحلتي مع القرآن", "رحلتي", "هدفك اليومي وسلسلة أيامك وتقدمك في الأسبوع والشهر", Icons.Outlined.Timeline, ToolGroup.Quran, true, "journey"),
             SiteTool("offline", "الاستخدام بدون إنترنت", "بدون إنترنت", "ما يعمل بلا اتصال، وتجهيز التطبيق والتلاوات", Icons.Outlined.CloudDone, ToolGroup.Daily, true, "offline"),
             SiteTool("nearby-mosques", "المساجد القريبة", "المساجد القريبة", "أقرب المساجد مع المسافة والاتجاهات", Icons.Outlined.Place, ToolGroup.Daily, true, "mosques"),

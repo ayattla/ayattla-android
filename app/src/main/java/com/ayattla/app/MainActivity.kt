@@ -211,6 +211,7 @@ object Routes {
     fun azkar(category: Int) = "azkar/$category"
     fun studio(surah: Int, from: Int, to: Int, video: Boolean = false) = "studio?s=$surah&a=$from&b=$to&v=${if (video) 1 else 0}"
     fun studioMode(video: Boolean) = "studio?v=${if (video) 1 else 0}"
+    fun tasmee(surah: Int, from: Int, to: Int) = "tasmee?s=$surah&a=$from&b=$to"
 }
 
 @Composable
@@ -317,6 +318,19 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
                 com.ayattla.app.screens.OfflineScreen(nav, e.arguments?.getString("from"))
             }
             composable("journey") { com.ayattla.app.screens.JourneyScreen(nav) }
+            composable(
+                "tasmee?s={s}&a={a}&b={b}",
+                arguments = listOf(
+                    navArgument("s") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("a") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("b") { type = NavType.IntType; defaultValue = 0 },
+                ),
+            ) { e ->
+                val a = e.arguments
+                fun arg(k: String) = a?.getInt(k)?.takeIf { it > 0 }
+                com.ayattla.app.screens.TasmeeScreen(nav, arg("s"), arg("a"), arg("b"))
+            }
+            composable("voice-search") { com.ayattla.app.screens.VoiceSearchScreen(nav) }
             composable("kaffarah") { com.ayattla.app.screens.KaffarahScreen(nav) }
             composable("crypto-zakat") { com.ayattla.app.screens.CryptoZakatScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->

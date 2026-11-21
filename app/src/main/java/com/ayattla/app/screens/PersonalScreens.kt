@@ -166,6 +166,7 @@ fun HifzPlanScreen(nav: NavHostController) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun UnitCard(content: ContentStore, u: Hifz.Unit, nav: NavHostController, actions: @Composable () -> Unit) {
     val b = LocalBrand.current
@@ -175,8 +176,9 @@ private fun UnitCard(content: ContentStore, u: Hifz.Unit, nav: NavHostController
             style = MaterialTheme.typography.labelLarge, color = b.goldInk)
         Text(ayat.joinToString(" ") { it.text + " ﴿${it.ayah}﴾" }, fontFamily = Fonts.quran, fontSize = 22.sp, lineHeight = 42.sp, color = b.ink,
             modifier = Modifier.padding(vertical = 6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip("افتح في المصحف", false, { nav.navigate(Routes.reader(u.surah, u.from)) })
+            Chip("سمّع بصوتك", false, { nav.navigate(Routes.tasmee(u.surah, u.from, minOf(u.to, u.from + 29))) })
             Chip("اختبر حفظك", false, { nav.navigate("hifz-test") })
         }
         actions()

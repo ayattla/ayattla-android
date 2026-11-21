@@ -25,7 +25,8 @@ data class Ayah(val surah: Int, val ayah: Int, val text: String, val page: Int?,
 }
 
 data class JuzStart(val juz: Int, val page: Int, val surah: Int, val ayah: Int)
-data class Reciter(val id: String, val name: String, val folder: String, val highlight: Boolean)
+/** [qfId]: Quran.com chapter-recitation id when word timings exist for this reciter (word highlighting). */
+data class Reciter(val id: String, val name: String, val folder: String, val highlight: Boolean, val qfId: Int? = null)
 data class ZikrCategory(val id: Int, val title: String)
 data class Zikr(val id: Int, val category: Int, val text: String, val count: Int, val reference: String?, val note: String?)
 
@@ -57,6 +58,14 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
         ).use { it.toAyat() }
 
     fun ayah(surah: Int, ayah: Int): Ayah? = ayat(surah, ayah, ayah).firstOrNull()
+
+    /** The whole mushaf in order (for the offline voice search index). */
+    val allAyat: List<Ayah> by lazy {
+        db.rawQuery("SELECT surah, ayah, text_uthmani, page, juz FROM ayah ORDER BY surah, ayah", null).use { it.toAyat() }
+    }
+
+    /** Offline voice search over [allAyat], built once. */
+    val voiceSearch: VoiceSearch by lazy { VoiceSearch(allAyat) }
 
     val juzStarts: List<JuzStart> by lazy {
         db.rawQuery(
@@ -96,8 +105,8 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
     }
 
     val reciters: List<Reciter> by lazy {
-        db.rawQuery("SELECT id, name, folder, highlight FROM reciter ORDER BY ord", null).use { c ->
-            buildList { while (c.moveToNext()) add(Reciter(c.getString(0), c.getString(1), c.getString(2), c.getInt(3) == 1)) }
+        db.rawQuery("SELECT id, name, folder, highlight, qf_id FROM reciter ORDER BY ord", null).use { c ->
+            buildList { while (c.moveToNext()) add(Reciter(c.getString(0), c.getString(1), c.getString(2), c.getInt(3) == 1, if (c.isNull(4)) null else c.getInt(4))) }
         }
     }
 
