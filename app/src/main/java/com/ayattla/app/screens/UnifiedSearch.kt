@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Search
@@ -109,7 +110,10 @@ fun UnifiedSearchScreen(nav: NavHostController) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).focusRequester(focus),
             placeholder = { Text("ابحث عن أداة أو سورة أو آية أو ذكر…") },
             leadingIcon = { Icon(Icons.Outlined.Search, null, tint = b.muted) },
-            trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Outlined.Close, "مسح", tint = b.muted) } },
+            trailingIcon = {
+                if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Outlined.Close, "مسح", tint = b.muted) }
+                else IconButton(onClick = { nav.navigate("voice-search") }) { Icon(Icons.Outlined.Mic, "البحث بالصوت", tint = b.green) }
+            },
             shape = RoundedCornerShape(18.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = {}),
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = b.green, unfocusedBorderColor = b.line, focusedContainerColor = b.surface, unfocusedContainerColor = b.surface),

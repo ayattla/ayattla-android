@@ -291,7 +291,7 @@ fun StudioScreen(nav: NavHostController, s0: Int, a0: Int, b0: Int, v0: Int = -1
                 AnimSection(project.style) { s -> update { it.copy(style = s) } }
             }
             Section("التوقيت والقارئ", reciter.name, Icons.Outlined.Timer, open == "timing", { open = if (open == "timing") "" else "timing" }) {
-                TimingSection(project, engine, reciter.name) { f -> update(f) }
+                TimingSection(project, engine, reciter) { f -> update(f) }
             }
         }
         Section("القوالب", "احفظ تصميمك واستخدمه لاحقا", Icons.Outlined.Palette, open == "tpl", { open = if (open == "tpl") "" else "tpl" }) {
@@ -560,20 +560,46 @@ private fun AnimSection(s: Style, set: (Style) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimingSection(p: Project, engine: ClipEngine, reciterName: String, update: ((Project) -> Project) -> Unit) {
+private fun TimingSection(p: Project, engine: ClipEngine, reciter: com.ayattla.app.data.Reciter, update: ((Project) -> Project) -> Unit) {
     val b = LocalBrand.current
     val content = LocalContent.current
     var picking by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(b.surface2).clickable { picking = true }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text("القارئ", style = MaterialTheme.typography.labelMedium, color = b.muted)
-            Text(reciterName, style = MaterialTheme.typography.bodyLarge, color = b.primaryInk)
+            Text(reciter.name + if (reciter.qfId != null) " ★" else "", style = MaterialTheme.typography.bodyLarge, color = b.primaryInk)
         }
         Text("تغيير", style = MaterialTheme.typography.labelLarge, color = b.goldInk)
     }
-    Text("وقفة بعد كل آية (تُضاف بعد انتهاء التلاوة):", style = MaterialTheme.typography.bodyMedium, color = b.ink)
+    // Word highlighting: reciters marked ★ have Quran.com word timings.
+    val canLight = engine.canHighlight(p, reciter)
+    if (reciter.qfId == null) {
+        Text("★ القراء المعلَّمون بنجمة يدعمون تظليل الكلمة مع التلاوة", style = MaterialTheme.typography.bodySmall, color = b.muted)
+    } else {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("تظليل الكلمة مع التلاوة", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                Text(if (canLight) "بتوقيتات Quran.com، تُضاء كل كلمة لحظة نطقها" else "يعمل حين تكون الآيات من سورة واحدة",
+                    style = MaterialTheme.typography.bodySmall, color = b.muted)
+            }
+            androidx.compose.material3.Switch(p.highlight, { v -> update { it.copy(highlight = v) } }, enabled = canLight)
+        }
+        if (p.highlight && canLight) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("لون الكلمة", style = MaterialTheme.typography.bodyMedium, color = b.ink)
+                listOf(null to Color(0xFFE9C46A), 0xFF3DDC97L to Color(0xFF3DDC97), 0xFFFFFFFFL to Color.White, 0xFF1F8A62L to Color(0xFF1F8A62)).forEach { (v, c) ->
+                    val on = p.highlightColor == v
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(c).border(if (on) 3.dp else 1.dp, if (on) b.green else b.line, CircleShape)
+                            .clickable { update { it.copy(highlightColor = v) } },
+                    )
+                }
+            }
+        }
+    }
+    if (!(p.highlight && canLight)) Text("وقفة بعد كل آية (تُضاف بعد انتهاء التلاوة):", style = MaterialTheme.typography.bodyMedium, color = b.ink)
     val parts = remember(p.ranges) { engine.parts(p).map { it.first } }
-    parts.take(ClipEngine.MAX_AYAT + p.ranges.size).forEach { part ->
+    if (!(p.highlight && canLight)) parts.take(ClipEngine.MAX_AYAT + p.ranges.size).forEach { part ->
         val key = part.keys.first()
         val ms = p.pauses[key] ?: 0
         LabeledSlider(part.reference, ms.toFloat(), 0f..3000f, if (ms == 0) "بدون" else String.format(java.util.Locale.US, "%.1f ث", ms / 1000f)) { v ->
@@ -584,7 +610,7 @@ private fun TimingSection(p: Project, engine: ClipEngine, reciterName: String, u
     if (picking) ModalBottomSheet(onDismissRequest = { picking = false }, containerColor = b.surface) {
         LazyColumn(contentPadding = PaddingValues(16.dp)) {
             items(content.reciters, key = { it.id }) { r ->
-                Text(r.name, style = MaterialTheme.typography.bodyLarge, color = if (r.id == p.reciterId) b.primaryInk else b.ink,
+                Text(r.name + if (r.qfId != null) " ★" else "", style = MaterialTheme.typography.bodyLarge, color = if (r.id == p.reciterId) b.primaryInk else b.ink,
                     modifier = Modifier.fillMaxWidth().clickable { update { it.copy(reciterId = r.id) }; picking = false }.padding(vertical = 12.dp))
                 HorizontalDivider(color = b.line)
             }

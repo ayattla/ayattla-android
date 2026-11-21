@@ -16,6 +16,8 @@ get https://api.alquran.cloud/v1/quran/quran-uthmani "$SRC/quran-uthmani.json"
 rm -rf "$SRC/azkar-db"; git clone -q --depth 1 https://github.com/osamayy/azkar-db "$SRC/azkar-db"
 AZ=$(git -C "$SRC/azkar-db" rev-parse HEAD)
 get https://ayattla.com/api/meta "$SRC/meta.json"
+# Quran.com chapter reciters: ids for word highlighting, matched by name in the pack builder.
+get "https://api.quran.com/api/v4/resources/chapter_reciters?language=en" "$SRC/qf-reciters.json"
 get https://ayattla.com/tools/tasbih "$SRC/tasbih.html"
 get https://ayattla.com/tools/prayer-guide "$SRC/prayer-guide.html"
 get https://ayattla.com/api/duas "$SRC/duas.json"
@@ -42,7 +44,7 @@ echo "== pack"
 rm -f app/src/main/assets/content-v1.sqlite
 python3 tools/content/normalize_azkar.py "$SRC/azkar-db/azkar.json" --source "osamayy/azkar-db@$AZ" --out "$SRC/azkar.json"
 python3 tools/content/build_content_pack.py --version 1 --quran "$SRC/quran-uthmani.json" --azkar "$SRC/azkar.json" \
-  --reciters "$SRC/meta.json" --tasbih-html "$SRC/tasbih.html" \
+  --reciters "$SRC/meta.json" --qf-reciters "$SRC/qf-reciters.json" --tasbih-html "$SRC/tasbih.html" \
   --guide-html "$SRC/prayer-guide.html" --duas "$SRC/duas.json" --ruqya "$SRC/ruqya.json" --asma-html "$SRC/asma.html" --topics-html "$SRC/ayat.html" --topics-dir "$SRC/ayat" --status-html "$SRC/status.html" --status-dir "$SRC/status" --out app/src/main/assets/content-v1.sqlite
 python3 - <<'PY'
 import sqlite3
@@ -50,6 +52,7 @@ db = sqlite3.connect("app/src/main/assets/content-v1.sqlite")
 q = lambda s: db.execute(s).fetchone()[0]
 n = q("select count(*) from ayah")
 print("surahs", q("select count(*) from surah"), "ayat", n, "reciters", q("select count(*) from reciter"),
+      "word-highlight reciters", q("select count(*) from reciter where qf_id is not null"),
       "azkar", q("select count(*) from azkar"), "categories", q("select count(*) from azkar_category"))
 import json
 for k in ("topics", "status", "duas", "prayer_guide"):

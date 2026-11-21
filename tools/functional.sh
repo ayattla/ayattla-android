@@ -207,6 +207,15 @@ open journey; expect "رحلتي: الصفحة المقروءة تُحتسب" "�
 scrollAll; expect "رحلتي: الأسبوع والشهر" "صفحة هذا الشهر" 6
 open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 10
 
+# ── 2.4 «القرآن بالصوت»: the recitation check and voice search open, and pressing the microphone
+# never crashes (the emulator may have no Arabic recognizer; the screen then says so).
+adb shell pm grant $PKG android.permission.RECORD_AUDIO 2>/dev/null || true
+open tasmee; expect "التسميع الذكي: الشاشة" "اضغط وابدأ القراءة" 10; shot tasmee
+$UI tap "ابدأ التسميع"; sleep 4; alive && ok "التسميع الذكي: الميكروفون" || bad "التسميع الذكي: انهار عند الميكروفون"
+$UI tap "أظهر الكلمة التالية"; sleep 1; expect "التسميع الذكي: التلميح" "1 من" 6
+open voice-search; expect "البحث بالصوت: الشاشة" "اقرأ بضع كلمات" 10; shot voice-search
+$UI tap "ابدأ البحث بالصوت"; sleep 4; alive && ok "البحث بالصوت: الميكروفون" || bad "البحث بالصوت: انهار عند الميكروفون"
+
 # ── Without internet: airplane mode, and the app's own offline state (--es offline 1) in case the
 #    emulator keeps a route. Everything opened above was saved, so it must keep working.
 adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || adb shell settings put global airplane_mode_on 1

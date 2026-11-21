@@ -72,6 +72,10 @@ data class Project(
     /** Cards: how many ayat on one card when making a set. */
     val perCard: Int = 1,
     val updated: Long = System.currentTimeMillis(),
+    /** Light each word as it is recited (reciters with Quran.com timings, one surah per clip). */
+    val highlight: Boolean = true,
+    /** Colour of the recited word (ARGB); null: the brand gold. */
+    val highlightColor: Long? = null,
 ) {
     val ayahCount get() = ranges.sumOf { it.to - it.from + 1 }
 }
@@ -122,6 +126,7 @@ fun Project.json(): JSONObject = JSONObject().put("v", 1).put("id", id).put("nam
     .put("ranges", JSONArray(ranges.map { JSONObject().put("s", it.surah).put("a", it.from).put("b", it.to) }))
     .put("style", style.json()).put("bg", background.json()).put("reciter", reciterId ?: JSONObject.NULL)
     .put("pauses", JSONObject(pauses as Map<*, *>)).put("perCard", perCard).put("updated", updated)
+    .put("hl", highlight).put("hlColor", highlightColor ?: JSONObject.NULL)
 
 fun parseProject(o: JSONObject): Project {
     val rs = o.optJSONArray("ranges") ?: JSONArray()
@@ -135,6 +140,7 @@ fun parseProject(o: JSONObject): Project {
         if (o.isNull("reciter")) null else o.optString("reciter"),
         p?.keys()?.asSequence()?.associateWith { p.getInt(it) } ?: emptyMap(),
         o.optInt("perCard", 1), o.optLong("updated"),
+        o.optBoolean("hl", true), o.optLongOrNull("hlColor"),
     )
 }
 

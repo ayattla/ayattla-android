@@ -66,6 +66,8 @@ object OfflineTools {
     private val saved = setOf(
         "clip", "listen", "ruqya", "kids-juz-amma", "hadith", "hadith-card", "hadith-checker", "tajweed", "word-by-word",
         "asma-ul-husna", "crypto-zakat",
+        // Speech recognition works offline where the phone has its Arabic model; otherwise it needs internet.
+        "tasmee", "voice-search",
     )
 
     fun level(id: String): OfflineLevel = when (id) {
