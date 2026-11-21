@@ -52,6 +52,7 @@ import com.ayattla.app.ui.components.TileStyle
 import com.ayattla.app.ui.components.offlineIcon
 import com.ayattla.app.ui.components.offlineTint
 import com.ayattla.app.ui.theme.LocalBrand
+import com.ayattla.app.ui.theme.ToolAccent
 import java.util.Locale
 
 /**
