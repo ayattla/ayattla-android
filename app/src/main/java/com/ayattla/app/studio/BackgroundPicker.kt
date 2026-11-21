@@ -100,7 +100,7 @@ fun BackgroundPicker(selected: SiteMedia?, allowVideo: Boolean, onSelect: (SiteM
                 }
             }
         }
-        if (!loading && items.isEmpty()) Text("تعذر تحميل الخلفيات الآن. تحقق من الاتصال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        if (!loading && items.isEmpty()) Text(if (!com.ayattla.app.data.Net.isOnline) "بدون إنترنت: اختر لونا أو صورة من جهازك، أو جهّز الخلفيات من «الاستخدام بدون إنترنت»." else "تعذر تحميل الخلفيات الآن. تحقق من الاتصال.", style = MaterialTheme.typography.bodySmall, color = b.muted)
         else Text("من مكتبة الموقع", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted)
     }
 }

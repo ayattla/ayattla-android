@@ -10,6 +10,7 @@ import androidx.media3.session.MediaSessionService
 import com.ayattla.app.MainActivity
 
 /** Recitation playback that keeps going in the background, with lock-screen and notification controls. */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
 
@@ -21,6 +22,8 @@ class PlaybackService : MediaSessionService() {
                 true,
             )
             .setHandleAudioBecomingNoisy(true)
+            // Recitations heard once are kept, so they play again without internet.
+            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(AudioCache.playerFactory(this)))
             .build()
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),

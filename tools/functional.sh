@@ -201,5 +201,32 @@ open status/jumuah; expect "الحالات: يوم الجمعة" "صممها ح�
 $UI tap "صممها حالة"; sleep 4; expect "الحالات: محرر البطاقة" "مشاركة" 8; shot status-card; adb shell input keyevent 4
 open status/marriage; expect "الحالات: الزواج" "صممها حالة" 8
 
+# ── Without internet: airplane mode, and the app's own offline state (--es offline 1) in case the
+#    emulator keeps a route. Everything opened above was saved, so it must keep working.
+adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || adb shell settings put global airplane_mode_on 1
+adb shell svc wifi disable >/dev/null 2>&1; adb shell svc data disable >/dev/null 2>&1; sleep 5
+offopen() { adb logcat -b all -c; adb shell am start -S -W -n $PKG/.MainActivity --es screen "$1" --es offline 1 >/dev/null 2>&1; sleep 4; }
+offopen home;    expect "بدون إنترنت: شريط التنبيه في الرئيسية" "أنت بدون إنترنت" 10; shot offline-home
+$UI tap "أنت بدون إنترنت"; sleep 2
+expect "بدون إنترنت: يفتح مركز الاستخدام بدون إنترنت" "أنت بدون إنترنت الآن" 8; shot offline-center
+scrollAll; expect "بدون إنترنت: الأدوات حسب ما يعمل" "يحتاج إنترنت" 6; shot offline-center-tools
+offopen tajweed; pickSurah "البقرة"; expect "بدون إنترنت: التجويد من المحفوظ (البقرة)" "الٓمٓ" 15; shot offline-tajweed
+offopen word-by-word; expect "بدون إنترنت: معاني الكلمات من المحفوظ" "الآية 1" 15
+offopen hadith
+if $UI wait "حديثًا" 10 || $UI wait "لا توجد أحاديث محفوظة" 3; then alive && ok "بدون إنترنت: الأحاديث من المحفوظ" || bad "بدون إنترنت: الأحاديث"; else bad "بدون إنترنت: الأحاديث"; fi
+shot offline-hadith
+offopen hadith-check; expect "بدون إنترنت: التحقق يبحث في المحفوظ" "يبحث في الأحاديث المحفوظة" 8
+offopen radios;  expect "بدون إنترنت: الإذاعات توضح أنها تحتاج إنترنت" "الإذاعات بث مباشر يحتاج إنترنت" 15; shot offline-radios
+offopen mosques; expect "بدون إنترنت: المساجد القريبة توضح الحاجة للإنترنت" "هذه الأداة تحتاج اتصالا بالإنترنت" 8
+offopen prayer;  expect "بدون إنترنت: مواقيت الصلاة" "الفجر" 8
+offopen azkar/1; alive && ok "بدون إنترنت: أذكار الصباح" || bad "بدون إنترنت: أذكار الصباح"
+offopen reader/36/1; alive && ok "بدون إنترنت: قراءة سورة يس" || bad "بدون إنترنت: قراءة سورة يس"
+offopen qibla;   alive && ok "بدون إنترنت: القبلة" || bad "بدون إنترنت: القبلة"
+offopen occasions; expect "بدون إنترنت: المناسبات تعمل" "يعمل بدون إنترنت" 8
+offopen kaffarah;  expect "بدون إنترنت: الكفارات تعمل" "يعمل بدون إنترنت" 8
+adb shell cmd connectivity airplane-mode disable >/dev/null 2>&1 || adb shell settings put global airplane_mode_on 0
+adb shell svc wifi enable >/dev/null 2>&1; adb shell svc data enable >/dev/null 2>&1; sleep 5
+open offline; expect "مع الإنترنت: مركز التجهيز" "أنت متصل بالإنترنت" 20
+
 echo "النتيجة: $(grep -c '^✓' "$OUT") نجحت، $FAIL فشلت" | tee -a "$OUT"
 [ "$FAIL" -eq 0 ]

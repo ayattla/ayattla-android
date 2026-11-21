@@ -93,11 +93,18 @@ fun HadithScreen(nav: NavHostController) {
     var total by remember { mutableIntStateOf(0) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
+    var fromSaved by remember { mutableStateOf(false) }
 
-    LaunchedEffect(cat, submitted, page) {
+    LaunchedEffect(cat, submitted, page, com.ayattla.app.data.Net.isOnline) {
         loading = true; failed = false
         runCatching { SiteApi.hadith(ctx, cat, page, submitted) }
-            .onSuccess { r -> if (page == 1) items.clear(); items.addAll(r.items); cats = r.cats; total = r.total }
+            .onSuccess { r ->
+                if (page == 1) items.clear()
+                // A saved page can repeat hadith already shown (the list keys must stay unique).
+                val have = items.map { it.id + it.url }.toHashSet()
+                items.addAll(r.items.filter { have.add(it.id + it.url) })
+                cats = r.cats; total = r.total; fromSaved = r.offline
+            }
             .onFailure { failed = true }
         loading = false
     }
@@ -119,6 +126,13 @@ fun HadithScreen(nav: NavHostController) {
             cats.forEach { (n, c) -> Chip("$n ($c)", cat == n, { cat = n; reset() }) }
         }
         when {
+            failed && items.isEmpty() && !com.ayattla.app.data.Net.isOnline -> Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                com.ayattla.app.ui.components.OfflineNotice(
+                    "لا توجد أحاديث محفوظة بعد",
+                    "جهّز التطبيق مرة واحدة عند الاتصال، فتتصفح الأحاديث وتبحث فيها بدون إنترنت.",
+                    action = "طريقة التجهيز",
+                ) { nav.navigate("offline") }
+            }
             failed && items.isEmpty() -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 EmptyState("تعذر تحميل الأحاديث", "تحقق من اتصال الإنترنت ثم أعد المحاولة.")
                 Button(onClick = { reset(); page = 1; submitted = submitted + "" }) { Text("إعادة المحاولة") }
@@ -126,7 +140,9 @@ fun HadithScreen(nav: NavHostController) {
             loading && items.isEmpty() -> LoadingState()
             items.isEmpty() -> EmptyState("لا نتائج", "جرّب كلمة أخرى.")
             else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item { Text("$total حديثًا · صحيح وحسن فقط", style = MaterialTheme.typography.labelMedium, color = b.muted) }
+                item {
+                    Text(if (fromSaved) "$total حديثًا من المحفوظ على جهازك · صحيح وحسن فقط" else "$total حديثًا · صحيح وحسن فقط", style = MaterialTheme.typography.labelMedium, color = b.muted)
+                }
                 items(items, key = { it.id + it.url }) { h -> HadithCard(h, nav) }
                 if (items.size < total) item {
                     OutlinedButton(onClick = { page += 1 }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
@@ -172,15 +188,25 @@ fun HadithCheckScreen(nav: NavHostController) {
     var result by remember { mutableStateOf<List<Hadith>?>(null) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var savedCheck by remember { mutableStateOf(false) }
+    val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        AppTopBar("التحقق من حديث", onBack = { nav.popBackStack() })
+        AppTopBar("التحقق من حديث", onBack = { nav.popBackStack() }, subtitle = if (!com.ayattla.app.data.Net.isOnline) "يبحث في الأحاديث المحفوظة" else null)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(value = text, onValueChange = { text = it }, minLines = 4, modifier = Modifier.fillMaxWidth(), placeholder = { Text("نص الحديث") })
             Button(
                 onClick = {
                     busy = true; error = null
                     scope.launch {
-                        runCatching { SiteApi.checkHadith(text.trim()) }.onSuccess { result = it }.onFailure { error = "تعذر الاتصال بالموقع. أعد المحاولة." }
+                        // Offline: the pasted text is matched against the hadith saved on the device.
+                        if (!com.ayattla.app.data.Net.isOnline) {
+                            savedCheck = true
+                            result = SiteApi.checkHadithSaved(ctx, text.trim())
+                        } else runCatching { SiteApi.checkHadith(text.trim()) }.onSuccess { savedCheck = false; result = it }.onFailure {
+                            savedCheck = true
+                            result = SiteApi.checkHadithSaved(ctx, text.trim()).takeIf { it.isNotEmpty() }
+                            if (result == null) error = "تعذر الاتصال بالموقع. أعد المحاولة."
+                        }
                         busy = false
                     }
                 },
@@ -189,6 +215,7 @@ fun HadithCheckScreen(nav: NavHostController) {
             ) { if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = b.onPrimary) else Text("تحقق") }
             error?.let { Text(it, color = b.goldInk) }
             result?.let { r ->
+                if (savedCheck) Text("بحثنا في الأحاديث المحفوظة على جهازك فقط. للبحث في كل المصادر اتصل بالإنترنت.", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 if (r.isEmpty()) EmptyState("لم نجد هذا النص", "لم نعثر عليه في المصادر المتاحة. لا يعني ذلك حكمًا عليه؛ راجع أهل العلم.")
                 else r.forEach { HadithCard(it, nav) }
             }

@@ -475,7 +475,7 @@ private fun HomeToolLauncher(nav: NavHostController) {
                     rest.chunked(4).forEach { row ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             row.forEach { t ->
-                                LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew) { openTool(nav, ctx, t) }
+                                LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew, dimmed = t.dimmedOffline()) { openTool(nav, ctx, t) }
                             }
                             repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
@@ -619,7 +619,7 @@ private fun HomeMediaGallery(nav: NavHostController) {
                 }
             }
         }
-        if (!loading && items.isEmpty()) Text("تعذر تحميل المعرض الآن. تحقق من الاتصال", style = MaterialTheme.typography.bodySmall, color = b.muted)
+        if (!loading && items.isEmpty()) Text(if (!com.ayattla.app.data.Net.isOnline) "المعرض يحتاج إنترنت، ويعرض ما فتحته من قبل." else "تعذر تحميل المعرض الآن. تحقق من الاتصال", style = MaterialTheme.typography.bodySmall, color = b.muted)
     }
 }
 

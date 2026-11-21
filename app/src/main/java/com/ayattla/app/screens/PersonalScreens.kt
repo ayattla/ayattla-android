@@ -193,10 +193,21 @@ fun DownloadsScreen(nav: NavHostController) {
     val scope = rememberCoroutineScope()
     var reciter by remember { mutableStateOf(rememberReciterStatic(content, ctx)) }
     val v = Downloads.version
-    val size = remember(v, reciter) { Downloads.sizeBytes(ctx) }
+    val size = remember(v, reciter, com.ayattla.app.data.OfflinePrep.version) { Downloads.sizeBytes(ctx) }
     var failed by remember { mutableStateOf<String?>(null) }
     ToolPage(nav, "التلاوات المحمّلة", "downloads") {
-        AppCard { Text("المساحة المستعملة: ${mb(size)}", style = MaterialTheme.typography.titleMedium, color = b.primaryInk) }
+        AppCard {
+            Text("المساحة المستعملة: ${mb(size)}", style = MaterialTheme.typography.titleMedium, color = b.primaryInk)
+            Text("السور المحمّلة تعمل بدون إنترنت في الاستماع والرقية وتحفيظ الأطفال وصانع المقاطع. وما تستمع إليه يحفظ تلقائيا أيضا.", style = MaterialTheme.typography.bodySmall, color = b.muted)
+            if (com.ayattla.app.data.OfflinePrep.running) {
+                Text(com.ayattla.app.data.OfflinePrep.stage, style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.padding(top = 8.dp))
+                androidx.compose.material3.LinearProgressIndicator(progress = { com.ayattla.app.data.OfflinePrep.progress }, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), color = b.green, trackColor = b.line)
+            } else com.ayattla.app.ui.components.BrandButton(
+                "حمّل جزء عم كاملا بصوت ${reciter.name}", Modifier.fillMaxWidth().padding(top = 8.dp),
+                kind = com.ayattla.app.ui.components.BtnKind.Gold, enabled = com.ayattla.app.data.Net.isOnline,
+            ) { com.ayattla.app.data.OfflinePrep.downloadRecitations(ctx, content, reciter) }
+            com.ayattla.app.data.OfflinePrep.lastResult?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = b.primaryInk, modifier = Modifier.padding(top = 6.dp)) }
+        }
         Text("القارئ", style = MaterialTheme.typography.labelLarge, color = b.muted)
         // One scrolling row: the surahs stay on the first screen.
         Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -203,6 +204,7 @@ private fun Featured(nav: NavHostController) {
 private fun QuickLinks(nav: NavHostController) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ServiceRow("آياتي المحفوظة", "الآيات التي حفظتها لتعود إليها", Icons.Outlined.StarOutline, style = TileStyle.Emerald) { nav.navigate("saved") }
+        ServiceRow("الاستخدام بدون إنترنت", "ما يعمل بلا اتصال وتجهيز التطبيق", Icons.Outlined.CloudDone, style = TileStyle.Emerald) { nav.navigate("offline") }
         ServiceRow("الإعدادات", "القارئ والخط والتنبيهات", Icons.Outlined.Settings, style = TileStyle.Soft) { nav.navigate("settings") }
         ServiceRow("عن آيات تتلى", "طريقة العمل والمزايا والمصادر", Icons.Outlined.Info, style = TileStyle.Soft) { nav.navigate("about") }
     }

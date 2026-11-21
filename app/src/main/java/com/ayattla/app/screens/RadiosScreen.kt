@@ -68,13 +68,20 @@ fun RadiosScreen(nav: NavHostController) {
     var failed by remember { mutableStateOf(false) }
     var attempt by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
-    LaunchedEffect(attempt) {
+    LaunchedEffect(attempt, com.ayattla.app.data.Net.isOnline) {
         failed = false
         runCatching { loadRadios() }.onSuccess { radios = it }.onFailure { failed = true }
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         AppTopBar("الإذاعات القرآنية", onBack = { nav.popBackStack() })
         when {
+            failed && !com.ayattla.app.data.Net.isOnline -> Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                com.ayattla.app.ui.components.OfflineNotice(
+                    "الإذاعات بث مباشر يحتاج إنترنت",
+                    "تعمل تلقائيا عند عودة الاتصال. تقدر الآن تستمع للسور المحمّلة وما استمعت إليه من قبل.",
+                    action = "التلاوات المحفوظة",
+                ) { nav.navigate("downloads") }
+            }
             failed -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 EmptyState("تعذر تحميل الإذاعات", "تحقق من اتصال الإنترنت ثم أعد المحاولة.")
                 Button(onClick = { attempt++ }) { Text("إعادة المحاولة") }

@@ -127,11 +127,12 @@ import java.util.Locale
 fun ToolPage(nav: NavHostController, title: String, id: String? = null, content: @Composable ColumnScope.() -> Unit) {
     val tool = id?.let { runCatching { SiteTool.byId(it) }.getOrNull() }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        AppTopBar(title, onBack = { nav.popBackStack() })
+        AppTopBar(title, onBack = { nav.popBackStack() }, subtitle = offlineSubtitle(id))
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (tool != null) OfflineToolNotice(nav, tool.id)
             content()
         }
     }
@@ -146,14 +147,31 @@ fun ToolPage(nav: NavHostController, title: String, id: String? = null, content:
 fun LazyToolPage(nav: NavHostController, title: String, id: String? = null, content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     val tool = id?.let { runCatching { SiteTool.byId(it) }.getOrNull() }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        AppTopBar(title, onBack = { nav.popBackStack() })
+        AppTopBar(title, onBack = { nav.popBackStack() }, subtitle = offlineSubtitle(id))
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
         ) {
+            if (tool != null && !com.ayattla.app.data.Net.isOnline && com.ayattla.app.data.OfflineTools.level(tool.id) == com.ayattla.app.data.OfflineLevel.Online)
+                block("offline-notice") { OfflineToolNotice(nav, tool.id) }
             content()
         }
     }
+}
+
+/** Under a tool's title while offline: how much of it works («يعمل بدون إنترنت» / «يعمل بما حفظته»). */
+@Composable
+private fun offlineSubtitle(id: String?): String? =
+    if (id == null || id == "offline" || com.ayattla.app.data.Net.isOnline) null else com.ayattla.app.data.OfflineTools.level(id).label
+
+/** Offline in a tool that needs internet: a clear note at the top with the way to what works. */
+@Composable
+fun OfflineToolNotice(nav: NavHostController, id: String) {
+    if (com.ayattla.app.data.Net.isOnline || com.ayattla.app.data.OfflineTools.level(id) != com.ayattla.app.data.OfflineLevel.Online) return
+    com.ayattla.app.ui.components.OfflineNotice(
+        "هذه الأداة تحتاج اتصالا بالإنترنت",
+        "ستعمل تلقائيا عند عودة الاتصال. أغلب أدوات التطبيق تعمل الآن بدون إنترنت.",
+    ) { nav.navigate("offline") }
 }
 
 /** A section of a [LazyToolPage], followed by the page's usual 16 dp gap. */
@@ -301,7 +319,7 @@ fun TajweedScreen(nav: NavHostController) {
     var failed by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
     var chunks by remember { mutableStateOf<List<androidx.compose.ui.text.AnnotatedString>>(emptyList()) }
-    LaunchedEffect(surah, retry) {
+    LaunchedEffect(surah, retry, com.ayattla.app.data.Net.isOnline) {
         verses = emptyList(); chunks = emptyList(); failed = false
         runCatching { SiteApi.tajweed(ctx, surah) }.onSuccess { verses = it }.onFailure { failed = true }
     }
@@ -320,7 +338,12 @@ fun TajweedScreen(nav: NavHostController) {
         }
         when {
             failed -> block("failed") {
-                AppCard {
+                if (!com.ayattla.app.data.Net.isOnline) com.ayattla.app.ui.components.OfflineNotice(
+                    "هذه السورة غير محفوظة على جهازك",
+                    "السور التي فتحتها من قبل تعمل بدون إنترنت. جهّز جزء عم والسور المشهورة مرة واحدة عند الاتصال.",
+                    action = "طريقة التجهيز",
+                ) { nav.navigate("offline") }
+                else AppCard {
                     Text("تعذر تحميل السورة. تحقق من الاتصال بالإنترنت.", color = b.muted)
                     BrandButton("إعادة المحاولة", Modifier.fillMaxWidth().padding(top = 8.dp), kind = BtnKind.Secondary) { retry++ }
                 }
@@ -350,7 +373,7 @@ fun WordByWordScreen(nav: NavHostController) {
     var failed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var retry by remember { mutableIntStateOf(0) }
-    LaunchedEffect(surah, lang, retry) {
+    LaunchedEffect(surah, lang, retry, com.ayattla.app.data.Net.isOnline) {
         verses = emptyList(); failed = false; loading = true
         sp(ctx).edit().putString("wbw.lang", lang).apply()
         // Pages are shown as they arrive, so long surahs start at once.
@@ -364,7 +387,12 @@ fun WordByWordScreen(nav: NavHostController) {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 WordLanguages.forEach { (id, t) -> Chip(t, id == lang, { lang = id }) }
             }
-            if (failed) {
+            if (failed && !com.ayattla.app.data.Net.isOnline) com.ayattla.app.ui.components.OfflineNotice(
+                "معاني هذه السورة غير محفوظة",
+                "السور التي فتحتها من قبل تعمل بدون إنترنت، ويحفظ التجهيز معاني جزء عم والسور المشهورة.",
+                action = "طريقة التجهيز",
+            ) { nav.navigate("offline") }
+            else if (failed) {
                 Text("تعذر التحميل. تحقق من الاتصال بالإنترنت.", color = b.muted)
                 BrandButton("إعادة المحاولة", Modifier.fillMaxWidth(), kind = BtnKind.Secondary) { retry++ }
             } else if (verses.isEmpty()) LoadingState(Modifier.height(160.dp))

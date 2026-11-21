@@ -590,7 +590,7 @@ private fun MyTools(nav: NavHostController, pinned: List<String>) {
         Column(Modifier.fillMaxWidth().surface(b).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             list.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { t -> LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew) { openTool(nav, ctx, t) } }
+                    row.forEach { t -> LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew, dimmed = t.dimmedOffline()) { openTool(nav, ctx, t) } }
                     repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }

@@ -668,7 +668,7 @@ private fun ClipExport(p: Project, engine: ClipEngine, reciter: com.ayattla.app.
                 job = scope.launch {
                     runCatching { engine.make(p, reciter) { stage = it } }
                         .onSuccess { result = it }
-                        .onFailure { e -> if (e !is kotlinx.coroutines.CancellationException) error = "تعذر تجهيز المقطع. تحقق من الإنترنت ثم أعد المحاولة." }
+                        .onFailure { e -> if (e !is kotlinx.coroutines.CancellationException) error = if (!com.ayattla.app.data.Net.isOnline) "بدون إنترنت يحتاج المقطع تلاوة محمّلة أو استمعت إليها من قبل. حمّل السورة من «التلاوات المحمّلة» أو اتصل بالإنترنت." else "تعذر تجهيز المقطع. تحقق من الإنترنت ثم أعد المحاولة." }
                     stage = null
                 }
             }

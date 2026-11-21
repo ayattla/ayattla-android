@@ -16,7 +16,10 @@ data class Hadith(
     val grade: String, val cat: String?, val url: String, val match: Int?,
 )
 
-data class HadithPage(val cats: List<Pair<String, Int>>, val total: Int, val page: Int, val items: List<Hadith>)
+data class HadithPage(val cats: List<Pair<String, Int>>, val total: Int, val page: Int, val items: List<Hadith>, val offline: Boolean = false)
+
+/** No connection and nothing saved for this request. */
+class OfflineException : Exception("offline")
 
 /**
  * Read-only client for ayattla.com's public JSON endpoints (the same ones the site's pages use).
@@ -33,8 +36,17 @@ object SiteApi {
             setRequestProperty("Accept", "application/json")
         }
 
-    private suspend fun getCached(context: Context, url: String, key: String): String = withContext(Dispatchers.IO) {
-        val f = File(File(context.cacheDir, "api").apply { mkdirs() }, key.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(120))
+    /** Saved answers live with the app's files (not the cache the system may empty), so tools keep working offline. */
+    private fun store(context: Context, sub: String) = File(File(context.filesDir, "offline"), sub).apply { mkdirs() }
+
+    /**
+     * [preferNetwork] false: a saved copy is used without asking the server (the offline preparation).
+     * Offline, a saved copy is returned at once instead of waiting for a timeout.
+     */
+    private suspend fun getCached(context: Context, url: String, key: String, preferNetwork: Boolean = true): String = withContext(Dispatchers.IO) {
+        val f = File(store(context, "api"), key.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(120))
+        if (f.exists() && (!preferNetwork || !Net.isOnline)) return@withContext f.readText()
+        if (!Net.isOnline) throw OfflineException()
         try {
             val c = open(url)
             try {
@@ -48,9 +60,14 @@ object SiteApi {
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 
-    /** GET /api/hadith/browse?cat=&page=&q= (12 per page, as on /tools/hadith). */
-    suspend fun hadith(context: Context, cat: String, page: Int, query: String): HadithPage {
-        val raw = getCached(context, "$BASE/api/hadith/browse?cat=${enc(cat)}&page=$page&q=${enc(query)}", "hadith-$cat-$page-${query.hashCode()}")
+    /** GET /api/hadith/browse?cat=&page=&q= (12 per page, as on /tools/hadith). Offline: the saved collection. */
+    suspend fun hadith(context: Context, cat: String, page: Int, query: String, preferNetwork: Boolean = true): HadithPage {
+        val raw = try {
+            getCached(context, "$BASE/api/hadith/browse?cat=${enc(cat)}&page=$page&q=${enc(query)}", "hadith-$cat-$page-${query.hashCode()}", preferNetwork)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            return savedHadith(context, cat, page, query) ?: throw e
+        }
         val o = JSONObject(raw)
         val cats = o.optJSONArray("cats") ?: JSONArray()
         return HadithPage(
@@ -59,8 +76,47 @@ object SiteApi {
         )
     }
 
+    /** Every hadith saved on the device (from pages opened or prepared), without repeats. */
+    suspend fun savedCollection(context: Context): Pair<List<Pair<String, Int>>, List<Hadith>> = withContext(Dispatchers.IO) {
+        val files = store(context, "api").listFiles { f -> f.name.startsWith("hadith-") }.orEmpty()
+        val seen = LinkedHashMap<String, Hadith>()
+        var cats: List<Pair<String, Int>> = emptyList()
+        files.sortedBy { it.name }.forEach { f ->
+            runCatching {
+                val o = JSONObject(f.readText())
+                val c = o.optJSONArray("cats")
+                if (c != null && c.length() > cats.size) cats = List(c.length()) { c.getJSONObject(it).let { x -> x.getString("name") to x.optInt("count") } }
+                items(o.getJSONArray("items")).forEach { h -> seen.putIfAbsent(h.id + h.url, h) }
+            }
+        }
+        cats to seen.values.toList()
+    }
+
+    /** A page of the saved collection, filtered as the site does (category, words of the search). */
+    private suspend fun savedHadith(context: Context, cat: String, page: Int, query: String): HadithPage? {
+        val (cats, all) = savedCollection(context)
+        if (all.isEmpty()) return null
+        val words = SearchText.clean(query).split(' ').filter { it.length > 1 }
+        val list = all.filter { h ->
+            (cat.isEmpty() || h.cat == cat) && (words.isEmpty() || SearchText.clean(h.text + " " + (h.title ?: "")).let { t -> words.all { it in t } })
+        }
+        val savedCats = cats.map { (n, _) -> n to all.count { it.cat == n } }.filter { it.second > 0 }
+        return HadithPage(savedCats, list.size, page, list.drop((page - 1) * 12).take(12), offline = true)
+    }
+
+    /** Offline check: the saved hadith whose words best match the pasted text (match = share of words found). */
+    suspend fun checkHadithSaved(context: Context, text: String): List<Hadith> {
+        val q = SearchText.clean(text).split(' ').filter { it.length > 2 }.toSet()
+        if (q.isEmpty()) return emptyList()
+        return savedCollection(context).second.map { h ->
+            val t = SearchText.clean(h.text).split(' ').toSet()
+            h to q.count { it in t } * 100 / q.size
+        }.filter { it.second >= 50 }.sortedByDescending { it.second }.take(5).map { (h, m) -> h.copy(match = m) }
+    }
+
     /** POST /api/hadith/check {"text": ...} (as on /tools/hadith-checker). */
     suspend fun checkHadith(text: String): List<Hadith> = withContext(Dispatchers.IO) {
+        if (!Net.isOnline) throw OfflineException()
         val c = open("$BASE/api/hadith/check", "POST")
         try {
             c.doOutput = true
@@ -87,8 +143,9 @@ object SiteApi {
     data class WordsVerse(val key: String, val n: Int, val words: List<Word>, val tafsir: String?)
 
     private suspend fun getQf(context: Context, url: String, key: String): String = withContext(Dispatchers.IO) {
-        val f = File(File(context.cacheDir, "qf").apply { mkdirs() }, key)
-        if (f.exists() && System.currentTimeMillis() - f.lastModified() < 6L * 86_400_000) return@withContext f.readText()
+        val f = File(store(context, "qf"), key)
+        if (f.exists() && (!Net.isOnline || System.currentTimeMillis() - f.lastModified() < 6L * 86_400_000)) return@withContext f.readText()
+        if (!Net.isOnline) throw OfflineException()
         try {
             val c = open(url)
             try {
@@ -97,6 +154,10 @@ object SiteApi {
             } finally { c.disconnect() }
         } catch (e: Exception) { if (f.exists()) f.readText() else throw e }
     }
+
+    /** Whether a surah's tajweed text / word meanings are on the device. */
+    fun hasTajweed(context: Context, chapter: Int) = File(store(context, "qf"), "tj-$chapter").exists()
+    fun hasWords(context: Context, chapter: Int, lang: String) = File(store(context, "qf"), "wbw-$chapter-$lang-1").exists()
 
     /** GET /api/qf/tajweed/{chapter}: verses with the site's tajweed HTML. */
     suspend fun tajweed(context: Context, chapter: Int): List<TajweedVerse> {
@@ -140,6 +201,7 @@ object SiteApi {
     )
 
     suspend fun mosques(lat: Double, lng: Double, radiusM: Int): List<Mosque> = withContext(Dispatchers.IO) {
+        if (!Net.isOnline) throw OfflineException()
         val q = "[out:json][timeout:25];(node[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng);" +
             "way[\"amenity\"=\"place_of_worship\"][\"religion\"=\"muslim\"](around:$radiusM,$lat,$lng););out center 80;"
         // All servers are asked at once and the first answer is used: each one is often busy or slow.

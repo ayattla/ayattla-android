@@ -37,8 +37,8 @@ object MediaLibrary {
         val url = "$BASE?type=$type&q=&category=${URLEncoder.encode(category, "UTF-8")}&page=1&orientation=$orientation"
         val raw = withContext(Dispatchers.IO) {
             val f = File(File(context.cacheDir, "media").apply { mkdirs() }, "search-$key.json")
-            val fresh = f.exists() && System.currentTimeMillis() - f.lastModified() < 3_600_000
-            if (fresh) f.readText() else runCatching {
+            val fresh = f.exists() && (!Net.isOnline || System.currentTimeMillis() - f.lastModified() < 3_600_000)
+            if (fresh) f.readText() else if (!Net.isOnline) return@withContext null else runCatching {
                 val c = (URL(url).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 10_000; readTimeout = 20_000
                     setRequestProperty("User-Agent", "AyatTutla-Android"); setRequestProperty("Accept", "application/json")
@@ -94,6 +94,7 @@ object RemoteImages {
                 val dir = File(context.cacheDir, "img").apply { mkdirs() }
                 val f = File(dir, url.hashCode().toUInt().toString(16) + ".bin")
                 if (!f.exists() || f.length() == 0L) {
+                    if (!Net.isOnline) error("offline")
                     val c = (URL(url).openConnection() as HttpURLConnection).apply {
                         connectTimeout = 10_000; readTimeout = 30_000
                         setRequestProperty("User-Agent", "AyatTutla-Android")

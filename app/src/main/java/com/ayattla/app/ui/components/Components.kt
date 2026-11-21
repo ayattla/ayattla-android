@@ -42,6 +42,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
@@ -405,12 +407,17 @@ fun ServiceRow(title: String, subtitle: String?, icon: ImageVector, modifier: Mo
 
 /** Launcher tile: icon over a short title (app-style grids, no card). */
 @Composable
-fun LauncherIcon(title: String, icon: ImageVector, style: TileStyle, modifier: Modifier = Modifier, isNew: Boolean = false, size: Dp = 54.dp, onClick: () -> Unit) {
+fun LauncherIcon(title: String, icon: ImageVector, style: TileStyle, modifier: Modifier = Modifier, isNew: Boolean = false, size: Dp = 54.dp, dimmed: Boolean = false, onClick: () -> Unit) {
     val b = LocalBrand.current
-    Column(modifier.pressable(onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+    Column(modifier.pressable(onClick).alpha(if (dimmed) 0.45f else 1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Box {
             IconTile(icon, style = style, size = size)
-            if (isNew) Box(
+            // Offline, a tool that needs internet carries a small «cloud off» mark.
+            if (dimmed) Box(
+                Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(20.dp).clip(CircleShape).background(b.surface).padding(2.dp),
+                contentAlignment = Alignment.Center,
+            ) { Icon(androidx.compose.material.icons.Icons.Outlined.CloudOff, "يحتاج إنترنت", tint = b.muted, modifier = Modifier.size(14.dp)) }
+            else if (isNew) Box(
                 Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp).size(11.dp).clip(CircleShape)
                     .background(b.surface).padding(2.dp).clip(CircleShape).background(b.accent),
             )
