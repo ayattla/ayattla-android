@@ -98,7 +98,13 @@ fun HadithScreen(nav: NavHostController) {
     LaunchedEffect(cat, submitted, page, com.ayattla.app.data.Net.isOnline) {
         loading = true; failed = false
         runCatching { SiteApi.hadith(ctx, cat, page, submitted) }
-            .onSuccess { r -> if (page == 1) items.clear(); items.addAll(r.items); cats = r.cats; total = r.total; fromSaved = r.offline }
+            .onSuccess { r ->
+                if (page == 1) items.clear()
+                // A saved page can repeat hadith already shown (the list keys must stay unique).
+                val have = items.map { it.id + it.url }.toHashSet()
+                items.addAll(r.items.filter { have.add(it.id + it.url) })
+                cats = r.cats; total = r.total; fromSaved = r.offline
+            }
             .onFailure { failed = true }
         loading = false
     }
