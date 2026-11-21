@@ -61,7 +61,7 @@ object Journey {
     /** A hifz portion learnt or a review rated. */
     fun hifzDone() = update { it.copy(hifz = it.hifz + 1) }
 
-    fun setGoal(n: Int) { goal = n.coerceIn(1, 40); save() }
+    fun chooseGoal(n: Int) { goal = n.coerceIn(1, 40); save() }
 
     fun day(d: Long = today()) = days[d] ?: Day()
     fun pagesToday() = day().pages.size

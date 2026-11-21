@@ -115,7 +115,7 @@ fun JourneyScreen(nav: NavHostController) {
                 Journey.goals.forEach { g ->
                     val on = g == goal
                     Box(
-                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(if (on) b.green else b.tint).clickable { Journey.setGoal(g) }.padding(vertical = 10.dp),
+                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(if (on) b.green else b.tint).clickable { Journey.chooseGoal(g) }.padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) { Text(goalLabel(g), style = MaterialTheme.typography.labelLarge, color = if (on) Color.White else b.ink, textAlign = TextAlign.Center) }
                 }
