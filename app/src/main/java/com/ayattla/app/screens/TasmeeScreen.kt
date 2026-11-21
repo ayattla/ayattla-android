@@ -234,7 +234,7 @@ private fun Stepper(label: String, value: Int, min: Int, max: Int, modifier: Mod
             verticalAlignment = Alignment.CenterVertically,
         ) {
             StepKey("+", value < max) { onChange(value + 1) }
-            Text((value), style = MaterialTheme.typography.titleMedium, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+            Text("$value", style = MaterialTheme.typography.titleMedium, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
             StepKey("−", value > min) { onChange(value - 1) }
         }
     }
