@@ -20,6 +20,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -337,12 +339,17 @@ private fun ChoiceGrid(choices: List<Welcome.Choice>, prefix: String, selected: 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val cols = if (maxWidth >= 560.dp) 3 else 2
         val gap = 10.dp
-        val w = (maxWidth - gap * (cols - 1)) / cols
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap)) {
-            choices.forEach { c ->
-                val on = c.id in selected
-                OptionCard(c.label, icons["$prefix:${c.id}"], on, Modifier.size(width = w, height = 104.dp)) {
-                    onChange(if (on) selected - c.id else selected + c.id)
+        // Fixed rows with equal weights: rounding can never push a card onto its own row.
+        Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+            choices.chunked(cols).forEach { row ->
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                    row.forEach { c ->
+                        val on = c.id in selected
+                        OptionCard(c.label, icons["$prefix:${c.id}"], on, Modifier.weight(1f).fillMaxHeight().heightIn(min = 104.dp)) {
+                            onChange(if (on) selected - c.id else selected + c.id)
+                        }
+                    }
+                    repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
