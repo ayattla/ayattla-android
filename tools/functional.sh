@@ -260,7 +260,13 @@ $UI tap "التالي"; sleep 2; $UI tap "تخطي"; sleep 2; expect "البدا
 $UI tap "قارئ مفضل"; sleep 1; shot welcome-listen; $UI tap "التالي"; sleep 2
 expect "البداية: سؤال التذكيرات" "ما التذكيرات التي ترغب فيها" 6; shot welcome-reminders
 $UI tap "آية اليوم كل صباح"; $UI tap "التالي"; sleep 3
-$UI tap "Allow" >/dev/null 2>&1 || $UI tap "السماح" >/dev/null 2>&1 || true; sleep 2
+allow_btn() {  # the dialog title also says "Allow", so tap the button itself by its id
+  adb shell uiautomator dump /sdcard/perm.xml >/dev/null 2>&1
+  b=$(adb shell cat /sdcard/perm.xml | grep -o 'resource-id="com.android.permissioncontroller:id/permission_allow_button"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o '\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]')
+  [ -n "$b" ] || return 1
+  set -- $(echo "$b" | tr '[],' '   '); adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
+shot welcome-permission; allow_btn || true; sleep 2
 expect "البداية: إذن الإشعارات عند اختيار تذكير فقط" "كيف تفضل عرض التطبيق" 8
 $UI tap "الوضع الداكن"; sleep 2; shot welcome-theme-dark; $UI tap "الوضع الفاتح"; sleep 1
 $UI tap "إنهاء"; sleep 2; expect "البداية: صفحة النجاح" "أهلا بك في آيات تتلى" 6; shot welcome-done
