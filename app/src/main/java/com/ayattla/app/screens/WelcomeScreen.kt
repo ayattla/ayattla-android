@@ -460,7 +460,7 @@ private fun RemindStep(selected: Set<String>, onChange: (Set<String>) -> Unit) {
             }
         }
         Text(
-            "أوقات الأذكار حسب مدينة ${prefs.cityName}، ولا نحتاج موقعك. إن اخترت تذكيرا نطلب إذن الإشعارات عند الضغط على «التالي».",
+            "أوقات الأذكار حسب مدينة ${prefs.cityName}، ولا نحتاج موقعك. إن اخترت تذكيرا نطلب إذن الإشعارات حين تتابع.",
             style = MaterialTheme.typography.bodySmall, color = b.muted, modifier = Modifier.padding(top = 4.dp),
         )
     }
