@@ -704,6 +704,7 @@ private fun ClipExport(p: Project, engine: ClipEngine, reciter: com.ayattla.app.
             Text("المقطع جاهز (${f.length() / 1_000_000} ميجا)", style = MaterialTheme.typography.titleSmall, color = b.primaryInk, modifier = Modifier.padding(top = 8.dp))
             Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 BrandButton("مشاركة المقطع", Modifier.fillMaxWidth(), icon = Icons.Filled.Share) {
+                    com.ayattla.app.data.Stats.event(ctx, "clip_shared")
                     val send = Intent(Intent.ACTION_SEND).setType("video/mp4").putExtra(Intent.EXTRA_STREAM, ClipEngine.shareUri(ctx, f)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     ctx.startActivity(Intent.createChooser(send, "مشاركة المقطع"))
                 }
@@ -711,6 +712,7 @@ private fun ClipExport(p: Project, engine: ClipEngine, reciter: com.ayattla.app.
                     BrandButton("حفظ", Modifier.weight(1f), icon = Icons.Filled.Download, kind = BtnKind.Secondary) {
                         scope.launch {
                             val uri = withContext(Dispatchers.IO) { ClipEngine.saveToGallery(ctx, f) }
+                            if (uri != null) com.ayattla.app.data.Stats.event(ctx, "clip_saved")
                             Toast.makeText(ctx, if (uri != null) "حُفظ المقطع في الفيديوهات" else "تعذر الحفظ", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -736,6 +738,7 @@ private fun CardsExport(p: Project, parts: List<Part>, onMedia: Boolean) {
         scope.launch {
             var n = 0
             withContext(Dispatchers.IO) { made.forEach { f -> android.graphics.BitmapFactory.decodeFile(f.path)?.let { bmp -> if (CardRenderer.saveToGallery(ctx, bmp, f.nameWithoutExtension) != null) n++; bmp.recycle() } } }
+            if (n > 0) com.ayattla.app.data.Stats.event(ctx, "design_saved", "ayah-card")
             Toast.makeText(ctx, "حُفظت $n بطاقة في الصور", Toast.LENGTH_SHORT).show()
         }
     }
@@ -782,6 +785,7 @@ private fun CardsExport(p: Project, parts: List<Part>, onMedia: Boolean) {
                 }
             }
             BrandButton(if (made.size == 1) "مشاركة" else "مشاركة الكل", Modifier.fillMaxWidth(), icon = Icons.Filled.Share) {
+                com.ayattla.app.data.Stats.event(ctx, "design_shared", "ayah-card")
                 val uris = ArrayList(made.map { ClipEngine.shareUri(ctx, it) })
                 val send = if (uris.size == 1) Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uris[0])
                 else Intent(Intent.ACTION_SEND_MULTIPLE).setType("image/png").putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)

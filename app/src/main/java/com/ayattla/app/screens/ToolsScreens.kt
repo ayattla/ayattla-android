@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -538,6 +539,29 @@ fun SettingsScreen(nav: NavHostController) {
                         Text("حركة الشعار القصيرة في بداية كل تشغيل", style = MaterialTheme.typography.bodySmall, color = b.muted)
                     }
                     androidx.compose.material3.Switch(introOn, { introOn = it; com.ayattla.app.ui.components.IntroPrefs.setEnabled(sctx, it) })
+                }
+            }
+            Text("تجربتك", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
+            AppCard(onClick = { nav.navigate("welcome-edit") }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Tune, null, tint = b.goldInk)
+                    Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                        Text("تعديل اهتماماتي", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                        Text("ما تهتم به يحدد مختارات الرئيسية واختصاراتك، ولا يخفي أي أداة", style = MaterialTheme.typography.bodySmall, color = b.muted)
+                    }
+                }
+            }
+            var statsOn by remember { mutableStateOf(com.ayattla.app.data.Stats.enabled(sctx)) }
+            AppCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("الإحصاءات المجهولة", style = MaterialTheme.typography.bodyLarge, color = b.ink)
+                        Text(
+                            "أعداد استخدام الأدوات والخطوات فقط لتحسين التطبيق، بلا اسم ولا رقم ولا موقع ولا أي معرف لجهازك",
+                            style = MaterialTheme.typography.bodySmall, color = b.muted,
+                        )
+                    }
+                    androidx.compose.material3.Switch(statsOn, { statsOn = it; com.ayattla.app.data.Stats.setEnabled(sctx, it) })
                 }
             }
             Text("التنبيهات", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())

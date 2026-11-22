@@ -75,7 +75,11 @@ data class CardText(
     val colourFirst: Boolean = false,
 )
 
-object PendingText { var value: CardText? = null }
+object PendingText {
+    var value: CardText? = null
+    /** Where the card came from, for the anonymous stats only ("status" for «حالات واتساب»). */
+    var source: String = "card"
+}
 
 /** Card maker for a hadith, a zikr or a name: the text as published, a real photo or a colour, four sizes. */
 @Composable
@@ -84,6 +88,7 @@ fun TextCardScreen(nav: NavHostController) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val card = remember { PendingText.value } ?: run { LaunchedEffect(Unit) { nav.popBackStack() }; return }
+    val source = remember { PendingText.source.also { PendingText.source = "card" } }
     var ratio by remember { mutableStateOf(card.ratio) }
     var style by remember { mutableStateOf(card.style) }
     var ornament by remember { mutableStateOf(card.ornament) }
@@ -106,6 +111,7 @@ fun TextCardScreen(nav: NavHostController) {
         bitmap?.let { bmp ->
             scope.launch {
                 val uri = withContext(Dispatchers.IO) { CardRenderer.saveToGallery(ctx, bmp, "ayattla-card-${System.currentTimeMillis()}") }
+                if (uri != null) com.ayattla.app.data.Stats.event(ctx, "design_saved", source)
                 Toast.makeText(ctx, if (uri != null) "حُفظت البطاقة في الصور" else "تعذر الحفظ", Toast.LENGTH_SHORT).show()
             }
         }
@@ -128,6 +134,7 @@ fun TextCardScreen(nav: NavHostController) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrandButton("مشاركة", Modifier.weight(1f), icon = Icons.Filled.Share, enabled = bitmap != null) {
                     val bmp = bitmap ?: return@BrandButton
+                    com.ayattla.app.data.Stats.event(ctx, "design_shared", source)
                     val send = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, CardRenderer.shareUri(ctx, bmp))
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     ctx.startActivity(Intent.createChooser(send, "مشاركة البطاقة"))

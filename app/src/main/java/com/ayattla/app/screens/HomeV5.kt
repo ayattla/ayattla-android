@@ -67,6 +67,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.horizontalScroll
+import com.ayattla.app.ui.components.ToolTile
+import com.ayattla.app.ui.components.BrandButton
+import com.ayattla.app.ui.components.BtnKind
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -126,7 +129,7 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
+    Prayer("الصلاة القادمة"), ForYou("مختارات لك"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
     Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
     Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
     Quick("الوصول السريع"),
@@ -139,11 +142,34 @@ object HomeLayout {
 
     /** Ordered sections with their visibility. New sections (from updates) join at the end, shown. */
     fun load(c: Context): List<Pair<HomeSection, Boolean>> {
+        if (!sp(c).contains("order.v2")) return personalDefault(c).map { it to (it !in hiddenByDefault) }
         val saved = sp(c).getString("order.v2", null)?.split(",")?.mapNotNull { e ->
             val (n, v) = e.split(":").let { it.getOrNull(0) to it.getOrNull(1) }
             HomeSection.entries.firstOrNull { it.name == n }?.let { it to (v != "0") }
         }.orEmpty()
         return saved + HomeSection.entries.filter { s -> saved.none { it.first == s } }.map { it to (it !in hiddenByDefault) }
+    }
+
+    /**
+     * The order before any manual arrangement: the original order, with the sections matching the
+     * first-run interests moved up after the prayer card. Nothing is hidden; a manual arrangement
+     * («تخصيص الرئيسية») always replaces this.
+     */
+    fun personalDefault(c: Context): List<HomeSection> {
+        val u = com.ayattla.app.data.Welcome.usesOf(c)
+        val boost = buildList {
+            add(HomeSection.ForYou)
+            if ("quran" in u || "hifz" in u) { add(HomeSection.Journey); add(HomeSection.Wird) }
+            if (u.any { it in setOf("status", "clips", "cards", "gifts") }) add(HomeSection.Create)
+            if ("azkar" in u) { add(HomeSection.Azkar); add(HomeSection.Dhikr) }
+            if ("cards" in u || "status" in u) add(HomeSection.Gallery)
+            if ("tafsir" in u) add(HomeSection.Ayah)
+            if ("gifts" in u) add(HomeSection.Occasion)
+            if ("all" in u) add(HomeSection.All)
+        }.distinct()
+        val base = HomeSection.entries.toList()
+        val head = base.takeWhile { it == HomeSection.Prayer }
+        return (head + boost + base).distinct()
     }
 
     fun save(c: Context, l: List<Pair<HomeSection, Boolean>>) =
@@ -173,6 +199,11 @@ fun HomeScreenV5(nav: NavHostController) {
                 Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp).padding(top = 6.dp, bottom = LocalBottomInset.current + 16.dp),
                 verticalArrangement = Arrangement.spacedBy(26.dp),
             ) {
+                var notice by remember { mutableStateOf(com.ayattla.app.data.Welcome.statsNoticeDue(ctx)) }
+                if (notice) StatsNotice(
+                    onOk = { com.ayattla.app.data.Welcome.statsNoticeSeen(ctx); notice = false },
+                    onOff = { com.ayattla.app.data.Stats.setEnabled(ctx, false); com.ayattla.app.data.Welcome.statsNoticeSeen(ctx); notice = false },
+                )
                 layout.filter { it.second }.forEachIndexed { i, (s, _) ->
                     // A light entrance, once per launch: each section rises in turn.
                     var shown by remember { mutableStateOf(false) }
@@ -205,6 +236,7 @@ private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: L
     when (s) {
         HomeSection.Prayer -> PrayerHero(nav)
         HomeSection.Journey -> JourneyHomeCard(nav)
+        HomeSection.ForYou -> ForYou(nav)
         HomeSection.Quick -> MuslimServices(nav)
         HomeSection.Tracker -> PrayerTracker()
         HomeSection.Dhikr -> QuickDhikr(nav)
@@ -616,15 +648,86 @@ private fun MyTools(nav: NavHostController, pinned: List<String>) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
     val fav = pinned.mapNotNull { id -> SiteTool.all.firstOrNull { it.id == id } }
-    val top = remember { ToolUsage.top(ctx, 8) }
+    // Pinned first, then real use; before there is any use, the tools matching the first-run interests.
+    val top = remember {
+        val suggested = if (ToolUsage.hasHistory(ctx)) emptyList() else com.ayattla.app.data.Welcome.suggested(ctx).mapNotNull { SiteTool.byIdOrNull(it) }
+        (suggested + ToolUsage.top(ctx, 8)).distinctBy { it.id }
+    }
     val list = (fav + top).distinctBy { it.id }.take(8)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        CenteredTitle(if (fav.isNotEmpty()) "أدواتي المفضلة" else "الأكثر استخداما", "كل الأدوات") { nav.goTab("more") }
+        CenteredTitle(if (fav.isNotEmpty()) "أدواتي المفضلة" else "اختصاراتك", "كل الأدوات") { nav.goTab("more") }
         Column(Modifier.fillMaxWidth().surface(b).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             list.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { t -> LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew, dimmed = t.dimmedOffline()) { openTool(nav, ctx, t) } }
+                    row.forEach { t ->
+                        val from = if (t.id in pinned) "favorite_tool_opened" else "home_shortcut_opened"
+                        LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew, dimmed = t.dimmedOffline()) { openTool(nav, ctx, t, from) }
+                    }
                     repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
+/** One-time note for people who updated: what the anonymous stats are, and how to turn them off. */
+@Composable
+private fun StatsNotice(onOk: () -> Unit, onOff: () -> Unit) {
+    val b = LocalBrand.current
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("ساعدنا في تحسين آيات تتلى", style = MaterialTheme.typography.titleSmall, color = b.ink)
+        Text(
+            "نجمع أعدادا مجهولة لاستخدام الأدوات والخطوات، بلا اسم ولا رقم ولا موقع ولا أي معرف لجهازك. يمكنك إيقافها الآن أو من الإعدادات.",
+            style = MaterialTheme.typography.bodySmall, color = b.muted,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BrandButton("حسنا", Modifier.weight(1f)) { onOk() }
+            BrandButton("إيقافها", Modifier.weight(1f), kind = BtnKind.Ghost) { onOff() }
+        }
+    }
+}
+
+// ───────────── For you ─────────────
+
+/**
+ * «مختارات لك»: a greeting by the time of day and, for each interest chosen at first run, a row of the
+ * real tools it covers (each with its icon and line). With no interests, one card invites the user to
+ * pick some. Every tool stays reachable from «كل الأدوات» whatever is chosen here.
+ */
+@Composable
+private fun ForYou(nav: NavHostController) {
+    val b = LocalBrand.current
+    val ctx = LocalContext.current
+    val picked = remember { com.ayattla.app.data.Welcome.pickedUses(ctx).take(4) }
+    val hour = java.time.LocalTime.now().hour
+    val greeting = when (hour) { in 4..11 -> "صباح الخير"; in 12..16 -> "طاب يومك"; else -> "مساء الخير" }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(greeting, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = b.ink)
+            Text(
+                if (picked.isEmpty()) "اختر اهتماماتك لنقدم لك ما يناسبك أولا" else "مختارات تناسب اهتماماتك",
+                style = MaterialTheme.typography.bodyMedium, color = b.muted,
+            )
+        }
+        if (picked.isEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().pressable { nav.navigate("welcome-edit") }.surface(b).padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Outlined.Tune, null, tint = b.primaryInk, modifier = Modifier.size(24.dp))
+                Text("اختر اهتماماتك", style = MaterialTheme.typography.titleSmall, color = b.ink, modifier = Modifier.weight(1f))
+                Text("دقيقة واحدة", style = MaterialTheme.typography.labelMedium, color = b.goldInk)
+            }
+        }
+        picked.forEach { u ->
+            val tools = u.tools.mapNotNull { SiteTool.byIdOrNull(it) }
+            if (tools.isEmpty()) return@forEach
+            Text(u.label, style = MaterialTheme.typography.titleSmall, color = b.primaryInk, modifier = Modifier.padding(horizontal = 4.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                tools.forEach { t ->
+                    ToolTile(t.title, t.subtitle, t.icon, Modifier.width(158.dp), accent = ToolAccent.color(t.id, b.dark), badge = if (t.isNew) "جديد" else null) {
+                        openTool(nav, ctx, t, "home_shortcut_opened")
+                    }
                 }
             }
         }

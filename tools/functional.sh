@@ -243,5 +243,44 @@ adb shell cmd connectivity airplane-mode disable >/dev/null 2>&1 || adb shell se
 adb shell svc wifi enable >/dev/null 2>&1; adb shell svc data enable >/dev/null 2>&1; sleep 5
 open offline; expect "مع الإنترنت: مركز التجهيز" "أنت متصل بالإنترنت" 20
 
+# ── «تجربة البداية»: a fresh install (data cleared) opens the welcome; every step can be skipped,
+# answers are kept, closing mid-way resumes at the same step, notifications are asked only for a
+# chosen reminder, and the questions never return after they end (finished or «ادخل مباشرة»).
+plain() { adb logcat -b all -c; adb shell am start -S -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 6; }
+absent() { sleep "$3"; if $UI has "$2" >/dev/null 2>&1; then bad "$1"; else ok "$1"; fi; }
+adb shell pm clear $PKG >/dev/null 2>&1
+plain; expect "البداية: الافتتاحية" "ابدأ رحلتك" 12; shot welcome-hello
+$UI tap "ابدأ رحلتك"; sleep 2; expect "البداية: سؤال الاهتمامات" "ما الذي تريد استخدام" 6
+$UI tap "قراءة القرآن الكريم"; $UI tap "تصميم حالات واتساب"; $UI tap "الأذكار والأدعية"; sleep 1; shot welcome-uses
+$UI tap "التالي"; sleep 2; expect "البداية: سؤال المحتوى" "ما نوع المحتوى" 6
+adb shell am force-stop $PKG; adb shell am start -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 6
+expect "البداية: يكمل من حيث توقف بعد الإغلاق" "ما نوع المحتوى" 8
+$UI tap "رجوع"; sleep 2; expect "البداية: الرجوع يحفظ الإجابات" "ما الذي تريد استخدام" 6
+$UI tap "التالي"; sleep 2; $UI tap "تخطي"; sleep 2; expect "البداية: تخطي سؤال" "كيف تفضل الاستماع" 6
+$UI tap "قارئ مفضل"; sleep 1; shot welcome-listen; $UI tap "التالي"; sleep 2
+expect "البداية: سؤال التذكيرات" "ما التذكيرات التي ترغب فيها" 6; shot welcome-reminders
+$UI tap "آية اليوم كل صباح"; $UI tap "التالي"; sleep 3
+allow_btn() {  # the dialog title also says "Allow", so tap the button itself by its id
+  adb shell uiautomator dump /sdcard/perm.xml >/dev/null 2>&1
+  b=$(adb shell cat /sdcard/perm.xml | grep -o 'resource-id="com.android.permissioncontroller:id/permission_allow_button"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o '\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]')
+  [ -n "$b" ] || return 1
+  set -- $(echo "$b" | tr '[],' '   '); adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
+shot welcome-permission; allow_btn || true; sleep 2
+expect "البداية: إذن الإشعارات عند اختيار تذكير فقط" "كيف تفضل عرض التطبيق" 8
+$UI tap "الوضع الداكن"; sleep 2; shot welcome-theme-dark; $UI tap "الوضع الفاتح"; sleep 1
+$UI tap "إنهاء"; sleep 2; expect "البداية: صفحة النجاح" "أهلا بك في آيات تتلى" 6; shot welcome-done
+if adb shell run-as $PKG cat files/notify.json 2>/dev/null | grep -q '"ayah":true'; then ok "البداية: التذكير المختار مفعّل في مركز التنبيهات"; else bad "البداية: التذكير المختار مفعّل في مركز التنبيهات"; fi
+$UI tap "ابدأ الآن"; sleep 3; expect "البداية: الرئيسية حسب الاهتمامات" "مختارات تناسب اهتماماتك" 10; shot welcome-home
+plain; absent "البداية: لا تتكرر عند كل تشغيل" "ابدأ رحلتك" 4
+alive && ok "البداية: بلا أعطال" || bad "البداية: بلا أعطال"
+# «ادخل مباشرة»: straight in, nothing asked, never again; the home invites picking interests.
+adb shell pm clear $PKG >/dev/null 2>&1
+plain; expect "البداية: الافتتاحية مرة ثانية" "ادخل مباشرة" 12
+$UI tap "ادخل مباشرة"; sleep 3; expect "البداية: الدخول المباشر" "اختر اهتماماتك" 10
+plain; absent "البداية: الدخول المباشر لا يعيد الأسئلة" "ابدأ رحلتك" 4
+open settings; expect "الإعدادات: تعديل الاهتمامات والإحصاءات" "الإحصاءات المجهولة" 8
+open welcome-edit; expect "الإعدادات: تعديل الاهتمامات يفتح الأسئلة" "ما الذي تريد استخدام" 8
+
 echo "النتيجة: $(grep -c '^✓' "$OUT") نجحت، $FAIL فشلت" | tee -a "$OUT"
 [ "$FAIL" -eq 0 ]

@@ -183,9 +183,14 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         AppRoot(startScreen, pendingOpen)
-                        // «الافتتاحية»: only on a normal launch (not a deep link, notification or CI screen).
-                        var intro by remember { mutableStateOf(startScreen == "intro" || startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity)) }
+                        // «تجربة البداية»: first run only (never after an update, never twice), on a normal launch.
+                        var welcome by remember {
+                            mutableStateOf(startScreen == "welcome" || startScreen == null && com.ayattla.app.data.Welcome.shouldShow(this@MainActivity))
+                        }
+                        // «الافتتاحية»: only on a normal launch (not a deep link, notification or CI screen), not with the welcome.
+                        var intro by remember { mutableStateOf(!welcome && (startScreen == "intro" || startScreen == null && !com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch && com.ayattla.app.ui.components.IntroPrefs.enabled(this@MainActivity))) }
                         if (intro) com.ayattla.app.ui.components.IntroOverlay(force = startScreen == "intro") { com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch = true; intro = false }
+                        if (welcome) com.ayattla.app.screens.WelcomeFlow { com.ayattla.app.ui.components.IntroPrefs.shownThisLaunch = true; welcome = false }
                     }
                 }
             }
@@ -227,6 +232,9 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
     val b = LocalBrand.current
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route?.substringBefore("?")
+    // Anonymous stats: which screens are opened (the route pattern only, never its arguments).
+    val statsCtx = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(route) { route?.let { com.ayattla.app.data.Stats.event(statsCtx, "screen_viewed", it.substringBefore("/")) } }
     val onTab = tabs.any { route == it.route }
     val stripShown = !com.ayattla.app.data.Net.isOnline && !offlineStripClosed.value
     val inset = if (onTab) (if (Recitation.active) 190.dp else 120.dp) + (if (stripShown) 64.dp else 0.dp) else 0.dp
@@ -331,6 +339,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
                 com.ayattla.app.screens.TasmeeScreen(nav, arg("s"), arg("a"), arg("b"))
             }
             composable("voice-search") { com.ayattla.app.screens.VoiceSearchScreen(nav) }
+            composable("welcome-edit") { com.ayattla.app.screens.WelcomeFlow(edit = true) { nav.popBackStack() } }
             composable("kaffarah") { com.ayattla.app.screens.KaffarahScreen(nav) }
             composable("crypto-zakat") { com.ayattla.app.screens.CryptoZakatScreen(nav) }
             composable("page/{page}", arguments = listOf(navArgument("page") { type = NavType.IntType })) { e ->

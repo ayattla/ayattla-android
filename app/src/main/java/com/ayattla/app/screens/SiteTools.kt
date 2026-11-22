@@ -112,6 +112,7 @@ data class SiteTool(
         val featured = setOf("clip", "ayah-card", "status")
 
         fun byId(id: String) = all.first { it.id == id }
+        fun byIdOrNull(id: String) = all.firstOrNull { it.id == id }
     }
 }
 
@@ -133,8 +134,10 @@ fun SiteTool.dimmedOffline(): Boolean =
     !com.ayattla.app.data.Net.isOnline && com.ayattla.app.data.OfflineTools.level(id) == com.ayattla.app.data.OfflineLevel.Online
 
 /** Opens a tool: tab roots switch tabs, the rest push a screen. Counts the use. */
-fun openTool(nav: androidx.navigation.NavHostController, c: Context, t: SiteTool) {
+fun openTool(nav: androidx.navigation.NavHostController, c: Context, t: SiteTool, from: String = "") {
     ToolUsage.record(c, t.id)
+    com.ayattla.app.data.Stats.event(c, "tool_opened", t.id)
+    if (from.isNotEmpty()) com.ayattla.app.data.Stats.event(c, from, t.id)
     // Offline, a tool that needs internet opens the offline centre, which says so and offers what works.
     if (!com.ayattla.app.data.Net.isOnline && com.ayattla.app.data.OfflineTools.level(t.id) == com.ayattla.app.data.OfflineLevel.Online) {
         nav.navigate("offline?from=${t.id}"); return

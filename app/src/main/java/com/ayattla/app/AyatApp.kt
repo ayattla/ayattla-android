@@ -1,5 +1,7 @@
 package com.ayattla.app
 
+import kotlinx.coroutines.launch
+
 import android.app.Application
 import com.ayattla.app.data.ContentStore
 import com.ayattla.app.data.Prefs
@@ -27,5 +29,9 @@ class AyatApp : Application() {
         com.ayattla.app.data.Net.start(this)
         // Once a week on Wi-Fi (release builds), the offline files are refreshed quietly.
         android.os.Handler(mainLooper).postDelayed({ runCatching { com.ayattla.app.data.OfflinePrep.maybeAuto(this) } }, 8_000)
+        // Anonymous usage counts (Settings → «الإحصاءات المجهولة»): sent quietly a little after start.
+        android.os.Handler(mainLooper).postDelayed({
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch { runCatching { com.ayattla.app.data.Stats.flush(this@AyatApp) } }
+        }, 12_000)
     }
 }
