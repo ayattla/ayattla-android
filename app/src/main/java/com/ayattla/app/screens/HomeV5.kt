@@ -132,7 +132,7 @@ import java.util.Locale
 
 /** The home sections the user can order and hide («تخصيص الرئيسية»). */
 enum class HomeSection(val title: String) {
-    Prayer("الصلاة القادمة"), ForYou("مختارات لك"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
+    Prayer("الصلاة القادمة"), Today("يومي"), ForYou("مختارات لك"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
     Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
     Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
     Quick("الوصول السريع"),
@@ -150,7 +150,12 @@ object HomeLayout {
             val (n, v) = e.split(":").let { it.getOrNull(0) to it.getOrNull(1) }
             HomeSection.entries.firstOrNull { it.name == n }?.let { it to (v != "0") }
         }.orEmpty()
-        return saved + HomeSection.entries.filter { s -> saved.none { it.first == s } }.map { it to (it !in hiddenByDefault) }
+        // «يومي» (2.6) joins right after the prayer card, even in an arrangement saved before it existed.
+        val withToday = if (saved.none { it.first == HomeSection.Today }) {
+            val i = saved.indexOfFirst { it.first == HomeSection.Prayer }
+            saved.toMutableList().apply { add(if (i >= 0) i + 1 else 0, HomeSection.Today to true) }
+        } else saved
+        return withToday + HomeSection.entries.filter { s -> withToday.none { it.first == s } }.map { it to (it !in hiddenByDefault) }
     }
 
     /**
@@ -171,7 +176,7 @@ object HomeLayout {
             if ("all" in u) add(HomeSection.All)
         }.distinct()
         val base = HomeSection.entries.toList()
-        val head = base.takeWhile { it == HomeSection.Prayer }
+        val head = listOf(HomeSection.Prayer, HomeSection.Today)
         return (head + boost + base).distinct()
     }
 
@@ -238,6 +243,7 @@ fun HomeScreenV5(nav: NavHostController) {
 private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: List<String>) {
     when (s) {
         HomeSection.Prayer -> PrayerHero(nav)
+        HomeSection.Today -> TodayCard(nav)
         HomeSection.Journey -> JourneyHomeCard(nav)
         HomeSection.ForYou -> ForYou(nav)
         HomeSection.Quick -> MuslimServices(nav)
