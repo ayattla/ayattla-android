@@ -314,6 +314,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("saved") { SavedScreen(nav) }
             composable("settings") { SettingsScreen(nav) }
             composable("about") { AboutScreen(nav) }
+            composable("sources") { com.ayattla.app.screens.SourcesScreen(nav) }
             composable("radios") { RadiosScreen(nav) }
             composable("hadith") { com.ayattla.app.screens.HadithScreen(nav) }
             composable("hadith-check") { com.ayattla.app.screens.HadithCheckScreen(nav) }

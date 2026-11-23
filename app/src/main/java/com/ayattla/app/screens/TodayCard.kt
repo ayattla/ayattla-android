@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -182,8 +183,12 @@ fun TodayCard(nav: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(h.text, fontFamily = Fonts.naskh, fontSize = 17.sp, lineHeight = 30.sp, color = b.ink, maxLines = 4, overflow = TextOverflow.Ellipsis)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Outlined.Verified, null, tint = b.green, modifier = Modifier.size(16.dp))
+                        // «موثق»: the source and grade, and a tap shows where every text comes from.
+                        Row(
+                            Modifier.clip(RoundedCornerShape(8.dp)).clickable { nav.navigate("sources") },
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(Icons.Outlined.Verified, "موثق", tint = b.green, modifier = Modifier.size(16.dp))
                             Text(listOf(h.source, h.grade).filter { it.isNotBlank() }.joinToString(" · "),
                                 style = MaterialTheme.typography.labelMedium, color = b.goldInk, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
