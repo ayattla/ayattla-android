@@ -51,7 +51,7 @@ class NextStepWidget : GlanceAppWidget() {
         val t = loc.times(now.toLocalDate())
         val slot = Today.slotAt(now, t)
         val day = Today.dayOf(now, t)
-        val next = slot.next()
+        val next = Today.next(slot)
         val nextAt = if (next == TodaySlot.Morning) loc.times(now.toLocalDate().plusDays(if (now.hour >= 12) 1 else 0)).fajr else t.hours(next.after)
         val season = runCatching {
             val h = Hijri.fromGregorian(day)
