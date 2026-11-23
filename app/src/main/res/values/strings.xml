@@ -2,5 +2,6 @@
 <resources>
     <string name="app_name">آيات تتلى</string>
     <string name="widget_desc">آية اليوم بخط المصحف</string>
+    <string name="next_step_widget_desc">خطوة يومي بعد كل صلاة</string>
     <string name="prayer_widget_desc">الصلاة القادمة ومواقيت اليوم</string>
 </resources>

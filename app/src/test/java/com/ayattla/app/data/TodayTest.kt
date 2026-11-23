@@ -39,3 +39,36 @@ class TodayTest {
         assertEquals(null, Today.pickForDay(emptyList<String>(), d))
     }
 }
+
+class SeasonsTest {
+    private val friday = LocalDate.of(2026, 11, 27)
+    private fun keys(d: LocalDate, m: Int, day: Int, s: TodaySlot) = Seasons.notes(d, m, day, s, "5:04 م", "4:53 ص").map { it.key }
+
+    @Test fun fridayDuringTheDayOnly() {
+        assertEquals(listOf("kahf", "salawat"), keys(friday, 6, 17, TodaySlot.Wird))
+        assertEquals(emptyList<String>(), keys(friday, 6, 17, TodaySlot.Hadith))
+    }
+
+    @Test fun ramadanFollowsTheDay() {
+        val d = LocalDate.of(2027, 2, 15) // a Monday
+        assertEquals(listOf("iftar", "khatma"), keys(d, 9, 8, TodaySlot.Morning))
+        assertEquals(listOf("tarawih", "khatma"), keys(d, 9, 8, TodaySlot.Hadith))
+        assertEquals(listOf("suhoor", "khatma"), keys(d, 9, 8, TodaySlot.Night))
+    }
+
+    @Test fun dhulHijjahAndVoluntaryFasts() {
+        val d = LocalDate.of(2027, 5, 15)
+        assert("takbir" in keys(d, 12, 3, TodaySlot.Morning))
+        assert("arafah" in keys(d, 12, 9, TodaySlot.Morning))
+        assert("arafah-eve" in keys(d, 12, 8, TodaySlot.Night))
+        assertEquals(listOf("eid"), keys(d, 12, 10, TodaySlot.Morning))
+        val sunday = LocalDate.of(2026, 11, 29)
+        assertEquals(listOf("fast-mon"), keys(sunday, 6, 19, TodaySlot.Night))
+        assertEquals(listOf("white"), keys(LocalDate.of(2026, 11, 24), 6, 13, TodaySlot.Night))
+    }
+
+    @Test fun noTashkeel() {
+        val all = (1..12).flatMap { m -> TodaySlot.entries.flatMap { s -> Seasons.notes(friday, m, 9, s, "x", "y") } }
+        all.forEach { n -> assert((n.title + n.line).none { it in 'ً'..'ْ' }) { n.title } }
+    }
+}
