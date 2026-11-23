@@ -1,5 +1,7 @@
 package com.ayattla.app.ui.components
 
+import androidx.compose.ui.layout.layout
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -84,13 +86,23 @@ private fun hBrush(c: List<Color>) = Brush.horizontalGradient(c)
 enum class Surface { Raised, Flat, Tinted, Gold }
 
 /** `.surface(level)`: the site's card. White, hairline border and the two soft shadows. */
+/**
+ * Lets a sideways row run under the screen's side padding, edge to edge, so cards scroll to the
+ * edge and their shadows are not cut by the parent's padding.
+ */
+fun Modifier.bleed(horizontal: Dp): Modifier = layout { m, c ->
+    val p = horizontal.roundToPx()
+    val pl = m.measure(c.copy(minWidth = c.minWidth + 2 * p, maxWidth = c.maxWidth + 2 * p))
+    layout(pl.width - 2 * p, pl.height) { pl.place(-p, 0) }
+}
+
 fun Modifier.surface(b: Brand, level: Surface = Surface.Raised, radius: Dp = Radius.card): Modifier {
     val shape = RoundedCornerShape(radius)
     val fill = when (level) { Surface.Raised, Surface.Flat -> b.surface; Surface.Tinted -> b.surface2; Surface.Gold -> b.goldSoft }
     val border = if (level == Surface.Gold) b.accent.copy(alpha = 0.45f) else b.line
     val shadowed = if (level == Surface.Raised && !b.dark) this
-        .softShadow(shape, 20.dp, b.shadow.copy(alpha = 0.14f), DpOffset(0.dp, 14.dp))
-        .softShadow(shape, 1.dp, b.shadow.copy(alpha = 0.06f), DpOffset(0.dp, 1.dp))
+        .softShadow(shape, 14.dp, b.shadow.copy(alpha = 0.08f), DpOffset(0.dp, 6.dp))
+        .softShadow(shape, 1.dp, b.shadow.copy(alpha = 0.05f), DpOffset(0.dp, 1.dp))
     else this
     return shadowed.clip(shape).background(fill).border(1.dp, border, shape)
 }
@@ -373,9 +385,9 @@ fun IconTile(icon: ImageVector, modifier: Modifier = Modifier, style: TileStyle 
 fun ToolTile(title: String, subtitle: String?, icon: ImageVector, modifier: Modifier = Modifier, accent: Color? = null, index: Int = 0, badge: String? = null, onClick: () -> Unit) {
     val b = LocalBrand.current
     Column(
-        modifier.pressable(onClick).surface(b).padding(horizontal = 14.dp, vertical = 20.dp).fillMaxWidth(),
+        modifier.pressable(onClick).surface(b).padding(horizontal = 14.dp, vertical = 18.dp).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
     ) {
         IconTile(icon, style = if (accent != null) TileStyle.Accent(accent) else TileStyle.Gradient(index))
         Text(title, style = MaterialTheme.typography.titleMedium, color = b.ink, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)

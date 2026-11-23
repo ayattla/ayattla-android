@@ -111,6 +111,9 @@ import com.ayattla.app.ui.components.TileStyle
 import com.ayattla.app.ui.components.featureSurface
 import com.ayattla.app.ui.components.pressable
 import com.ayattla.app.ui.components.softShadow
+import com.ayattla.app.ui.components.bleed
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import com.ayattla.app.ui.components.surface
 import com.ayattla.app.ui.theme.Fonts
 import com.ayattla.app.ui.theme.LocalBrand
@@ -722,10 +725,16 @@ private fun ForYou(nav: NavHostController) {
         picked.forEach { u ->
             val tools = u.tools.mapNotNull { SiteTool.byIdOrNull(it) }
             if (tools.isEmpty()) return@forEach
-            Text(u.label, style = MaterialTheme.typography.titleSmall, color = b.primaryInk, modifier = Modifier.padding(horizontal = 4.dp))
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(u.label, style = MaterialTheme.typography.titleSmall, color = b.primaryInk, modifier = Modifier.padding(horizontal = 4.dp).padding(top = 6.dp))
+            // Edge to edge, with room above and below so the soft shadows are never cut into a band,
+            // and one height for every card in the row.
+            Row(
+                Modifier.fillMaxWidth().bleed(16.dp).horizontalScroll(rememberScrollState())
+                    .height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 tools.forEach { t ->
-                    ToolTile(t.title, t.subtitle, t.icon, Modifier.width(158.dp), accent = ToolAccent.color(t.id, b.dark), badge = if (t.isNew) "جديد" else null) {
+                    ToolTile(t.title, t.subtitle, t.icon, Modifier.width(156.dp).fillMaxHeight(), accent = ToolAccent.color(t.id, b.dark), badge = if (t.isNew) "جديد" else null) {
                         openTool(nav, ctx, t, "home_shortcut_opened")
                     }
                 }
