@@ -36,6 +36,8 @@ data class NotifyConfig(
     val khatma: Boolean = false, val khatmaAt: Int = 20 * 60,
     val hifz: Boolean = false, val hifzAt: Int = 19 * 60,
     val journey: Boolean = false, val journeyAt: Int = 21 * 60,  // only when today's goal is not met yet
+    /** Quran reminders (khatma, hifz, daily goal) 20 minutes after this prayer (Prayer ordinal), or at their own times when -1. */
+    val wirdAfter: Int = -1,
     val friday: Boolean = false, val fridayAt: Int = 10 * 60,
     val fasting: Boolean = false, val fastingAt: Int = 21 * 60,  // eve of Monday/Thursday
     val whiteDays: Boolean = false,                               // eve of the 13th, 14th, 15th
@@ -85,6 +87,8 @@ object Planner {
             val t = inp.times(date)
             fun at(m: Int): LocalDateTime = date.atStartOfDay().plusMinutes(m.toLong())
             val key = date.toString()
+            // The Quran reminders can follow a prayer instead of the clock, so they move with the seasons.
+            fun wird(own: Int) = if (c.wirdAfter in Prayer.entries.indices && Prayer.entries[c.wirdAfter].isPrayer) minute(t.hours(Prayer.entries[c.wirdAfter])) + 20 else own
 
             // The five prayers (sunrise is never a prayer and gets no alert).
             for (p in NotifyConfig.PRAYERS) {
@@ -107,9 +111,9 @@ object Planner {
             if (c.sleep) out += Alert("sleep.$key", at(c.sleepAt), "أذكار النوم", "قبل أن تنام: أذكار النوم", Channels.AZKAR, "azkar:أذكار النوم")
             if (c.istighfar) out += Alert("istighfar.$key", at(c.istighfarAt), "الاستغفار والتسبيح", "دقيقة للاستغفار والتسبيح", Channels.AZKAR, "route:tasbih")
             if (c.ayah) out += Alert("ayah.$key", at(c.ayahAt), "آية اليوم", inp.ayahText(date) ?: "آية اليوم مع تفسيرها", Channels.QURAN, "route:ayah-today")
-            if (c.khatma) inp.khatmaWird(date)?.let { out += Alert("khatma.$key", at(c.khatmaAt), "ورد الختمة", it, Channels.QURAN, "route:khatma") }
-            if (c.hifz) inp.hifzToday(date)?.let { out += Alert("hifz.$key", at(c.hifzAt), "الحفظ والمراجعة", it, Channels.QURAN, "route:hifz-plan") }
-            if (c.journey) out += Alert("journey.$key", at(c.journeyAt), "وردك اليوم", inp.journeyText(date), Channels.QURAN, "route:journey")
+            if (c.khatma) inp.khatmaWird(date)?.let { out += Alert("khatma.$key", at(wird(c.khatmaAt)), "ورد الختمة", it, Channels.QURAN, "route:khatma") }
+            if (c.hifz) inp.hifzToday(date)?.let { out += Alert("hifz.$key", at(wird(c.hifzAt)), "الحفظ والمراجعة", it, Channels.QURAN, "route:hifz-plan") }
+            if (c.journey) out += Alert("journey.$key", at(wird(c.journeyAt)), "وردك اليوم", inp.journeyText(date), Channels.QURAN, "route:journey")
             if (c.friday && date.dayOfWeek == DayOfWeek.FRIDAY)
                 out += Alert("friday.$key", at(c.fridayAt), "يوم الجمعة", "قراءة سورة الكهف", Channels.OCCASIONS, "route:reader/18/1")
             if (c.fasting) {

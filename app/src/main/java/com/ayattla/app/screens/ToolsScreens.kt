@@ -617,6 +617,7 @@ fun AboutScreen(nav: NavHostController) {
                     "المواقيت والقبلة والتاريخ الهجري: نفس معادلات موقع آيات تتلى، وتقويم أم القرى.",
                     "الخطوط: Amiri Quran وAmiri وIBM Plex Sans Arabic برخصة OFL.",
                 ).forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium, color = b.muted, modifier = Modifier.padding(top = 6.dp)) }
+                androidx.compose.material3.TextButton(onClick = { nav.navigate("sources") }) { Text("كل المصادر بالتفصيل") }
             }
             AppCard {
                 Text("الخصوصية", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())

@@ -202,12 +202,20 @@ fun NotificationsScreen(nav: NavHostController) {
         Section("القرآن") {
             SwitchRow("آية اليوم", clock(cfg.ayahAt), cfg.ayah) { v -> set { it.copy(ayah = v) } }
             if (cfg.ayah) TimeButton("الوقت", cfg.ayahAt) { v -> set { it.copy(ayahAt = v) } }
-            SwitchRow("ورد الختمة", "${clock(cfg.khatmaAt)} · عند وجود خطة ختمة ولم تُتم ورد اليوم", cfg.khatma) { v -> set { it.copy(khatma = v) } }
-            if (cfg.khatma) TimeButton("الوقت", cfg.khatmaAt) { v -> set { it.copy(khatmaAt = v) } }
-            SwitchRow("الحفظ والمراجعة", "${clock(cfg.hifzAt)} · عند وجود خطة حفظ", cfg.hifz) { v -> set { it.copy(hifz = v) } }
-            if (cfg.hifz) TimeButton("الوقت", cfg.hifzAt) { v -> set { it.copy(hifzAt = v) } }
-            SwitchRow("هدفي اليومي من القرآن", "${clock(cfg.journeyAt)} · فقط إن لم تُكمل هدفك اليوم", cfg.journey) { v -> set { it.copy(journey = v) } }
-            if (cfg.journey) TimeButton("الوقت", cfg.journeyAt) { v -> set { it.copy(journeyAt = v) } }
+            // The khatma, hifz and daily-goal reminders can follow a prayer instead of a fixed time.
+            val pr = com.ayattla.app.calc.Prayer.entries
+            val wirdName = pr.getOrNull(cfg.wirdAfter)?.takeIf { it.isPrayer }?.let { "بعد ${it.title} بـ20 دقيقة" }
+            if (cfg.khatma || cfg.hifz || cfg.journey) Choices(
+                "وقت تذكيرات الورد",
+                listOf(-1 to "بوقت محدد") + pr.filter { it.isPrayer }.map { it.ordinal to "بعد ${it.title}" },
+                cfg.wirdAfter,
+            ) { v -> set { it.copy(wirdAfter = v) } }
+            SwitchRow("ورد الختمة", "${wirdName ?: clock(cfg.khatmaAt)} · عند وجود خطة ختمة ولم تُتم ورد اليوم", cfg.khatma) { v -> set { it.copy(khatma = v) } }
+            if (cfg.khatma && wirdName == null) TimeButton("الوقت", cfg.khatmaAt) { v -> set { it.copy(khatmaAt = v) } }
+            SwitchRow("الحفظ والمراجعة", "${wirdName ?: clock(cfg.hifzAt)} · عند وجود خطة حفظ", cfg.hifz) { v -> set { it.copy(hifz = v) } }
+            if (cfg.hifz && wirdName == null) TimeButton("الوقت", cfg.hifzAt) { v -> set { it.copy(hifzAt = v) } }
+            SwitchRow("هدفي اليومي من القرآن", "${wirdName ?: clock(cfg.journeyAt)} · فقط إن لم تُكمل هدفك اليوم", cfg.journey) { v -> set { it.copy(journey = v) } }
+            if (cfg.journey && wirdName == null) TimeButton("الوقت", cfg.journeyAt) { v -> set { it.copy(journeyAt = v) } }
         }
 
         // ── Friday and fasting

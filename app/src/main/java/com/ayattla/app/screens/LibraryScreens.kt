@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -312,7 +313,13 @@ fun DuasScreen(nav: NavHostController) {
                     val ayat = remember(r) { content.ayat(r.s, r.a, r.b) }
                     AppCard {
                         Text(ayat.joinToString(" ") { it.text + " " + Num.ayahMark(it.ayah) }, fontFamily = Fonts.quran, fontSize = 21.sp, lineHeight = 40.sp, color = b.ink)
-                        Text("سورة ${content.surah(r.s).shortName} · ${r.a}", style = MaterialTheme.typography.labelMedium, color = b.goldInk)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("سورة ${content.surah(r.s).shortName} · ${r.a}", style = MaterialTheme.typography.labelMedium, color = b.goldInk, modifier = Modifier.weight(1f))
+                            // The ayat open in the ayah-card maker with the exact mushaf text.
+                            IconButton(onClick = { nav.navigate(Routes.studio(r.s, r.a, r.b)) }) {
+                                Icon(Icons.Outlined.PhotoLibrary, "اصنع بطاقة آية", tint = b.muted)
+                            }
+                        }
                     }
                 }
             }
@@ -328,6 +335,14 @@ fun DuasScreen(nav: NavHostController) {
                             Text(text, fontFamily = Fonts.naskh, fontSize = 19.sp, lineHeight = 34.sp, color = b.ink)
                             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                                 IconButton(onClick = { shareText(ctx, "$text\n\nayattla.com") }) { Icon(Icons.Filled.Share, "مشاركة", tint = b.muted) }
+                                // «شارك الخير»: the dua as a ready status card, with its chapter as the reference.
+                                IconButton(onClick = {
+                                    com.ayattla.app.studio.PendingText.value = com.ayattla.app.studio.CardText(
+                                        "اصنع حالة", text, ch.name, ratio = com.ayattla.app.studio.CardRatio.Story,
+                                    )
+                                    com.ayattla.app.studio.PendingText.source = "dua"
+                                    nav.navigate("text-card")
+                                }) { Icon(Icons.Outlined.PhotoLibrary, "اصنع حالة", tint = b.muted) }
                             }
                         }
                     }
