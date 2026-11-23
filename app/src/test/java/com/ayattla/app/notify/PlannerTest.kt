@@ -37,6 +37,15 @@ class PlannerTest {
         assertEquals(Channels.PRAYER_SILENT, Planner.plan(c, monday, 1, inputs).single().channel)
     }
 
+    @Test fun wirdCanFollowAPrayer() {
+        val c = NotifyConfig(journey = true, journeyAt = 21 * 60)
+        assertEquals("21:00", Planner.plan(c, monday, 1, inputs).single().at.toLocalTime().toString())
+        val after = c.copy(wirdAfter = Prayer.Dhuhr.ordinal)
+        assertEquals("12:00", Planner.plan(after, monday, 1, inputs).single().at.toLocalTime().toString())
+        // Sunrise is never a prayer: the own time stays.
+        assertEquals("21:00", Planner.plan(c.copy(wirdAfter = Prayer.Sunrise.ordinal), monday, 1, inputs).single().at.toLocalTime().toString())
+    }
+
     @Test fun azkarFollowFajrAndAsr() {
         val c = NotifyConfig(morning = true, evening = true, morningOffset = 30, eveningOffset = 15)
         val day = Planner.plan(c, monday, 1, inputs).associate { it.title to it.at.toLocalTime().toString() }
