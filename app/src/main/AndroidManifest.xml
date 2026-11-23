@@ -77,6 +77,13 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_widget" />
         </receiver>
 
+        <receiver android:name=".widget.NextStepWidgetReceiver" android:exported="true" android:label="يومي: الخطوة التالية">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/next_step_widget" />
+        </receiver>
+
         <receiver android:name=".widget.ReminderReceiver" android:exported="false" />
 
         <receiver android:name=".notify.AlertReceiver" android:exported="false" />

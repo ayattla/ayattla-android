@@ -8,6 +8,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,26 +97,20 @@ fun TodayCard(nav: NavHostController) {
     val times = remember(loc, now.toLocalDate()) { loc.times(now.toLocalDate()) }
     val slot = Today.slotAt(now, times)
     val day = Today.dayOf(now, times)
+    val seasons = remember(day, slot) {
+        val h = runCatching { com.ayattla.app.calc.Hijri.fromGregorian(day) }.getOrNull()
+        if (h == null) emptyList() else com.ayattla.app.data.Seasons.notes(
+            day, h.month, h.day, slot,
+            com.ayattla.app.calc.PrayerTimes.hm12(times.maghrib), com.ayattla.app.calc.PrayerTimes.hm12(loc.times(day.plusDays(1)).fajr),
+        )
+    }
     // Re-read the counters whenever the card comes back into view (after the user returns from a step).
     var tick by remember { mutableStateOf(0) }
     val entry by nav.currentBackStackEntryAsState()
     LaunchedEffect(entry) { tick++ }
 
     fun azkarCat(word: String) = content.azkarCategories.firstOrNull { "أذكار $word" == it.title || word in it.title }
-    fun azkarFrac(word: String): Float {
-        val c = azkarCat(word) ?: return 0f
-        val items = content.azkar(c.id)
-        val total = items.sumOf { it.count }.coerceAtLeast(1)
-        val done = items.sumOf { it.count - prefs.zikrRemaining(day.toString(), it.id, it.count) }
-        return (done.toFloat() / total).coerceIn(0f, 1f)
-    }
-    fun progress(s: TodaySlot): Float = when (s) {
-        TodaySlot.Morning -> azkarFrac("الصباح")
-        TodaySlot.Evening -> azkarFrac("المساء")
-        TodaySlot.Wird -> (Journey.day(day.toEpochDay()).pages.size.toFloat() / Journey.goal.coerceAtLeast(1)).coerceIn(0f, 1f)
-        TodaySlot.Hadith -> if (Today.opened(ctx, day, s)) 1f else 0f
-        TodaySlot.Night -> maxOf(azkarFrac("النوم"), if (Today.opened(ctx, day, s)) 1f else 0f)
-    }
+    fun progress(s: TodaySlot): Float = todayProgress(ctx, content, prefs, day, s)
     val all = remember(day, slot, tick) { TodaySlot.entries.associateWith { progress(it) } }
     val frac = all[slot] ?: 0f
     val done = frac >= 1f
@@ -149,8 +145,8 @@ fun TodayCard(nav: NavHostController) {
                 color = b.primaryInk, modifier = Modifier.clip(CircleShape).background(b.tint).padding(horizontal = 10.dp, vertical = 5.dp),
             )
             Spacer(Modifier.weight(1f))
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.semantics {
-                contentDescription = "أتممت ${all.values.count { it >= 1f }} من خمس خطوات اليوم"
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.clip(CircleShape).clickable { nav.navigate("week") }.padding(6.dp).semantics {
+                contentDescription = "أتممت ${all.values.count { it >= 1f }} من خمس خطوات اليوم، اضغط لملخص الأسبوع"
             }) {
                 TodaySlot.entries.forEach { s ->
                     val full = (all[s] ?: 0f) >= 1f
@@ -200,6 +196,22 @@ fun TodayCard(nav: NavHostController) {
                     color = b.green, trackColor = b.surface2, drawStopIndicator = {}, gapSize = 0.dp,
                 )
 
+                if (seasons.isNotEmpty()) Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    seasons.forEach { n ->
+                        Column(
+                            Modifier.clip(RoundedCornerShape(14.dp)).background(b.goldSoft)
+                                .clickable { Stats.event(ctx, "season_opened", n.key); nav.navigate(n.route) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            Text(n.title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink, maxLines = 1)
+                            Text(n.line, style = MaterialTheme.typography.labelSmall, color = b.goldInk, maxLines = 1)
+                        }
+                    }
+                }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (isDone) {
                         val n = Today.next(s)
@@ -230,5 +242,23 @@ fun TodayCard(nav: NavHostController) {
                 }
             }
         }
+    }
+}
+
+/** How far a step of «يومي» is done on a day (0..1), from the counters the app already keeps. */
+fun todayProgress(ctx: android.content.Context, content: com.ayattla.app.data.ContentStore, prefs: com.ayattla.app.data.Prefs, day: java.time.LocalDate, s: TodaySlot): Float {
+    fun azkarFrac(word: String): Float {
+        val c = content.azkarCategories.firstOrNull { "أذكار $word" == it.title || word in it.title } ?: return 0f
+        val items = content.azkar(c.id)
+        val total = items.sumOf { it.count }.coerceAtLeast(1)
+        val done = items.sumOf { it.count - prefs.zikrRemaining(day.toString(), it.id, it.count) }
+        return (done.toFloat() / total).coerceIn(0f, 1f)
+    }
+    return when (s) {
+        TodaySlot.Morning -> azkarFrac("الصباح")
+        TodaySlot.Evening -> azkarFrac("المساء")
+        TodaySlot.Wird -> (Journey.day(day.toEpochDay()).pages.size.toFloat() / Journey.goal.coerceAtLeast(1)).coerceIn(0f, 1f)
+        TodaySlot.Hadith -> if (Today.opened(ctx, day, s)) 1f else 0f
+        TodaySlot.Night -> maxOf(azkarFrac("النوم"), if (Today.opened(ctx, day, s)) 1f else 0f)
     }
 }

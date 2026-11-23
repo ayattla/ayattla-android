@@ -45,3 +45,44 @@ object Today {
     /** Same hadith all day, a new one each day, from whatever list is at hand. */
     fun <T> pickForDay(items: List<T>, day: LocalDate): T? = if (items.isEmpty()) null else items[Math.floorMod(day.toEpochDay(), items.size.toLong()).toInt()]
 }
+
+/** A short seasonal note shown with «يومي» (Friday, Ramadan, the ten days of Dhul-Hijjah, voluntary fasts). */
+data class SeasonNote(val key: String, val title: String, val line: String, val route: String)
+
+/**
+ * The seasons the day belongs to, read from the Hijri date and the weekday. Only well-known
+ * practices with a sound basis; wording without tashkeel like the rest of the app.
+ */
+object Seasons {
+    fun notes(
+        date: LocalDate, hijriMonth: Int, hijriDay: Int, slot: TodaySlot,
+        maghrib: String, fajrTomorrow: String,
+    ): List<SeasonNote> = buildList {
+        val beforeMaghrib = slot == TodaySlot.Morning || slot == TodaySlot.Wird || slot == TodaySlot.Evening
+        val dow = date.dayOfWeek
+        // Friday: Surat al-Kahf and sending blessings on the Prophet, during the day.
+        if (dow == java.time.DayOfWeek.FRIDAY && beforeMaghrib) {
+            add(SeasonNote("kahf", "سورة الكهف", "من سنن يوم الجمعة", "reader/18/1"))
+            add(SeasonNote("salawat", "الصلاة على النبي", "أكثروا منها يوم الجمعة", "tasbih"))
+        }
+        // Ramadan: the iftar time by day, tarawih after Maghrib, suhoor at night, and the month's khatma.
+        if (hijriMonth == 9) {
+            if (beforeMaghrib) add(SeasonNote("iftar", "الإفطار $maghrib", "موعد أذان المغرب اليوم", "prayer"))
+            if (slot == TodaySlot.Hadith) add(SeasonNote("tarawih", "صلاة التراويح", "بعد صلاة العشاء", "prayer"))
+            if (slot == TodaySlot.Night) add(SeasonNote("suhoor", "السحور قبل $fajrTomorrow", "موعد أذان الفجر", "prayer"))
+            add(SeasonNote("khatma", "ختمة رمضان", "وزع المصحف على أيام الشهر", "khatma"))
+        }
+        // The first ten days of Dhul-Hijjah: takbir; fasting the day of Arafah; the day of Eid.
+        if (hijriMonth == 12 && hijriDay in 1..9) add(SeasonNote("takbir", "التكبير في العشر", "الله أكبر ولله الحمد", "tasbih"))
+        if (hijriMonth == 12 && hijriDay == 8 && !beforeMaghrib) add(SeasonNote("arafah-eve", "غدا يوم عرفة", "صيامه يكفر سنتين", "sawm"))
+        if (hijriMonth == 12 && hijriDay == 9) add(SeasonNote("arafah", "يوم عرفة", "صيامه يكفر سنتين، وأكثر من الدعاء", "duas"))
+        if (hijriMonth == 12 && hijriDay == 10) add(SeasonNote("eid", "عيد الأضحى", "تقبل الله منا ومنكم", "occasions"))
+        // Voluntary fasts: Monday and Thursday, and the white days (13th–15th), named the night before.
+        if (slot == TodaySlot.Night && hijriMonth != 9) {
+            val tomorrow = date.plusDays(1).dayOfWeek
+            if (tomorrow == java.time.DayOfWeek.MONDAY) add(SeasonNote("fast-mon", "صيام الاثنين غدا", "من صيام التطوع", "sawm"))
+            if (tomorrow == java.time.DayOfWeek.THURSDAY) add(SeasonNote("fast-thu", "صيام الخميس غدا", "من صيام التطوع", "sawm"))
+            if (hijriDay in 12..14) add(SeasonNote("white", "الأيام البيض", "غدا اليوم ${hijriDay + 1} من الشهر", "sawm"))
+        }
+    }
+}
