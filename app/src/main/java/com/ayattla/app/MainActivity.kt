@@ -294,6 +294,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("asma") { com.ayattla.app.screens.AsmaScreen(nav) }
             composable("occasions") { com.ayattla.app.screens.OccasionsScreen(nav) }
             composable("qada") { com.ayattla.app.screens.QadaScreen(nav) }
+            composable("bio") { com.ayattla.app.screens.BioScreen(nav) }
             composable("sawm") { com.ayattla.app.screens.SawmScreen(nav) }
             composable("mosques") { com.ayattla.app.screens.MosquesScreen(nav) }
             composable("kids") { com.ayattla.app.screens.KidsScreen(nav) }

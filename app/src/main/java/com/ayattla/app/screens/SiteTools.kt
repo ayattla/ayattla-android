@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.RecordVoiceOver
@@ -65,6 +66,7 @@ data class SiteTool(
         val all: List<SiteTool> = listOf(
             SiteTool("clip", "صانع المقاطع القرآنية", "صانع المقاطع", "فيديو بتظليل الكلمات وأكثر من ٣٠ قارئا", Icons.Outlined.SmartDisplay, ToolGroup.Content, false, Routes.studioMode(video = true)),
             SiteTool("ayah-card", "صانع بطاقات الآيات", "بطاقة آية", "صورة جاهزة للحالة والمنشور بأربعة مقاسات", Icons.Outlined.PhotoLibrary, ToolGroup.Content, true, Routes.studioMode(video = false)),
+            SiteTool("bio", "عبارات دينية قصيرة للبايو", "عبارات للبايو", "آيات وأذكار موثقة جاهزة للنسخ", Icons.Outlined.FormatQuote, ToolGroup.Content, true, "bio"),
             SiteTool("status", "حالات واتساب", "حالات واتساب", "صورة أو فيديو أو نص متحرك", Icons.Outlined.Forum, ToolGroup.Content, false, "status"),
             SiteTool("listen", "المصحف المسموع والتحفيظ", "المصحف المسموع", "استمع للسورة آية آية مع التكرار للحفظ", Icons.Outlined.Headphones, ToolGroup.Quran, true, "quran"),
             SiteTool("search", "البحث في القرآن", "البحث", "ابحث بكلمة واصنع من النتيجة فيديو أو بطاقة", Icons.Outlined.Search, ToolGroup.Quran, true, "quran"),
