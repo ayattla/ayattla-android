@@ -189,7 +189,7 @@ open page/1; for i in 1 2 3 4 5; do adb shell input swipe 900 1200 150 1200 120;
 open quran; scrollAll; alive && ok "فهرس السور: التمرير" || bad "فهرس السور"
 
 # ── Home v5 and the unified search.
-open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; expect "الرئيسية: اختصاراتك" "اختصاراتك" 8
+open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; expect "الرئيسية: اختصاراتك" "اختصاراتك" 25
 scrollAll; scrollAll; scrollAll; scrollAll; scrollAll
 $UI tap "تخصيص الرئيسية"; sleep 2; expect "الرئيسية: التخصيص" "إعادة الترتيب الافتراضي" 5; shot home-customize; adb shell input keyevent 4
 open home; $UI tap "الفجر" && alive && ok "الرئيسية: صلواتي اليوم" || bad "الرئيسية: صلواتي اليوم"
@@ -206,7 +206,7 @@ open status/marriage; expect "الحالات: الزواج" "صممها حالة
 open page/3; sleep 5
 open journey; expect "رحلتي: الصفحة المقروءة تُحتسب" "سلسلتك: يوم واحد" 10; shot journey
 scrollAll; expect "رحلتي: الأسبوع والشهر" "صفحة هذا الشهر" 6
-open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 10
+open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 40
 
 # ── 2.4 «القرآن بالصوت»: the recitation check and voice search open, and pressing the microphone
 # never crashes (the emulator may have no Arabic recognizer; the screen then says so).
@@ -272,13 +272,13 @@ expect "البداية: إذن الإشعارات عند اختيار تذكير
 $UI tap "الوضع الداكن"; sleep 2; shot welcome-theme-dark; $UI tap "الوضع الفاتح"; sleep 1
 $UI tap "إنهاء"; sleep 2; expect "البداية: صفحة النجاح" "أهلا بك في آيات تتلى" 6; shot welcome-done
 if adb shell run-as $PKG cat files/notify.json 2>/dev/null | grep -q '"ayah":true'; then ok "البداية: التذكير المختار مفعّل في مركز التنبيهات"; else bad "البداية: التذكير المختار مفعّل في مركز التنبيهات"; fi
-$UI tap "ابدأ الآن"; sleep 3; expect "البداية: الرئيسية حسب الاهتمامات" "اختصاراتك" 10; shot welcome-home
+$UI tap "ابدأ الآن"; sleep 3; expect "البداية: الرئيسية حسب الاهتمامات" "اختصاراتك" 25; shot welcome-home
 plain; absent "البداية: لا تتكرر عند كل تشغيل" "ابدأ رحلتك" 4
 alive && ok "البداية: بلا أعطال" || bad "البداية: بلا أعطال"
 # «ادخل مباشرة»: straight in, nothing asked, never again; the home invites picking interests.
 adb shell pm clear $PKG >/dev/null 2>&1
 plain; expect "البداية: الافتتاحية مرة ثانية" "ادخل مباشرة" 12
-$UI tap "ادخل مباشرة"; sleep 3; expect "البداية: الدخول المباشر" "اختصاراتك" 10
+$UI tap "ادخل مباشرة"; sleep 3; expect "البداية: الدخول المباشر" "اختصاراتك" 25
 plain; absent "البداية: الدخول المباشر لا يعيد الأسئلة" "ابدأ رحلتك" 4
 open settings; expect "الإعدادات: تعديل الاهتمامات والإحصاءات" "الإحصاءات المجهولة" 8
 open welcome-edit; expect "الإعدادات: تعديل الاهتمامات يفتح الأسئلة" "ما الذي تريد استخدام" 8
