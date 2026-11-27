@@ -59,6 +59,9 @@ fun MushafScreen(nav: NavHostController, startPage: Int) {
         kotlinx.coroutines.delay(2000); com.ayattla.app.data.Journey.load(ctx); com.ayattla.app.data.Journey.readPage(current)
     }
 
+    // Reading the mushaf keeps the screen awake, like the leading mushaf apps.
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(Unit) { view.keepScreenOn = true; onDispose { view.keepScreenOn = false } }
     Column(Modifier.fillMaxSize().background(MushafColors.backdrop()).statusBarsPadding()) {
         AppTopBar(first?.let { "سورة ${content.surah(it.surah).shortName}" } ?: "المصحف", onBack = { nav.popBackStack() }) {
             MushafThemeButton()

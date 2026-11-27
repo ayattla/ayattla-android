@@ -146,7 +146,7 @@ enum class HomeSection(val title: String) {
     Prayer("الصلاة القادمة"), Today("يومي"), ForYou("اختصاراتك"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
     Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
     Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
-    Quick("الوصول السريع"), Name("اسم الله اليوم"),
+    Quick("الوصول السريع"), Name("اسم الله اليوم"), Dua("دعاء من القرآن"),
 }
 
 object HomeLayout {
@@ -157,7 +157,7 @@ object HomeLayout {
      */
     val defaultOrder = listOf(
         HomeSection.Prayer, HomeSection.Today, HomeSection.Tracker, HomeSection.ForYou, HomeSection.Continue,
-        HomeSection.Journey, HomeSection.Wird, HomeSection.Ayah, HomeSection.Azkar, HomeSection.Dhikr, HomeSection.Name,
+        HomeSection.Journey, HomeSection.Wird, HomeSection.Ayah, HomeSection.Azkar, HomeSection.Dhikr, HomeSection.Name, HomeSection.Dua,
         HomeSection.Quiz, HomeSection.Occasion, HomeSection.Create, HomeSection.Gallery, HomeSection.All,
     )
     /** Only true repeats start hidden: their tools are already in «اختصاراتك». */
@@ -172,7 +172,12 @@ object HomeLayout {
             val (n, v) = e.split(":").let { it.getOrNull(0) to it.getOrNull(1) }
             HomeSection.entries.firstOrNull { it.name == n }?.let { it to (v != "0") }
         }.orEmpty()
-        return saved + HomeSection.entries.filter { s -> saved.none { it.first == s } }.map { it to false }
+        // «دعاء من القرآن» (2.9.1) joins right after «اسم الله اليوم» for those who saved a layout before it.
+        val withDua = if (saved.none { it.first == HomeSection.Dua }) {
+            val i = saved.indexOfFirst { it.first == HomeSection.Name }
+            if (i >= 0) saved.toMutableList().apply { add(i + 1, HomeSection.Dua to true) } else saved
+        } else saved
+        return withDua + HomeSection.entries.filter { s -> withDua.none { it.first == s } }.map { it to false }
     }
 
     /** The default order, then the hidden sections (available in «تخصيص الرئيسية»). */
@@ -259,6 +264,7 @@ private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: L
         HomeSection.Gallery -> HomeGalleryPublic(nav)
         HomeSection.All -> HomeAllToolsPublic(nav)
         HomeSection.Name -> NameOfTheDay(nav)
+        HomeSection.Dua -> QuranDuaOfTheDay(nav)
     }
 }
 
@@ -314,6 +320,7 @@ private fun homeIcon(title: String): ImageVector = when {
     title.startsWith("صناعة") -> Icons.Outlined.AutoAwesome
     title.startsWith("أقسام") -> Icons.Outlined.Apps
     title.startsWith("اسم الله") -> Icons.Outlined.AutoAwesome
+    title.startsWith("دعاء") -> Icons.Outlined.MenuBook
     else -> Icons.Outlined.Star
 }
 
@@ -323,6 +330,7 @@ private fun homeSubtitle(title: String): String? = when {
     title.startsWith("المناسبات") -> "المواسم والأيام الفاضلة القادمة"
     title.startsWith("اختصاراتك") -> "أدواتك المفضلة في مكان واحد"
     title.startsWith("أذكار") -> "تقدمك في أذكار اليوم"
+    title.startsWith("دعاء") -> "دعاء جديد كل يوم بنص المصحف"
     else -> null
 }
 
@@ -790,6 +798,35 @@ private fun NameOfTheDay(nav: NavHostController) {
             ) {
                 Icon(Icons.Outlined.AutoAwesome, null, tint = b.primaryInk, modifier = Modifier.size(18.dp))
                 Text("صمم بطاقة بالاسم", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
+            }
+        }
+    }
+}
+
+/**
+ * «دعاء من القرآن»: one of the Quran duas listed in «الأدعية», a new one each day, shown with the
+ * mushaf text and its surah and ayah, to listen to or turn into a card.
+ */
+@Composable
+private fun QuranDuaOfTheDay(nav: NavHostController) {
+    val b = LocalBrand.current
+    val ctx = LocalContext.current
+    val content = LocalContent.current
+    val reciter = rememberReciter()
+    val refs = content.library.duas?.quran.orEmpty()
+    if (refs.isEmpty()) return
+    val r = remember { refs[(LocalDate.now().toEpochDay() % refs.size).toInt()] }
+    val text = remember(r) { runCatching { content.ayat(r.s, r.a, r.b).joinToString(" ") { it.text } }.getOrDefault("") }
+    if (text.isEmpty()) return
+    val where = "سورة ${content.surah(r.s).shortName} · " + if (r.a == r.b) "الآية ${r.a}" else "الآيات ${r.a}-${r.b}"
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("دعاء من القرآن", "كل الأدعية") { nav.navigate("duas") }
+        Column(Modifier.fillMaxWidth().surface(b).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(text, fontFamily = Fonts.quran, fontSize = 21.sp, lineHeight = 42.sp, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Text(where, style = MaterialTheme.typography.labelLarge, color = b.goldInk, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                BrandButton("استمع", Modifier.weight(1f), kind = BtnKind.Secondary) { Recitation.play(ctx, content, reciter, r.s, r.a, r.b) }
+                BrandButton("صمم بطاقة", Modifier.weight(1f)) { nav.navigate(Routes.studio(r.s, r.a, r.b)) }
             }
         }
     }
