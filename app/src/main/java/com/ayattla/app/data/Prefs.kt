@@ -16,6 +16,7 @@ class Prefs(context: Context) {
     var reciterId by mutableStateOf(sp.getString("reciter", "") ?: "")
         private set
     var quranFontSize by mutableStateOf(sp.getFloat("quranFont", 26f))
+        private set
     /** Background of the Quran pages: paper, white, green or night. */
     var mushafTheme by mutableStateOf(sp.getString("mushafTheme", "paper") ?: "paper")
         private set
