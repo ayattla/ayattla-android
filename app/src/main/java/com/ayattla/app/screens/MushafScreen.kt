@@ -59,8 +59,9 @@ fun MushafScreen(nav: NavHostController, startPage: Int) {
         kotlinx.coroutines.delay(2000); com.ayattla.app.data.Journey.load(ctx); com.ayattla.app.data.Journey.readPage(current)
     }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().background(MushafColors.backdrop()).statusBarsPadding()) {
         AppTopBar(first?.let { "سورة ${content.surah(it.surah).shortName}" } ?: "المصحف", onBack = { nav.popBackStack() }) {
+            MushafThemeButton()
             IconButton(onClick = { first?.let { Recitation.play(ctx, content, reciter, it.surah, it.ayah, continuous = true) } }) { Icon(Icons.Filled.PlayArrow, "استمع من أول الصفحة") }
         }
         HorizontalPager(state = pager, modifier = Modifier.weight(1f), beyondViewportPageCount = 1, key = { it }) { index ->

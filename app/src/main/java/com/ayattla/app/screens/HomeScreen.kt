@@ -67,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -288,7 +289,7 @@ private fun HomeCreateBento(nav: NavHostController) {
     val b = LocalBrand.current
     val (videos, images) = rememberFeatured()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SiteSectionHead("ابدأ صناعة المحتوى", eyebrow = "اصنع", subtitle = "مقاطع وبطاقات وحالات بخلفيات حقيقية، جاهزة للنشر")
+        com.ayattla.app.ui.components.HomeHead("صناعة المحتوى", subtitle = "مقاطع وبطاقات وحالات جاهزة للنشر", icon = Icons.Outlined.AutoAwesome)
         MediaShortcut(
             "مقطع تلاوة بالفيديو", "تظليل الكلمة مع التلاوة وأكثر من ٣٠ قارئا، بخلفية فيديو حقيقية",
             Icons.Filled.SmartDisplay, videos.firstOrNull(), 0, 210.dp, big = true, badge = "MP4",
@@ -430,7 +431,7 @@ private fun HomeToolLauncher(nav: NavHostController) {
         ToolGroup.Hadith to G(Icons.Outlined.School, Color(0xFF6B3F8E), Color(0xFF3A1F55)),
     )
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SiteSectionHead("أقسام الأدوات", eyebrow = "الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية في ${ToolGroup.entries.size} أقسام")
+        com.ayattla.app.ui.components.HomeHead("كل الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية في ${ToolGroup.entries.size} أقسام", icon = Icons.Outlined.Apps)
         ToolGroup.entries.forEach { g ->
             val tools = SiteTool.all.filter { it.group == g }
             if (tools.isEmpty()) return@forEach

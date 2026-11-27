@@ -32,32 +32,62 @@ import androidx.compose.ui.unit.sp
 import com.ayattla.app.data.Surah
 import com.ayattla.app.ui.theme.Fonts
 import com.ayattla.app.ui.theme.LocalBrand
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.ui.graphics.compositeOver
 
-/** Mushaf paper and gold for light and dark reading. */
-object MushafColors {
-    @Composable fun paper() = if (LocalBrand.current.dark) Color(0xFF14211C) else Color(0xFFFCF8EE)
-    @Composable fun gold() = if (LocalBrand.current.dark) Color(0xFFC9A75F) else Color(0xFFB08A3E)
-    @Composable fun ink() = if (LocalBrand.current.dark) Color(0xFFEDE6D3) else Color(0xFF1F2620)
+/**
+ * The reading backgrounds of the Quran pages. Calm, flat tones only (no patterns), like the reading
+ * themes of the leading mushaf apps; night follows the app's dark mode.
+ */
+enum class MushafTheme(val key: String, val label: String, val page: Color, val backdrop: Color, val gold: Color, val ink: Color) {
+    Paper("paper", "ورقي", Color(0xFFFCF8EE), Color(0xFFF4EFE2), Color(0xFFB08A3E), Color(0xFF1F2620)),
+    White("white", "أبيض", Color(0xFFFFFFFF), Color(0xFFF1F3F2), Color(0xFF9C8350), Color(0xFF1A1F1C)),
+    Green("green", "أخضر هادئ", Color(0xFFF4F8F2), Color(0xFFE5EEE3), Color(0xFF427E45), Color(0xFF102D27)),
+    Night("night", "ليلي", Color(0xFF14211C), Color(0xFF0D1713), Color(0xFFC9A75F), Color(0xFFEDE6D3));
+    companion object { fun of(key: String) = entries.firstOrNull { it.key == key } ?: Paper }
 }
 
-private fun DrawScope.star8(c: Offset, r: Float, color: Color, fill: Boolean) {
-    val inner = r * (cos(PI / 4) / cos(PI / 8)).toFloat()
-    val p = Path()
-    for (i in 0 until 16) {
-        val a = (PI / 8 * i - PI / 2).toFloat()
-        val rr = if (i % 2 == 0) r else inner
-        val x = c.x + cos(a) * rr; val y = c.y + sin(a) * rr
-        if (i == 0) p.moveTo(x, y) else p.lineTo(x, y)
+object MushafColors {
+    @Composable fun theme(): MushafTheme = if (LocalBrand.current.dark) MushafTheme.Night else MushafTheme.of(com.ayattla.app.LocalPrefs.current.mushafTheme)
+    @Composable fun paper() = theme().page
+    @Composable fun backdrop() = theme().backdrop
+    @Composable fun gold() = theme().gold
+    @Composable fun ink() = theme().ink
+}
+
+/** Picks the page background; shown in the reader's top bar. */
+@Composable
+fun MushafThemeButton() {
+    val prefs = com.ayattla.app.LocalPrefs.current
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Box {
+        androidx.compose.material3.IconButton(onClick = { open = true }) {
+            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Palette, "خلفية المصحف")
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }) {
+            MushafTheme.entries.forEach { t ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(t.label) },
+                    leadingIcon = {
+                        Box(Modifier.size(22.dp).background(t.page, androidx.compose.foundation.shape.CircleShape)
+                            .border(if (prefs.mushafTheme == t.key) 2.dp else 1.dp, t.gold, androidx.compose.foundation.shape.CircleShape))
+                    },
+                    onClick = { prefs.setMushafTheme(t.key); open = false },
+                )
+            }
+        }
     }
-    p.close()
-    if (fill) drawPath(p, color) else drawPath(p, color, style = Stroke(1.2.dp.toPx()))
+}
+
+/** Soft gold corner brackets: the modern replacement for ornamental corner stars. */
+private fun DrawScope.corner(x: Float, y: Float, dx: Float, dy: Float, len: Float, color: Color) {
+    val p = Path().apply { moveTo(x, y + dy * len); lineTo(x, y + dy * len * 0.25f); quadraticTo(x, y, x + dx * len * 0.25f, y); lineTo(x + dx * len, y) }
+    drawPath(p, color, style = Stroke(2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
 }
 
 /**
- * A mushaf page: paper inside a double gold rule with star corners, a running head (surah, juz) and the
+ * A mushaf page: paper inside a double gold rule with soft corner brackets, a running head (surah, juz) and the
  * page number in a small medallion at the foot. The ayat go in [content].
  */
 @Composable
@@ -70,10 +100,9 @@ fun MushafFrame(surahName: String, juz: Int?, page: Int?, modifier: Modifier = M
             val o = 6.dp.toPx(); val i = 11.dp.toPx()
             drawRoundRect(gold, Offset(o, o), Size(size.width - 2 * o, size.height - 2 * o), CornerRadius(12.dp.toPx()), style = Stroke(1.6.dp.toPx()))
             drawRoundRect(gold.copy(alpha = 0.55f), Offset(i, i), Size(size.width - 2 * i, size.height - 2 * i), CornerRadius(8.dp.toPx()), style = Stroke(0.8.dp.toPx()))
-            val r = 7.dp.toPx()
-            listOf(Offset(o + 2, o + 2), Offset(size.width - o - 2, o + 2), Offset(o + 2, size.height - o - 2), Offset(size.width - o - 2, size.height - o - 2)).forEach {
-                star8(it, r, paper, true); star8(it, r, gold, false); star8(it, r * 0.45f, gold, true)
-            }
+            val c = 2.dp.toPx(); val len = 22.dp.toPx(); val w = size.width; val h = size.height
+            corner(c, c, 1f, 1f, len, gold); corner(w - c, c, -1f, 1f, len, gold)
+            corner(c, h - c, 1f, -1f, len, gold); corner(w - c, h - c, -1f, -1f, len, gold)
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 18.dp)) {
             // Running head.
@@ -85,11 +114,11 @@ fun MushafFrame(surahName: String, juz: Int?, page: Int?, modifier: Modifier = M
             content()
             // Page number medallion.
             if (page != null) Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.matchParentSize()) {
-                        val c = center; val rr = size.minDimension / 2 - 1.dp.toPx()
-                        star8(c, rr, paper, true); star8(c, rr, gold, false)
-                    }
+                Box(
+                    Modifier.heightIn(min = 26.dp).background(paper, androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .border(1.dp, gold, androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text("$page", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (b.dark) gold else Color(0xFF6B5320))
                 }
             }
@@ -97,32 +126,22 @@ fun MushafFrame(surahName: String, juz: Int?, page: Int?, modifier: Modifier = M
     }
 }
 
-/** The surah title as a framed cartouche with star ends, its place of revelation and ayah count. */
+/** The surah title in a soft framed capsule, its place of revelation and ayah count. */
 @Composable
 fun SurahBanner(surah: Surah, modifier: Modifier = Modifier) {
     val gold = MushafColors.gold()
     val paper = MushafColors.paper()
-    val green = if (LocalBrand.current.dark) Color(0xFF1C3A2E) else Color(0xFFE8F1EA)
+    val green = if (MushafColors.theme() == MushafTheme.Night) Color(0xFF1C3A2E) else MushafColors.gold().copy(alpha = 0.10f).compositeOver(MushafColors.paper())
     Column(modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().heightIn(min = 64.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.matchParentSize()) {
-                val h = size.height; val w = size.width; val cut = h * 0.5f
-                // Cartouche: a band with pointed ends.
-                val band = Path().apply {
-                    moveTo(cut, 0f); lineTo(w - cut, 0f); lineTo(w, h / 2); lineTo(w - cut, h); lineTo(cut, h); lineTo(0f, h / 2); close()
-                }
-                drawPath(band, green)
-                drawPath(band, gold, style = Stroke(1.6.dp.toPx()))
-                val inset = 5.dp.toPx()
-                val inner = Path().apply {
-                    moveTo(cut + inset, inset); lineTo(w - cut - inset, inset); lineTo(w - inset * 1.6f, h / 2); lineTo(w - cut - inset, h - inset)
-                    lineTo(cut + inset, h - inset); lineTo(inset * 1.6f, h / 2); close()
-                }
-                drawPath(inner, gold.copy(alpha = 0.5f), style = Stroke(0.8.dp.toPx()))
-                star8(Offset(cut * 0.95f, h / 2), h * 0.17f, gold, true)
-                star8(Offset(w - cut * 0.95f, h / 2), h * 0.17f, gold, true)
-                star8(Offset(cut * 0.95f, h / 2), h * 0.27f, gold, false)
-                star8(Offset(w - cut * 0.95f, h / 2), h * 0.27f, gold, false)
+                // A soft capsule with a fine double gold rule and a dot at each end.
+                val h = size.height; val w = size.width; val r = h / 2
+                drawRoundRect(green, cornerRadius = CornerRadius(r))
+                drawRoundRect(gold, cornerRadius = CornerRadius(r), style = Stroke(1.4.dp.toPx()))
+                val i = 5.dp.toPx()
+                drawRoundRect(gold.copy(alpha = 0.45f), Offset(i, i), Size(w - 2 * i, h - 2 * i), CornerRadius(r - i), style = Stroke(0.8.dp.toPx()))
+                drawCircle(gold, 3.dp.toPx(), Offset(r * 0.9f, h / 2)); drawCircle(gold, 3.dp.toPx(), Offset(w - r * 0.9f, h / 2))
             }
             Text(
                 "سورة ${surah.shortName}", fontFamily = Fonts.naskh, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MushafColors.ink(),

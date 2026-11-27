@@ -335,7 +335,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
         prefs.setLastRead(surahId, visiblePage.first().ayah)
         visiblePage.first().page?.let { pg -> kotlinx.coroutines.delay(2000); com.ayattla.app.data.Journey.readPage(pg) }
     }
-    val paper = if (b.dark) b.background else Color(0xFFF4EFE2)
+    val paper = MushafColors.backdrop()
     val highlight = if (b.dark) Color(0xFF3A3317) else Color(0xFFF5E6B0)
 
     Column(Modifier.fillMaxSize().background(paper).statusBarsPadding()) {
@@ -343,6 +343,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
             "سورة ${surah.shortName}", onBack = { nav.popBackStack() },
             subtitle = "الجزء ${visiblePage.first().juz ?: 1} · صفحة ${visiblePage.first().page ?: 1}",
         ) {
+            MushafThemeButton()
             IconButton(onClick = { showFont = true }) { Icon(Icons.Filled.FormatSize, "حجم الخط", tint = b.primaryInk) }
             IconButton(onClick = { Recitation.play(ctx, content, reciter, surahId, 1, continuous = true) }) { Icon(Icons.Filled.PlayArrow, "استمع للسورة", tint = b.primaryInk) }
         }
