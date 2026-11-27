@@ -291,13 +291,13 @@ fun SiteSectionHead(title: String, modifier: Modifier = Modifier, eyebrow: Strin
 @Composable
 fun HomeHead(title: String, subtitle: String? = null, icon: ImageVector? = null, action: String? = null, onAction: (() -> Unit)? = null) {
     val b = LocalBrand.current
-    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (icon != null) Box(
             Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(b.tint),
             contentAlignment = Alignment.Center,
         ) { Icon(icon, null, tint = b.primaryInk, modifier = Modifier.size(21.dp)) }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1)
+            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1, modifier = Modifier.semantics { heading() })
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         if (action != null && onAction != null) Text(

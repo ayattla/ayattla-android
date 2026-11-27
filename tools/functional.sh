@@ -190,7 +190,7 @@ open quran; scrollAll; alive && ok "فهرس السور: التمرير" || bad 
 
 # ── Home v5 and the unified search.
 open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; expect "الرئيسية: اختصاراتك" "اختصاراتك" 8
-for i in $(seq 1 60); do $UI has "تخصيص الرئيسية" && break; adb shell input swipe 540 1600 540 900 200; sleep 0.4; done
+scrollAll; scrollAll; scrollAll; scrollAll; scrollAll
 $UI tap "تخصيص الرئيسية"; sleep 2; expect "الرئيسية: التخصيص" "إعادة الترتيب الافتراضي" 5; shot home-customize; adb shell input keyevent 4
 open home; $UI tap "الفجر" && alive && ok "الرئيسية: صلواتي اليوم" || bad "الرئيسية: صلواتي اليوم"
 open settings; expect "الإعدادات: الافتتاحية" "الافتتاحية عند فتح التطبيق" 5
