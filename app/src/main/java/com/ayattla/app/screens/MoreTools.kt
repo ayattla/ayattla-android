@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Mosque
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -916,6 +917,7 @@ fun KidsScreen(nav: NavHostController) {
             }
         }
         BrandButton("مسابقة جزء عم", Modifier.fillMaxWidth(), icon = Icons.Filled.Star, kind = BtnKind.Secondary) { nav.navigate("kids-quiz") }
+        BrandButton("ختمة جماعية للأسرة", Modifier.fillMaxWidth(), icon = Icons.Outlined.Groups, kind = BtnKind.Secondary) { nav.navigate("khatma") }
         BrandButton("شهادة تقدير", Modifier.fillMaxWidth(), icon = Icons.Outlined.WorkspacePremium, kind = BtnKind.Gold, enabled = done.isNotEmpty()) {
             val who = name.ifBlank { "بطلنا" }
             PendingText.value = CardText(
