@@ -742,7 +742,7 @@ private fun ForYou(nav: NavHostController) {
     }
     Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("اختصاراتك", "تعديل") { nav.navigate("welcome-edit") }
-        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             (tools.map { it as Any } + "all").chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth()) {
                     row.forEach { item ->
@@ -944,7 +944,7 @@ private fun PrayerTracker() {
     var done by remember { mutableStateOf(sp.getStringSet(key(today), emptySet()).orEmpty()) }
     Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("صلواتي اليوم")
-        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 five.forEach { p ->
                     val on = p.name in done
@@ -999,7 +999,7 @@ private fun MuslimServices(nav: NavHostController) {
     )
     Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("الوصول السريع", "كل الأدوات") { nav.goTab("more") }
-        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             items.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth()) {
                     row.forEach { s ->
