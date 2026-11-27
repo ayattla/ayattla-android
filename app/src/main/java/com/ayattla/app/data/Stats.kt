@@ -65,6 +65,8 @@ object Stats {
         if (!enabled(c) || !Net.isOnline) return@withContext
         if (!force && System.currentTimeMillis() - p.getLong("sent", 0) < EVERY_MS) return@withContext
         val version = runCatching { c.packageManager.getPackageInfo(c.packageName, 0).versionName }.getOrNull() ?: ""
+        // CI and test builds keep the default version (2.0.0): they are not real use, so nothing is sent.
+        if (version.isEmpty() || version == "2.0.0") return@withContext
         val body = batch(c, version) ?: return@withContext
         val sent = p.all.filter { it.key.startsWith("n|") && it.value is Int }.mapValues { it.value as Int }
         runCatching {
