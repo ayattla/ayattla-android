@@ -92,6 +92,12 @@ fun UnifiedSearchScreen(nav: NavHostController) {
     }
     val topics = remember(clean) { if (clean.length < 2) emptyList() else content.library.topics.filter { hit(it.title) } }
     val azkarCats = remember(clean) { if (clean.length < 2) emptyList() else content.azkarCategories.filter { hit(it.title) } }
+    val zikrs = remember(clean) { if (clean.length < 3) emptyList() else content.allAzkar.filter { hit(it.text) }.take(30) }
+    val duas = remember(clean) {
+        if (clean.length < 3) emptyList()
+        else content.library.duas?.needs.orEmpty().flatMap { n -> n.chapters.flatMap { c -> c.items.map { Triple(it, c.name, n.need) } } }
+            .filter { hit(it.first) || hit(it.second) }.take(30)
+    }
     val reciters = remember(clean) { if (clean.length < 2) emptyList() else content.reciters.filter { hit(it.name) } }
     var ayat by remember { mutableStateOf<List<com.ayattla.app.data.Ayah>>(emptyList()) }
     LaunchedEffect(clean) {
@@ -100,7 +106,7 @@ fun UnifiedSearchScreen(nav: NavHostController) {
         delay(250)
         ayat = withContext(Dispatchers.IO) { runCatching { content.search(q, 60) }.getOrDefault(emptyList()) }
     }
-    val groups = listOf("الكل", "الأدوات", "السور", "الآيات", "المواضيع", "الأذكار", "القراء")
+    val groups = listOf("الكل", "الأدوات", "السور", "الآيات", "الأذكار", "الأدعية", "المواضيع", "القراء")
     fun show(g: String) = filter == "الكل" || filter == g
 
     Column(Modifier.fillMaxSize()) {
@@ -108,7 +114,7 @@ fun UnifiedSearchScreen(nav: NavHostController) {
         OutlinedTextField(
             q, { q = it }, singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).focusRequester(focus),
-            placeholder = { Text("ابحث عن أداة أو سورة أو آية أو ذكر…") },
+            placeholder = { Text("ابحث عن آية أو ذكر أو دعاء أو أداة…") },
             leadingIcon = { Icon(Icons.Outlined.Search, null, tint = b.muted) },
             trailingIcon = {
                 if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Outlined.Close, "مسح", tint = b.muted) }
@@ -121,7 +127,7 @@ fun UnifiedSearchScreen(nav: NavHostController) {
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(groups) { g -> Chip(g, filter == g, { filter = g }) }
         }
-        val empty = tools.isEmpty() && surahs.isEmpty() && topics.isEmpty() && azkarCats.isEmpty() && reciters.isEmpty() && ayat.isEmpty()
+        val empty = tools.isEmpty() && surahs.isEmpty() && topics.isEmpty() && azkarCats.isEmpty() && zikrs.isEmpty() && duas.isEmpty() && reciters.isEmpty() && ayat.isEmpty()
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
@@ -161,6 +167,19 @@ fun UnifiedSearchScreen(nav: NavHostController) {
                     ResultRow(c.title, null, Icons.Outlined.WbTwilight, TileStyle.Gradient(2)) { nav.navigate(Routes.azkar(c.id)) }
                 }
             }
+            if (show("الأذكار") && zikrs.isNotEmpty()) {
+                item { GroupTitle("نصوص الأذكار", zikrs.size) }
+                items(zikrs, key = { "zk" + it.id }) { z ->
+                    val cat = azkarTitle(content, z.category)
+                    ResultRow(z.text, listOfNotNull(cat, z.reference).joinToString(" · "), Icons.Outlined.WbTwilight, TileStyle.Gradient(2), lines = 2) { nav.navigate(Routes.azkar(z.category)) }
+                }
+            }
+            if (show("الأدعية") && duas.isNotEmpty()) {
+                item { GroupTitle("الأدعية", duas.size) }
+                items(duas, key = { "d" + it.second + it.first.hashCode() }) { d ->
+                    ResultRow(d.first, "${d.third} · ${d.second}", Icons.Outlined.Lightbulb, TileStyle.Gradient(4), lines = 2) { nav.navigate("duas") }
+                }
+            }
             if (show("القراء") && reciters.isNotEmpty()) {
                 item { GroupTitle("القراء", reciters.size) }
                 items(reciters.take(20), key = { "r" + it.id }) { r ->
@@ -196,7 +215,7 @@ private fun GroupTitle(t: String, n: Int) {
 }
 
 @Composable
-private fun ResultRow(title: String, sub: String?, icon: ImageVector, style: TileStyle, onClick: () -> Unit) {
+private fun ResultRow(title: String, sub: String?, icon: ImageVector, style: TileStyle, lines: Int = 1, onClick: () -> Unit) {
     val b = LocalBrand.current
     Row(
         Modifier.fillMaxWidth().heightIn(min = 60.dp).pressable(onClick).surface(b).padding(horizontal = 12.dp, vertical = 10.dp),
@@ -204,8 +223,10 @@ private fun ResultRow(title: String, sub: String?, icon: ImageVector, style: Til
     ) {
         IconTile(icon, style = style, size = 40.dp)
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = b.ink, maxLines = lines, overflow = TextOverflow.Ellipsis)
             if (!sub.isNullOrBlank()) Text(sub, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
+
+private fun azkarTitle(content: com.ayattla.app.data.ContentStore, id: Int): String? = content.azkarCategories.firstOrNull { it.id == id }?.title

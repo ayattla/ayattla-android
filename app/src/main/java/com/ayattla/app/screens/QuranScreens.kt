@@ -80,6 +80,7 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
@@ -409,6 +410,7 @@ fun ReaderScreen(nav: NavHostController, surahId: Int, startAyah: Int) {
                 Text("سورة ${surah.shortName} · آية ${a.ayah}", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                 Text(a.text, fontFamily = Fonts.quran, fontSize = 20.sp, lineHeight = 38.sp, color = b.ink, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(vertical = 8.dp))
                 val share = a.text + "\n\n[سورة ${surah.shortName} ${a.ayah}]\nayattla.com"
+                SheetAction(Icons.Filled.School, "مسار الآية: استمع وافهم واحفظ") { selected = null; nav.navigate(Routes.path(surahId, a.ayah)) }
                 SheetAction(Icons.Filled.PlayArrow, "استمع من هنا") { Recitation.play(ctx, content, reciter, surahId, a.ayah, continuous = true); selected = null }
                 SheetAction(Icons.Filled.Repeat, "استمع لهذه الآية فقط") { Recitation.play(ctx, content, reciter, surahId, a.ayah, a.ayah); selected = null }
                 SheetAction(if (a.key in prefs.favorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (a.key in prefs.favorites) "إزالة من المحفوظات" else "حفظ الآية") {
