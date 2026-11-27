@@ -297,7 +297,7 @@ fun HomeHead(title: String, subtitle: String? = null, icon: ImageVector? = null,
             contentAlignment = Alignment.Center,
         ) { Icon(icon, null, tint = b.primaryInk, modifier = Modifier.size(21.dp)) }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1, modifier = Modifier.semantics { heading() })
+            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         if (action != null && onAction != null) Text(
