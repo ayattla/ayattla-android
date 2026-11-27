@@ -75,7 +75,7 @@ fun MushafThemeButton() {
                         Box(Modifier.size(22.dp).background(t.page, androidx.compose.foundation.shape.CircleShape)
                             .border(if (prefs.mushafTheme == t.key) 2.dp else 1.dp, t.gold, androidx.compose.foundation.shape.CircleShape))
                     },
-                    onClick = { prefs.setMushafTheme(t.key); open = false },
+                    onClick = { prefs.chooseMushafTheme(t.key); open = false },
                 )
             }
         }

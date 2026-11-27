@@ -19,6 +19,7 @@ class Prefs(context: Context) {
     /** Background of the Quran pages: paper, white, green or night. */
     var mushafTheme by mutableStateOf(sp.getString("mushafTheme", "paper") ?: "paper")
         private set
+        private set
     var lastRead by mutableStateOf(sp.getString("lastRead", null))
         private set
     var favorites by mutableStateOf(sp.getStringSet("favorites", emptySet())!!.toSet())
@@ -54,7 +55,7 @@ class Prefs(context: Context) {
     fun setTheme(m: ThemeMode) { themeMode = m; sp.edit().putString("theme", m.name).apply() }
     fun setReciter(id: String) { reciterId = id; sp.edit().putString("reciter", id).apply() }
     fun setQuranFont(size: Float) { quranFontSize = size; sp.edit().putFloat("quranFont", size).apply() }
-    fun setMushafTheme(t: String) { mushafTheme = t; sp.edit().putString("mushafTheme", t).apply() }
+    fun chooseMushafTheme(t: String) { mushafTheme = t; sp.edit().putString("mushafTheme", t).apply() }
     fun setLastRead(surah: Int, ayah: Int) { lastRead = "$surah:$ayah"; sp.edit().putString("lastRead", lastRead).apply() }
     fun setOnboarded() { onboarded = true; sp.edit().putBoolean("onboarded", true).apply() }
 
