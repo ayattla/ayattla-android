@@ -146,21 +146,23 @@ enum class HomeSection(val title: String) {
     Prayer("الصلاة القادمة"), Today("يومي"), ForYou("اختصاراتك"), Journey("رحلتي مع القرآن"), Create("صناعة المحتوى"), All("أقسام الأدوات"), Continue("تابع من حيث توقفت"),
     Wird("الورد والختمة"), Azkar("أذكار اليوم"), Tracker("صلواتي اليوم"), Dhikr("الذكر السريع"),
     Occasion("المناسبات"), Ayah("آية اليوم"), Quiz("مسابقة اليوم"), Tools("أدواتي"), Gallery("معرض الخلفيات"),
-    Quick("الوصول السريع"),
+    Quick("الوصول السريع"), Name("اسم الله اليوم"),
 }
 
 object HomeLayout {
     /**
-     * Home 6: nine sections in a clear order — the day first (prayer, «يومي»), then shortcuts, reading,
-     * prayers, content and occasions, then every tool. Sections that repeated others start hidden;
-     * none is removed, and «تخصيص الرئيسية» shows them all.
+     * Home 6: every section in a studied order — the day (prayer, «يومي», prayers logged), shortcuts,
+     * the Quran (continue, journey, wird, ayah), remembrance (azkar, dhikr, a name of Allah), learning
+     * and seasons (quiz, occasions), then making content and every tool.
      */
     val defaultOrder = listOf(
-        HomeSection.Prayer, HomeSection.Today, HomeSection.ForYou, HomeSection.Continue, HomeSection.Ayah,
-        HomeSection.Tracker, HomeSection.Create, HomeSection.Occasion, HomeSection.All,
+        HomeSection.Prayer, HomeSection.Today, HomeSection.Tracker, HomeSection.ForYou, HomeSection.Continue,
+        HomeSection.Journey, HomeSection.Wird, HomeSection.Ayah, HomeSection.Azkar, HomeSection.Dhikr, HomeSection.Name,
+        HomeSection.Quiz, HomeSection.Occasion, HomeSection.Create, HomeSection.Gallery, HomeSection.All,
     )
-    val hiddenByDefault = HomeSection.entries.toSet() - defaultOrder.toSet()
-    private const val KEY = "order.v3"
+    /** Only true repeats start hidden: their tools are already in «اختصاراتك». */
+    val hiddenByDefault = setOf(HomeSection.Quick, HomeSection.Tools)
+    private const val KEY = "order.v4"
     private fun sp(c: Context) = c.getSharedPreferences("home.layout", Context.MODE_PRIVATE)
 
     /** Ordered sections with their visibility. New sections (from updates) join at the end, hidden. */
@@ -180,7 +182,7 @@ object HomeLayout {
     fun save(c: Context, l: List<Pair<HomeSection, Boolean>>) =
         sp(c).edit().putString(KEY, l.joinToString(",") { "${it.first.name}:${if (it.second) 1 else 0}" }).apply()
 
-    fun reset(c: Context) = sp(c).edit().remove(KEY).remove("order.v2").remove("pinned").apply()
+    fun reset(c: Context) = sp(c).edit().remove(KEY).remove("order.v3").remove("order.v2").remove("pinned").apply()
 
     fun pinned(c: Context): List<String> = sp(c).getString("pinned", null)?.split(",")?.filter { it.isNotBlank() }.orEmpty()
     fun setPinned(c: Context, ids: List<String>) = sp(c).edit().putString("pinned", ids.joinToString(",")).apply()
@@ -256,6 +258,7 @@ private fun HomeSectionContent(s: HomeSection, nav: NavHostController, pinned: L
         HomeSection.Create -> HomeCreatePublic(nav)
         HomeSection.Gallery -> HomeGalleryPublic(nav)
         HomeSection.All -> HomeAllToolsPublic(nav)
+        HomeSection.Name -> NameOfTheDay(nav)
     }
 }
 
@@ -310,6 +313,7 @@ private fun homeIcon(title: String): ImageVector = when {
     title.startsWith("الذكر") -> Icons.Outlined.TouchApp
     title.startsWith("صناعة") -> Icons.Outlined.AutoAwesome
     title.startsWith("أقسام") -> Icons.Outlined.Apps
+    title.startsWith("اسم الله") -> Icons.Outlined.AutoAwesome
     else -> Icons.Outlined.Star
 }
 
@@ -753,6 +757,39 @@ private fun ForYou(nav: NavHostController) {
                     }
                     repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * «اسم الله اليوم»: one of the names listed in «الأسماء الحسنى», a new one each day, with a card to
+ * share it. Only the name is shown (the list carries no explanations, and none is written here).
+ */
+@Composable
+private fun NameOfTheDay(nav: NavHostController) {
+    val b = LocalBrand.current
+    val names = LocalContent.current.library.asma
+    if (names.isEmpty()) return
+    val (_, name) = remember { names[(LocalDate.now().toEpochDay() % names.size).toInt()] }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CenteredTitle("اسم الله اليوم", "كل الأسماء") { nav.navigate("asma") }
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card))
+                .background(Brush.linearGradient(listOf(b.goldSoft, b.surface))).border(1.dp, b.accent.copy(alpha = 0.35f), RoundedCornerShape(Radius.card))
+                .padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text("من أسماء الله الحسنى", style = MaterialTheme.typography.labelLarge, color = b.goldInk)
+            Text(name, fontFamily = Fonts.naskh, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = b.ink, textAlign = TextAlign.Center)
+            Row(
+                Modifier.heightIn(min = 44.dp).clip(CircleShape).background(b.surface).border(1.dp, b.line, CircleShape)
+                    .pressable { com.ayattla.app.studio.PendingText.value = com.ayattla.app.studio.CardText("بطاقة اسم", name, "من أسماء الله الحسنى"); nav.navigate("text-card") }
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.AutoAwesome, null, tint = b.primaryInk, modifier = Modifier.size(18.dp))
+                Text("صمم بطاقة بالاسم", style = MaterialTheme.typography.labelLarge, color = b.primaryInk)
             }
         }
     }

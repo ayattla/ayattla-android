@@ -190,7 +190,7 @@ open quran; scrollAll; alive && ok "فهرس السور: التمرير" || bad 
 
 # ── Home v5 and the unified search.
 open home; expect "الرئيسية: الصلاة القادمة" "القبلة" 8; expect "الرئيسية: اختصاراتك" "اختصاراتك" 8
-for i in $(seq 1 30); do $UI has "تخصيص الرئيسية" && break; adb shell input swipe 540 1600 540 900 200; sleep 0.4; done
+for i in $(seq 1 60); do $UI has "تخصيص الرئيسية" && break; adb shell input swipe 540 1600 540 900 200; sleep 0.4; done
 $UI tap "تخصيص الرئيسية"; sleep 2; expect "الرئيسية: التخصيص" "إعادة الترتيب الافتراضي" 5; shot home-customize; adb shell input keyevent 4
 open home; $UI tap "الفجر" && alive && ok "الرئيسية: صلواتي اليوم" || bad "الرئيسية: صلواتي اليوم"
 open settings; expect "الإعدادات: الافتتاحية" "الافتتاحية عند فتح التطبيق" 5
@@ -206,7 +206,7 @@ open status/marriage; expect "الحالات: الزواج" "صممها حالة
 open page/3; sleep 5
 open journey; expect "رحلتي: الصفحة المقروءة تُحتسب" "سلسلتك: يوم واحد" 10; shot journey
 scrollAll; expect "رحلتي: الأسبوع والشهر" "صفحة هذا الشهر" 6
-open journey; expect "رحلتي: الشاشة" "رحلتي مع القرآن" 10
+open home; expect "الرئيسية: بطاقة رحلتي" "رحلتي مع القرآن" 10
 
 # ── 2.4 «القرآن بالصوت»: the recitation check and voice search open, and pressing the microphone
 # never crashes (the emulator may have no Arabic recognizer; the screen then says so).
