@@ -19,7 +19,6 @@ class Prefs(context: Context) {
     /** Background of the Quran pages: paper, white, green or night. */
     var mushafTheme by mutableStateOf(sp.getString("mushafTheme", "paper") ?: "paper")
         private set
-        private set
     var lastRead by mutableStateOf(sp.getString("lastRead", null))
         private set
     var favorites by mutableStateOf(sp.getStringSet("favorites", emptySet())!!.toSet())
