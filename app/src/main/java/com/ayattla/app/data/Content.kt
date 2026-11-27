@@ -126,6 +126,15 @@ class ContentStore private constructor(private val db: SQLiteDatabase) {
             }
         }
 
+    /** Every zikr, for the unified search (a few hundred short rows, read once). */
+    val allAzkar: List<Zikr> by lazy {
+        db.rawQuery("SELECT id, category, text, count, reference, note FROM azkar ORDER BY id", null).use { c ->
+            buildList {
+                while (c.moveToNext()) add(Zikr(c.getInt(0), c.getInt(1), c.getString(2), c.getInt(3).coerceAtLeast(1), c.getStringOrNull(4), c.getStringOrNull(5)))
+            }
+        }
+    }
+
     fun meta(key: String): String? =
         db.rawQuery("SELECT value FROM meta WHERE key = ?", arrayOf(key)).use { if (it.moveToFirst()) it.getString(0) else null }
 

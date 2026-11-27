@@ -839,9 +839,20 @@ fun MosquesScreen(nav: NavHostController) {
 object Kids {
     val surahs = (78..114).reversed().toList()
     val badges = listOf(1 to "البداية", 5 to "المثابر", 10 to "النجم", 20 to "البطل", 37 to "حافظ جزء عم")
-    fun name(c: Context) = sp(c).getString("kids.name", "") ?: ""
-    fun done(c: Context): Set<Int> = sp(c).getString("kids.done", "")!!.split(",").mapNotNull { it.toIntOrNull() }.toSet()
-    fun saveDone(c: Context, s: Set<Int>) = sp(c).edit().putString("kids.done", s.joinToString(",")).apply()
+    // Family: up to six children on one device, each with their own progress. The first child keeps
+    // the original keys, so progress saved before profiles existed stays with them.
+    const val MAX = 6
+    fun count(c: Context) = sp(c).getInt("kids.count", 1).coerceIn(1, MAX)
+    fun active(c: Context) = sp(c).getInt("kids.active", 0).coerceIn(0, count(c) - 1)
+    fun setActive(c: Context, i: Int) = sp(c).edit().putInt("kids.active", i.coerceIn(0, count(c) - 1)).apply()
+    fun add(c: Context): Int { val n = count(c); if (n >= MAX) return n - 1; sp(c).edit().putInt("kids.count", n + 1).putInt("kids.active", n).apply(); return n }
+    private fun suffix(i: Int) = if (i == 0) "" else ".$i"
+    fun nameOf(c: Context, i: Int) = sp(c).getString("kids.name" + suffix(i), "") ?: ""
+    fun setName(c: Context, s: String) = sp(c).edit().putString("kids.name" + suffix(active(c)), s).apply()
+    fun name(c: Context) = nameOf(c, active(c))
+    fun doneOf(c: Context, i: Int): Set<Int> = sp(c).getString("kids.done" + suffix(i), "")!!.split(",").mapNotNull { it.toIntOrNull() }.toSet()
+    fun done(c: Context): Set<Int> = doneOf(c, active(c))
+    fun saveDone(c: Context, s: Set<Int>) = sp(c).edit().putString("kids.done" + suffix(active(c)), s.joinToString(",")).apply()
 }
 
 @Composable
@@ -849,16 +860,29 @@ fun KidsScreen(nav: NavHostController) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
     val content = LocalContent.current
-    var name by remember { mutableStateOf(Kids.name(ctx)) }
-    val done = remember { Kids.done(ctx) }
+    var active by remember { mutableIntStateOf(Kids.active(ctx)) }
+    var count by remember { mutableIntStateOf(Kids.count(ctx)) }
+    var name by remember(active) { mutableStateOf(Kids.name(ctx)) }
+    val done = remember(active) { Kids.done(ctx) }
     ToolPage(nav, "تحفيظ الأطفال جزء عم", "kids-juz-amma") {
+        // One row per child in the family; each keeps their own stars and certificate.
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (0 until count).forEach { i ->
+                val label = Kids.nameOf(ctx, i).ifBlank { "طفل ${i + 1}" }
+                Chip("$label · ${Kids.doneOf(ctx, i).size} سورة", i == active, { Kids.setActive(ctx, i); active = i })
+            }
+            if (count < Kids.MAX) Chip("+ طفل", false, {
+                active = Kids.add(ctx); count = Kids.count(ctx)
+                com.ayattla.app.data.Stats.event(ctx, "kids_profile_added")
+            })
+        }
         AppCard {
             Box(
                 Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).background(b.surface2).padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 if (name.isEmpty()) Text("اسم الطفل", color = b.muted)
-                BasicTextField(name, { name = it.take(30); sp(ctx).edit().putString("kids.name", name).apply() }, singleLine = true,
+                BasicTextField(name, { name = it.take(30); Kids.setName(ctx, name) }, singleLine = true,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(color = b.ink), cursorBrush = SolidColor(b.green), modifier = Modifier.fillMaxWidth())
             }
             Text("حفظ: ${done.size} من ${Kids.surahs.size} سورة", style = MaterialTheme.typography.titleMedium, color = b.primaryInk, modifier = Modifier.padding(top = 10.dp))

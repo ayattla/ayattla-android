@@ -67,6 +67,8 @@ shot 35-kids kids
 shot 36-kids-surah kids/112
 shot 37-ayah-today ayah-today 8
 shot 38-status status
+shot 39-week week
+shot 40-path path/1/2 8
 shot 38b-status-jumuah status/jumuah
 shot 38c-status-marriage status/marriage
 shot 39-more-all 'more?group=Daily'

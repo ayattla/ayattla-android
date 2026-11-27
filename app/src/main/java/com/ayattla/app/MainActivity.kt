@@ -217,6 +217,7 @@ object Routes {
     fun studio(surah: Int, from: Int, to: Int, video: Boolean = false) = "studio?s=$surah&a=$from&b=$to&v=${if (video) 1 else 0}"
     fun studioMode(video: Boolean) = "studio?v=${if (video) 1 else 0}"
     fun tasmee(surah: Int, from: Int, to: Int) = "tasmee?s=$surah&a=$from&b=$to"
+    fun path(surah: Int, ayah: Int) = "path/$surah/$ayah"
 }
 
 @Composable
@@ -257,6 +258,9 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             ) {
             composable("home") { com.ayattla.app.screens.HomeScreenV5(nav) }
             composable("search") { com.ayattla.app.screens.UnifiedSearchScreen(nav) }
+            composable("path/{s}/{a}", arguments = listOf(navArgument("s") { type = NavType.IntType }, navArgument("a") { type = NavType.IntType })) { e ->
+                com.ayattla.app.screens.AyahPathScreen(nav, e.arguments!!.getInt("s"), e.arguments!!.getInt("a"))
+            }
             composable("quran") { QuranIndexScreen(nav) }
             composable(
                 "studio?s={s}&a={a}&b={b}&v={v}",
