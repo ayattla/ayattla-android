@@ -1,5 +1,7 @@
 package com.ayattla.app.ui.components
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.layout.layout
 
 import androidx.compose.foundation.Canvas
@@ -279,6 +281,30 @@ fun SiteSectionHead(title: String, modifier: Modifier = Modifier, eyebrow: Strin
             }.padding(horizontal = 6.dp),
         )
         if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = b.muted, textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * The home's section header (Canva/SaaS style): a soft icon tile, a bold title with a short line
+ * under it, and an optional «الكل» pill at the end. One look for every home section.
+ */
+@Composable
+fun HomeHead(title: String, subtitle: String? = null, icon: ImageVector? = null, action: String? = null, onAction: (() -> Unit)? = null) {
+    val b = LocalBrand.current
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (icon != null) Box(
+            Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(b.tint),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, null, tint = b.primaryInk, modifier = Modifier.size(21.dp)) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = b.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
+        if (action != null && onAction != null) Text(
+            action, style = MaterialTheme.typography.labelLarge, color = b.primaryInk,
+            modifier = Modifier.heightIn(min = 36.dp).clip(CircleShape).background(b.surface).border(1.dp, b.line, CircleShape)
+                .clickable(onClick = onAction).padding(horizontal = 14.dp, vertical = 8.dp),
+        )
     }
 }
 
