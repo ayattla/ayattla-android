@@ -869,7 +869,7 @@ fun KidsScreen(nav: NavHostController) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             (0 until count).forEach { i ->
                 val label = Kids.nameOf(ctx, i).ifBlank { "طفل ${i + 1}" }
-                Chip("$label · ${Kids.doneOf(ctx, i).size}", i == active, { Kids.setActive(ctx, i); active = i })
+                Chip("$label · ${Kids.doneOf(ctx, i).size} سورة", i == active, { Kids.setActive(ctx, i); active = i })
             }
             if (count < Kids.MAX) Chip("+ طفل", false, {
                 active = Kids.add(ctx); count = Kids.count(ctx)
