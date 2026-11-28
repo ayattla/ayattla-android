@@ -225,15 +225,7 @@ fun HomeScreenV5(nav: NavHostController) {
                         HomeSectionContent(s, nav, pinned)
                     }
                 }
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 52.dp).pressable { customizing = true }.clip(RoundedCornerShape(16.dp))
-                        .border(1.dp, b.line, RoundedCornerShape(16.dp)).padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(Icons.Outlined.Tune, null, tint = b.primaryInk, modifier = Modifier.size(20.dp))
-                    Text("  تخصيص الرئيسية", style = MaterialTheme.typography.titleSmall, color = b.primaryInk)
-                }
-                HomeFooterPublic(nav)
+                HomeFooterPublic(nav) { customizing = true }
             }
         }
     }
