@@ -146,7 +146,7 @@ fun HomeScreen(nav: NavHostController) {
                 HomeToolLauncher(nav)
                 HomeAyahCard(nav)
                 HomeMediaGallery(nav)
-                HomeFooter(nav)
+                HomeFooter(nav) {}
             }
         }
     }
