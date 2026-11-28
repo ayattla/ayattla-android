@@ -46,6 +46,17 @@ class PlannerTest {
         assertEquals("21:00", Planner.plan(c.copy(wirdAfter = Prayer.Sunrise.ordinal), monday, 1, inputs).single().at.toLocalTime().toString())
     }
 
+    @Test fun wirdCanFollowTheUsualReadingTime() {
+        val c = NotifyConfig(journey = true, journeyAt = 21 * 60, wirdAfter = -2)
+        // Not learned yet: the own time stays.
+        assertEquals("21:00", Planner.plan(c, monday, 1, inputs).single().at.toLocalTime().toString())
+        val learned = PlanInputs("الرياض", { t }, usualReadMinute = 22 * 60 + 15)
+        assertEquals("22:15", Planner.plan(c, monday, 1, learned).single().at.toLocalTime().toString())
+        // The usual time is the middle sitting, so one odd late night doesn't move it.
+        assertEquals(22 * 60 + 30, com.ayattla.app.data.ReadingClock.usual(listOf(1350, 1340, 1355, 180)))
+        assertEquals(null, com.ayattla.app.data.ReadingClock.usual(listOf(1350, 1340)))
+    }
+
     @Test fun azkarFollowFajrAndAsr() {
         val c = NotifyConfig(morning = true, evening = true, morningOffset = 30, eveningOffset = 15)
         val day = Planner.plan(c, monday, 1, inputs).associate { it.title to it.at.toLocalTime().toString() }

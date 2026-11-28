@@ -204,10 +204,12 @@ fun NotificationsScreen(nav: NavHostController) {
             if (cfg.ayah) TimeButton("الوقت", cfg.ayahAt) { v -> set { it.copy(ayahAt = v) } }
             // The khatma, hifz and daily-goal reminders can follow a prayer instead of a fixed time.
             val pr = com.ayattla.app.calc.Prayer.entries
-            val wirdName = pr.getOrNull(cfg.wirdAfter)?.takeIf { it.isPrayer }?.let { "بعد ${it.title} بـ20 دقيقة" }
+            val usual = com.ayattla.app.data.ReadingClock.reminderMinute(androidx.compose.ui.platform.LocalContext.current)
+            val wirdName = if (cfg.wirdAfter == -2) (usual?.let { "قبل وقت قراءتك المعتاد · ${clock(it)}" } ?: "وقت قراءتك المعتاد (يتعلمه التطبيق بعد 3 جلسات قراءة)")
+                else pr.getOrNull(cfg.wirdAfter)?.takeIf { it.isPrayer }?.let { "بعد ${it.title} بـ20 دقيقة" }
             if (cfg.khatma || cfg.hifz || cfg.journey) Choices(
                 "وقت تذكيرات الورد",
-                listOf(-1 to "بوقت محدد") + pr.filter { it.isPrayer }.map { it.ordinal to "بعد ${it.title}" },
+                listOf(-1 to "بوقت محدد", -2 to "وقت قراءتي المعتاد") + pr.filter { it.isPrayer }.map { it.ordinal to "بعد ${it.title}" },
                 cfg.wirdAfter,
             ) { v -> set { it.copy(wirdAfter = v) } }
             SwitchRow("ورد الختمة", "${wirdName ?: clock(cfg.khatmaAt)} · عند وجود خطة ختمة ولم تُتم ورد اليوم", cfg.khatma) { v -> set { it.copy(khatma = v) } }

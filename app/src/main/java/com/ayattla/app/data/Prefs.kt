@@ -8,7 +8,7 @@ import androidx.compose.runtime.setValue
 import com.ayattla.app.ui.theme.ThemeMode
 
 /** User settings and personal data, stored only on the device. */
-class Prefs(context: Context) {
+class Prefs(private val context: Context) {
     private val sp: SharedPreferences = context.getSharedPreferences("ayat", Context.MODE_PRIVATE)
 
     var themeMode by mutableStateOf(runCatching { ThemeMode.valueOf(sp.getString("theme", "Light")!!) }.getOrDefault(ThemeMode.Light))
@@ -56,7 +56,7 @@ class Prefs(context: Context) {
     fun setReciter(id: String) { reciterId = id; sp.edit().putString("reciter", id).apply() }
     fun setQuranFont(size: Float) { quranFontSize = size; sp.edit().putFloat("quranFont", size).apply() }
     fun chooseMushafTheme(t: String) { mushafTheme = t; sp.edit().putString("mushafTheme", t).apply() }
-    fun setLastRead(surah: Int, ayah: Int) { lastRead = "$surah:$ayah"; sp.edit().putString("lastRead", lastRead).apply() }
+    fun setLastRead(surah: Int, ayah: Int) { lastRead = "$surah:$ayah"; sp.edit().putString("lastRead", lastRead).apply(); ReadingClock.record(context) }
     fun setOnboarded() { onboarded = true; sp.edit().putBoolean("onboarded", true).apply() }
 
     fun toggleFavorite(key: String) {

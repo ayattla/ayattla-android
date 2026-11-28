@@ -75,6 +75,8 @@ class PlanInputs(
     val hifzToday: (LocalDate) -> String? = { null },
     val hijriDay: (LocalDate) -> Int? = { null },
     val journeyText: (LocalDate) -> String = { "وردك اليومي من القرآن" },
+    /** Minute of day a little before the person usually reads, when known (wirdAfter = -2). */
+    val usualReadMinute: Int? = null,
 )
 
 object Planner {
@@ -88,7 +90,8 @@ object Planner {
             fun at(m: Int): LocalDateTime = date.atStartOfDay().plusMinutes(m.toLong())
             val key = date.toString()
             // The Quran reminders can follow a prayer instead of the clock, so they move with the seasons.
-            fun wird(own: Int) = if (c.wirdAfter in Prayer.entries.indices && Prayer.entries[c.wirdAfter].isPrayer) minute(t.hours(Prayer.entries[c.wirdAfter])) + 20 else own
+            fun wird(own: Int) = if (c.wirdAfter == -2) inp.usualReadMinute ?: own
+                else if (c.wirdAfter in Prayer.entries.indices && Prayer.entries[c.wirdAfter].isPrayer) minute(t.hours(Prayer.entries[c.wirdAfter])) + 20 else own
 
             // The five prayers (sunrise is never a prayer and gets no alert).
             for (p in NotifyConfig.PRAYERS) {
