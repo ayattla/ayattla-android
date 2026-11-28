@@ -84,6 +84,18 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/next_step_widget" />
         </receiver>
 
+        <receiver android:name=".widget.DuaWidgetReceiver" android:exported="true" android:label="دعاء من القرآن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/dua_widget" />
+        </receiver>
+        <receiver android:name=".widget.TasbihWidgetReceiver" android:exported="true" android:label="عداد الأذكار">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/tasbih_widget" />
+        </receiver>
         <receiver android:name=".widget.ReminderReceiver" android:exported="false" />
 
         <receiver android:name=".notify.AlertReceiver" android:exported="false" />

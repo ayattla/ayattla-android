@@ -4,4 +4,6 @@
     <string name="widget_desc">آية اليوم بخط المصحف</string>
     <string name="next_step_widget_desc">خطوة يومي بعد كل صلاة</string>
     <string name="prayer_widget_desc">الصلاة القادمة ومواقيت اليوم</string>
+    <string name="dua_widget_desc">دعاء من القرآن كل يوم بنص المصحف</string>
+    <string name="tasbih_widget_desc">سبح من شاشة جوالك بدون فتح التطبيق</string>
 </resources>
