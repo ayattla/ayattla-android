@@ -22,6 +22,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +52,7 @@ import com.ayattla.app.ui.theme.LocalBrand
 import com.ayattla.app.ui.theme.Num
 
 /** The Madani mushaf page by page (604 pages); swipe like a printed mushaf. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun MushafScreen(nav: NavHostController, startPage: Int) {
     val b = LocalBrand.current
@@ -99,8 +110,55 @@ fun MushafScreen(nav: NavHostController, startPage: Int) {
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text("صفحة $current · الجزء ${first?.juz ?: ""}", style = MaterialTheme.typography.labelLarge, color = b.muted)
+        // Where you are in the juz, and a bookmark for this page — like the leading mushaf apps.
+        val juz = first?.juz ?: MushafMarks.juzOf(current)
+        val (from, to) = MushafMarks.juzPages(juz)
+        var marks by remember { mutableStateOf(MushafMarks.load(ctx)) }
+        var showMarks by remember { mutableStateOf(false) }
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { ((current - from + 1).toFloat() / (to - from + 1)).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(4.dp), color = MushafColors.gold(), trackColor = MushafColors.gold().copy(alpha = 0.18f),
+            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("الجزء $juz · صفحة ${current - from + 1} من ${to - from + 1}", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.weight(1f))
+                IconButton(onClick = { marks = MushafMarks.toggle(ctx, current) }) {
+                    Icon(if (current in marks) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder, if (current in marks) "إزالة علامة الصفحة" else "ضع علامة على الصفحة", tint = MushafColors.gold())
+                }
+                IconButton(onClick = { showMarks = true }) { Icon(Icons.AutoMirrored.Outlined.List, "علاماتي") }
+            }
         }
+        if (showMarks) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { showMarks = false }) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                Text("علاماتي", style = MaterialTheme.typography.titleLarge, color = b.ink)
+                if (marks.isEmpty()) Text("ضع علامة على أي صفحة من زر العلامة أسفل المصحف، وترجع لها من هنا", style = MaterialTheme.typography.bodyMedium, color = b.muted)
+                marks.sorted().forEach { p ->
+                    val a = remember(p) { content.page(p).firstOrNull() }
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { showMarks = false; scope.launch { pager.animateScrollToPage(p - 1) } }.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(Icons.Filled.Bookmark, null, tint = MushafColors.gold())
+                        Text("صفحة $p" + (a?.let { " · سورة ${content.surah(it.surah).shortName}" } ?: ""), style = MaterialTheme.typography.bodyLarge, color = b.ink, modifier = Modifier.weight(1f))
+                        Text("الجزء ${a?.juz ?: MushafMarks.juzOf(p)}", style = MaterialTheme.typography.labelMedium, color = b.muted)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Page bookmarks (kept on the device) and the juz boundaries of the Madinah mushaf (604 pages). */
+object MushafMarks {
+    private val starts = intArrayOf(1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582)
+    fun juzOf(page: Int) = starts.indexOfLast { it <= page }.coerceAtLeast(0) + 1
+    fun juzPages(juz: Int): Pair<Int, Int> { val j = juz.coerceIn(1, 30); return starts[j - 1] to (if (j == 30) 604 else starts[j] - 1) }
+    private fun sp(c: android.content.Context) = c.getSharedPreferences("mushaf", android.content.Context.MODE_PRIVATE)
+    fun load(c: android.content.Context): Set<Int> = sp(c).getString("bookmarks", "").orEmpty().split(",").mapNotNull { it.toIntOrNull() }.toSet()
+    fun toggle(c: android.content.Context, page: Int): Set<Int> {
+        val now = load(c).let { if (page in it) it - page else it + page }
+        sp(c).edit().putString("bookmarks", now.joinToString(",")).apply()
+        return now
     }
 }
