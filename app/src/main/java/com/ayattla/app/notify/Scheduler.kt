@@ -63,6 +63,7 @@ object Scheduler {
                 else "مقطع اليوم ومراجعاتك في خطة الحفظ"
             },
             hijriDay = { d -> runCatching { Hijri.fromGregorian(d).day }.getOrNull() },
+            usualReadMinute = com.ayattla.app.data.ReadingClock.reminderMinute(c),
             journeyText = { _ ->
                 com.ayattla.app.data.Journey.load(c)
                 val s = com.ayattla.app.data.Journey.streak()
