@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.media3.effect)
     implementation(libs.glance.appwidget)
     implementation(libs.coroutines.android)
+    implementation(libs.profileinstaller)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)

@@ -205,7 +205,7 @@ fun BrandScreen(modifier: Modifier = Modifier, strong: Boolean = false, content:
 fun Modifier.pressable(onClick: () -> Unit): Modifier {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    return this.scale(if (pressed) 0.975f else 1f).clickable(source, indication = null, onClick = onClick)
+    return this.scale(if (pressed) 0.975f else 1f).clickable(source, indication = null, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
 }
 
 // ───────────────────────── Cards and panels ─────────────────────────
@@ -604,7 +604,7 @@ fun AppTopBar(title: String, onBack: (() -> Unit)? = null, subtitle: String? = n
     val b = LocalBrand.current
     Box(Modifier.fillMaxWidth().statusBarsPadding().height(52.dp).padding(horizontal = 4.dp)) {
         if (onBack != null) Box(
-            Modifier.align(Alignment.CenterStart).size(44.dp).clip(CircleShape).clickable(onClick = onBack),
+            Modifier.align(Alignment.CenterStart).size(48.dp).clip(CircleShape).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onBack),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.AutoMirrored.Filled.ArrowBackIos, "رجوع", tint = b.primaryInk, modifier = Modifier.size(20.dp).offset(x = 3.dp)) }
         Column(Modifier.align(Alignment.Center).widthIn(max = 220.dp), horizontalAlignment = Alignment.CenterHorizontally) {

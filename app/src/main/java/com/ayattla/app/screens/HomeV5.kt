@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -496,7 +497,7 @@ private fun WirdCard(nav: NavHostController) {
                 if (plan == null) {
                     Text("لا توجد خطة ختمة", style = MaterialTheme.typography.titleMedium, color = b.ink, modifier = Modifier.fillMaxWidth())
                     Text("حدد مدة الختمة ويقسمها التطبيق وردا يوميا", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
-                    Text("ابدأ خطة", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.padding(top = 4.dp).clickable { nav.navigate("khatma") })
+                    Text("ابدأ خطة", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.heightIn(min = 48.dp).wrapContentHeight().clickable(role = androidx.compose.ui.semantics.Role.Button) { nav.navigate("khatma") }.padding(top = 4.dp))
                 } else {
                     val day = plan.dayOn(LocalDate.now()).coerceIn(1, plan.days)
                     val r = plan.range(day)
@@ -504,8 +505,8 @@ private fun WirdCard(nav: NavHostController) {
                     Text(if (plan.isFinished) "أتممت الختمة" else "ورد اليوم ${if (todayDone) "✓" else ""}", style = MaterialTheme.typography.titleMedium, color = b.ink)
                     if (r != null && !plan.isFinished) Text("من صفحة ${r.first} إلى ${r.last} · اليوم $day من ${plan.days}", style = MaterialTheme.typography.bodySmall, color = b.muted, textAlign = TextAlign.Center)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 4.dp)) {
-                        if (r != null && !plan.isFinished) Text("اقرأ الورد", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.clickable { nav.navigate("page/${r.first}") })
-                        Text("الخطة", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.clickable { nav.navigate("khatma") })
+                        if (r != null && !plan.isFinished) Text("اقرأ الورد", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.heightIn(min = 48.dp).wrapContentHeight().clickable(role = androidx.compose.ui.semantics.Role.Button) { nav.navigate("page/${r.first}") })
+                        Text("الخطة", style = MaterialTheme.typography.labelLarge, color = b.muted, modifier = Modifier.heightIn(min = 48.dp).wrapContentHeight().clickable(role = androidx.compose.ui.semantics.Role.Button) { nav.navigate("khatma") })
                     }
                 }
             }
@@ -675,7 +676,7 @@ private fun DailyQuiz() {
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.primaryInk, textAlign = TextAlign.Center)
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("نتيجتك: $score من $total", style = MaterialTheme.typography.labelMedium, color = b.muted)
-                    Text("سؤال آخر", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.clip(CircleShape).clickable { extra++ }.padding(6.dp))
+                    Text("سؤال آخر", style = MaterialTheme.typography.labelLarge, color = b.primaryInk, modifier = Modifier.heightIn(min = 48.dp).wrapContentHeight().clip(CircleShape).clickable(role = androidx.compose.ui.semantics.Role.Button) { extra++ }.padding(horizontal = 10.dp, vertical = 6.dp))
                 }
             }
         }
