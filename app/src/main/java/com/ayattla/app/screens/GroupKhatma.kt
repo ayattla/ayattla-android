@@ -38,7 +38,7 @@ data class GroupKhatma(val title: String, val names: List<String>, val done: Set
 
     fun message(): String = buildString {
         append("ختمة جماعية: ").append(title).append('\n')
-        split().forEach { (name, r) -> append(name).append(": ").append(if (r.first == r.last) "الجزء ${r.first}" else "الأجزاء ${r.first} إلى ${r.last}").append('\n') }
+        this@GroupKhatma.split().forEach { (name, r) -> append(name).append(": ").append(if (r.first == r.last) "الجزء ${r.first}" else "الأجزاء ${r.first} إلى ${r.last}").append('\n') }
         append("\nاقرأ وردك من تطبيق آيات تتلى: https://play.google.com/store/apps/details?id=com.ayattla.app")
     }
 
