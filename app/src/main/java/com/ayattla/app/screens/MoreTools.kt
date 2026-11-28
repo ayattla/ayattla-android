@@ -917,7 +917,7 @@ fun KidsScreen(nav: NavHostController) {
             }
         }
         BrandButton("مسابقة جزء عم", Modifier.fillMaxWidth(), icon = Icons.Filled.Star, kind = BtnKind.Secondary) { nav.navigate("kids-quiz") }
-        BrandButton("ختمة جماعية للأسرة", Modifier.fillMaxWidth(), icon = Icons.Outlined.Groups, kind = BtnKind.Secondary) { nav.navigate("khatma") }
+        BrandButton("ختمة جماعية للأسرة", Modifier.fillMaxWidth(), icon = Icons.Outlined.Groups, kind = BtnKind.Secondary) { nav.navigate("group-khatma") }
         BrandButton("شهادة تقدير", Modifier.fillMaxWidth(), icon = Icons.Outlined.WorkspacePremium, kind = BtnKind.Gold, enabled = done.isNotEmpty()) {
             val who = name.ifBlank { "بطلنا" }
             PendingText.value = CardText(
