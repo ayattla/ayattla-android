@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -418,70 +420,36 @@ fun NextPrayerCard(nav: NavHostController) {
 
 // ───────────── Tool launcher ─────────────
 
-/** Every tool, by section (as before), each section a framed panel with its own colour band. */
+/**
+ * Every tool, as four calm section tiles (2×2) in the brand colours: icon, name and count. The full
+ * lists stay one tap away in «المزيد», so the home stays short and tidy.
+ */
 @Composable
 private fun HomeToolLauncher(nav: NavHostController) {
     val b = LocalBrand.current
-    val ctx = LocalContext.current
-    data class G(val icon: ImageVector, val top: Color, val bottom: Color)
-    val look = mapOf(
-        ToolGroup.Content to G(Icons.Filled.SmartDisplay, Color(0xFF1F7A4E), Color(0xFF0E3B2C)),
-        ToolGroup.Quran to G(Icons.Outlined.Book, Color(0xFF2A5C8A), Color(0xFF13304D)),
-        ToolGroup.Daily to G(Icons.Outlined.WbSunny, Color(0xFFB0832F), Color(0xFF6B4A12)),
-        ToolGroup.Hadith to G(Icons.Outlined.School, Color(0xFF6B3F8E), Color(0xFF3A1F55)),
+    val icons = mapOf(
+        ToolGroup.Content to Icons.Filled.SmartDisplay, ToolGroup.Quran to Icons.Outlined.Book,
+        ToolGroup.Daily to Icons.Outlined.WbSunny, ToolGroup.Hadith to Icons.Outlined.School,
     )
-    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         com.ayattla.app.ui.components.HomeHead("كل الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية في ${ToolGroup.entries.size} أقسام", icon = Icons.Outlined.Apps)
-        ToolGroup.entries.forEach { g ->
-            val tools = SiteTool.all.filter { it.group == g }
-            if (tools.isEmpty()) return@forEach
-            val l = look[g] ?: G(Icons.Outlined.Apps, b.green, b.primary)
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card)).surface(b)) {
-                // Colour band with the section's icon, name and count.
-                Row(
-                    Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(l.top, l.bottom))).clickable { nav.navigate("more?group=${g.name}") }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(Color.White.copy(alpha = 0.16f))
-                        .border(1.dp, Color(0xFFE3CB8E).copy(alpha = 0.55f), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
-                        Icon(l.icon, null, tint = Color(0xFFF3DFA2), modifier = Modifier.size(22.dp))
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(g.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White, textAlign = TextAlign.Start)
-                        Text("${tools.size} أداة", style = MaterialTheme.typography.labelMedium, color = Color(0xFFF3DFA2), textAlign = TextAlign.Start)
-                    }
-                    Text("عرض الكل", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.9f))
-                    Chevron(Modifier.size(16.dp), Color.White.copy(alpha = 0.9f))
-                }
-                // Makers first, large, in the content section.
-                if (g == ToolGroup.Content) {
-                    val makers = tools.filter { it.id in SiteTool.featured }
-                    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        makers.forEachIndexed { i, t ->
-                            Column(
-                                Modifier.weight(1f).pressable { openTool(nav, ctx, t) }.clip(RoundedCornerShape(18.dp))
-                                    .background(Brush.verticalGradient(listOf(listOf(Color(0xFF1F7A4E), Color(0xFF2A5C8A), Color(0xFFB0832F))[i % 3], Color(0xFF0E2A20))))
-                                    .padding(vertical = 14.dp, horizontal = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(t.icon, null, tint = Color(0xFFF3DFA2), modifier = Modifier.size(28.dp))
-                                Text(t.short, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1)
-                            }
+        ToolGroup.entries.filter { g -> SiteTool.all.any { it.group == g } }.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { g ->
+                    val n = SiteTool.all.count { it.group == g }
+                    Column(
+                        Modifier.weight(1f).fillMaxHeight().pressable { nav.navigate("more?group=${g.name}") }
+                            .surface(b, com.ayattla.app.ui.components.Surface.Tinted, 16.dp).padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Box(Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(b.tint), contentAlignment = Alignment.Center) {
+                            Icon(icons[g] ?: Icons.Outlined.Apps, null, tint = b.primaryInk, modifier = Modifier.size(22.dp))
                         }
+                        Text(g.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = b.ink, maxLines = 1)
+                        Text("$n أداة", style = MaterialTheme.typography.labelMedium, color = b.muted)
                     }
                 }
-                val rest = if (g == ToolGroup.Content) tools.filter { it.id !in SiteTool.featured } else tools
-                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    rest.chunked(4).forEach { row ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            row.forEach { t ->
-                                LauncherIcon(t.short, t.icon, TileStyle.Accent(ToolAccent.color(t.id, b.dark)), Modifier.weight(1f), isNew = t.isNew, dimmed = t.dimmedOffline()) { openTool(nav, ctx, t) }
-                            }
-                            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }
@@ -555,8 +523,6 @@ private fun HomeAyahCard(nav: NavHostController) {
                 }
             }
         }
-        FloatChip("تظليل الكلمة مع التلاوة", Icons.Outlined.CheckCircle, Modifier.align(Alignment.TopEnd).offset(x = (-10).dp, y = (-16).dp))
-        FloatChip("+٣٠ قارئا", Icons.Outlined.GraphicEq, Modifier.align(Alignment.BottomStart).offset(x = 10.dp, y = 16.dp))
     }
 }
 
