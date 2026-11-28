@@ -185,6 +185,22 @@ object HomeLayout {
     fun personalDefault(@Suppress("UNUSED_PARAMETER") c: Context): List<HomeSection> =
         (defaultOrder + HomeSection.entries).distinct()
 
+    /** True once the person arranged the home themselves: then their order is kept exactly. */
+    fun customized(c: Context) = sp(c).contains(KEY)
+
+    /**
+     * The smart home: for those who never arranged it, the section that fits this hour moves up right
+     * after «يومي» — azkar in the morning and evening, reading at midday and night. All on the device.
+     */
+    fun smart(c: Context, shown: List<HomeSection>, hour: Int = java.time.LocalTime.now().hour): List<HomeSection> {
+        if (customized(c)) return shown
+        val lift = if (hour in 4..11 || hour in 15..20) HomeSection.Azkar else HomeSection.Continue
+        if (lift !in shown) return shown
+        val after = shown.indexOf(HomeSection.Today).takeIf { it >= 0 } ?: return shown
+        val rest = shown - lift
+        return rest.take(after + 1) + lift + rest.drop(after + 1)
+    }
+
     fun save(c: Context, l: List<Pair<HomeSection, Boolean>>) =
         sp(c).edit().putString(KEY, l.joinToString(",") { "${it.first.name}:${if (it.second) 1 else 0}" }).apply()
 
@@ -217,7 +233,7 @@ fun HomeScreenV5(nav: NavHostController) {
                     onOk = { com.ayattla.app.data.Welcome.statsNoticeSeen(ctx); notice = false },
                     onOff = { com.ayattla.app.data.Stats.setEnabled(ctx, false); com.ayattla.app.data.Welcome.statsNoticeSeen(ctx); notice = false },
                 )
-                layout.filter { it.second }.forEachIndexed { i, (s, _) ->
+                remember(layout) { HomeLayout.smart(ctx, layout.filter { it.second }.map { it.first }) }.forEachIndexed { i, s ->
                     // A light entrance, once per launch: each section rises in turn.
                     var shown by remember { mutableStateOf(false) }
                     LaunchedEffect(Unit) { delay(40L * i.coerceAtMost(6)); shown = true }
@@ -728,7 +744,10 @@ private fun ForYou(nav: NavHostController) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
     val tools = remember {
-        val ids = HomeLayout.pinned(ctx) + com.ayattla.app.data.Welcome.pickedUses(ctx).flatMap { it.tools } +
+        // Pinned first, then what you open most (twice or more), then your interests, then the essentials.
+        val usage = ctx.getSharedPreferences("tools.usage", android.content.Context.MODE_PRIVATE).all
+            .mapNotNull { (k, v) -> (v as? Int)?.takeIf { it >= 2 }?.let { k to it } }.sortedByDescending { it.second }.map { it.first }
+        val ids = HomeLayout.pinned(ctx) + usage + com.ayattla.app.data.Welcome.pickedUses(ctx).flatMap { it.tools } +
             listOf("mushaf", "azkar", "prayer-times", "listen", "qibla", "tasbih", "hadith", "khatma")
         ids.distinct().mapNotNull { SiteTool.byIdOrNull(it) }.take(7)
     }
