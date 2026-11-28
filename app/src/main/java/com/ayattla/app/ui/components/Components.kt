@@ -117,7 +117,6 @@ fun Modifier.heroSurface(b: Brand, radius: Dp = Radius.hero): Modifier {
         .clip(shape)
         .background(Brush.linearGradient(b.gradient))
         .drawBehind {
-            drawIslamicPattern(b.accent.copy(alpha = 0.10f))
             drawRect(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.08f), Color.Transparent), center = Offset(0f, 0f), radius = 320.dp.toPx()))
         }
         .padding(7.dp)
