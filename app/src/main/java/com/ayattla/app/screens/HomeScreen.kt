@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.NightsStay
 import androidx.compose.material.icons.outlined.Radio
@@ -594,36 +595,33 @@ private fun HomeMediaGallery(nav: NavHostController) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HomeFooter(nav: NavHostController) {
+private fun HomeFooter(nav: NavHostController, onCustomize: () -> Unit) {
     val b = LocalBrand.current
     val ctx = LocalContext.current
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(Modifier.fillMaxWidth().surface(b)) {
-            FooterRow("عن آيات تتلى", Icons.Outlined.Info, 0) { nav.navigate("about") }
-            FooterRow("شارك التطبيق", Icons.Outlined.Share, 6, chevron = false, divider = false) {
-                shareText(ctx, "آيات تتلى: مقاطع وبطاقات قرآنية وأدوات يومية، مجانا وبلا تسجيل\nhttps://ayattla.com")
-            }
-        }
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.hero)).background(b.surface2).padding(vertical = 16.dp, horizontal = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Image(
-                painterResource(if (b.dark) R.drawable.logo_full_light else R.drawable.logo_full), null,
-                Modifier.size(76.dp).clip(RoundedCornerShape(20.dp)).background(b.surface).border(1.dp, b.line, RoundedCornerShape(20.dp)).padding(10.dp),
-            )
-            Text("صانع مقاطع وبطاقات قرآنية مجاني، صدقة جارية لكل من شارك", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = b.ink, textAlign = TextAlign.Center)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("دليل الاستخدام" to "/guide", "المصادر والتراخيص" to "/sources", "منهجية التوثيق" to "/methodology", "الخصوصية" to "/privacy", "الشروط" to "/terms", "تواصل معنا" to "/contact").forEach { (t, p) ->
-                    Box(
-                        Modifier.heightIn(min = 34.dp).clip(CircleShape).background(b.surface).border(1.dp, b.line, CircleShape)
-                            .clickable { openUrl(ctx, "https://ayattla.com$p") }.padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { Text(t, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink) }
+    // One quiet closing card: three actions, then the site links as plain text.
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                Triple("تخصيص الرئيسية", Icons.Outlined.Tune, onCustomize),
+                Triple("عن التطبيق", Icons.Outlined.Info, { nav.navigate("about") }),
+                Triple("شارك التطبيق", Icons.Outlined.Share, { shareText(ctx, "آيات تتلى: مقاطع وبطاقات قرآنية وأدوات يومية، مجانا وبلا تسجيل\nhttps://ayattla.com") }),
+            ).forEach { (t, icon, go) ->
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().pressable(go).surface(b, com.ayattla.app.ui.components.Surface.Tinted, 16.dp).padding(vertical = 12.dp, horizontal = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(icon, null, tint = b.primaryInk, modifier = Modifier.size(22.dp))
+                    Text(t, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, textAlign = TextAlign.Center, maxLines = 2)
                 }
             }
-            Text("© آيات تتلى · ayattla.com", style = MaterialTheme.typography.labelSmall, color = b.muted)
         }
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("دليل الاستخدام" to "/guide", "المصادر" to "/sources", "منهجية التوثيق" to "/methodology", "الخصوصية" to "/privacy", "الشروط" to "/terms", "تواصل معنا" to "/contact").forEach { (t, p) ->
+                Text(t, style = MaterialTheme.typography.labelMedium, color = b.muted,
+                    modifier = Modifier.heightIn(min = 32.dp).clickable { openUrl(ctx, "https://ayattla.com$p") }.padding(vertical = 6.dp))
+            }
+        }
+        Text("آيات تتلى · صدقة جارية لكل من شارك", style = MaterialTheme.typography.labelSmall, color = b.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -649,4 +647,4 @@ fun openUrl(c: android.content.Context, url: String) {
 @Composable fun HomeCreatePublic(nav: NavHostController) = HomeCreateBento(nav)
 @Composable fun HomeGalleryPublic(nav: NavHostController) = HomeMediaGallery(nav)
 @Composable fun HomeAllToolsPublic(nav: NavHostController) = HomeToolLauncher(nav)
-@Composable fun HomeFooterPublic(nav: NavHostController) = HomeFooter(nav)
+@Composable fun HomeFooterPublic(nav: NavHostController, onCustomize: () -> Unit = {}) = HomeFooter(nav, onCustomize)

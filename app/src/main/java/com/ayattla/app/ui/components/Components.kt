@@ -454,7 +454,7 @@ fun LauncherIcon(title: String, icon: ImageVector, style: TileStyle, modifier: M
                 Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(20.dp).clip(CircleShape).background(b.surface).padding(2.dp),
                 contentAlignment = Alignment.Center,
             ) { Icon(androidx.compose.material.icons.Icons.Outlined.CloudOff, "يحتاج إنترنت", tint = b.muted, modifier = Modifier.size(14.dp)) }
-            else if (isNew) Box(
+            else if (false && isNew) Box(
                 Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp).size(11.dp).clip(CircleShape)
                     .background(b.surface).padding(2.dp).clip(CircleShape).background(b.accent),
             )

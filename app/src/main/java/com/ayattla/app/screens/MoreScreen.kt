@@ -152,7 +152,7 @@ fun MoreScreen(nav: NavHostController, initialGroup: String? = null, autoFocus: 
 private fun ToolRow(nav: NavHostController, t: SiteTool) {
     val ctx = LocalContext.current
     val b = LocalBrand.current
-    ServiceRow(t.title, t.subtitle, t.icon, style = TileStyle.Accent(ToolAccent.color(t.id, b.dark)), badge = if (t.isNew) "جديد" else null) { openTool(nav, ctx, t) }
+    ServiceRow(t.title, t.subtitle, t.icon, style = TileStyle.Accent(ToolAccent.color(t.id, b.dark)), badge = null) { openTool(nav, ctx, t) }
 }
 
 @Composable
