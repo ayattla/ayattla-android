@@ -1,0 +1,6 @@
+--------- beginning of main
+11-28 11:50:30.165  9325  9325 I AyatSelfTest: background=null
+11-28 11:51:01.283  9325  9325 I AyatSelfTest: CLIP OK video=false bytes=3023915 durationMs=14133 size=1920x1080 rotation=90 audio=yes took=31118ms
+--------- beginning of main
+11-28 11:51:07.409  9861  9861 I AyatSelfTest: background=https://cdn.pixabay.com/video/2022/08/19/128406-741495445_tiny.mp4
+11-28 11:52:12.310  9861  9861 I AyatSelfTest: CLIP OK video=true bytes=11449818 durationMs=14100 size=1920x1080 rotation=90 audio=yes took=66048ms
