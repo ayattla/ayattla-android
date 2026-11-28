@@ -329,6 +329,7 @@ fun AppRoot(startScreen: String? = null, openRequest: androidx.compose.runtime.M
             composable("duas") { com.ayattla.app.screens.DuasScreen(nav) }
             composable("guide") { com.ayattla.app.screens.GuideScreen(nav) }
             composable("khatma") { com.ayattla.app.screens.KhatmaScreen(nav) }
+            composable("group-khatma") { com.ayattla.app.screens.GroupKhatmaScreen(nav) }
             composable("offline?from={from}", arguments = listOf(navArgument("from") { type = NavType.StringType; nullable = true; defaultValue = null })) { e ->
                 com.ayattla.app.screens.OfflineScreen(nav, e.arguments?.getString("from"))
             }

@@ -99,7 +99,7 @@ data class SiteTool(
             SiteTool("prayer-guide", "صفة الوضوء والصلاة", "الوضوء والصلاة", "من الأحاديث الصحيحة مع الشرح", Icons.Outlined.WaterDrop, ToolGroup.Hadith, true, "guide"),
             SiteTool("kids-juz-amma", "تحفيظ الأطفال جزء عم", "تحفيظ الأطفال", "استماع وتكرار ونجوم وشهادة باسم الطفل", Icons.Outlined.ChildCare, ToolGroup.Hadith, true, "kids"),
             SiteTool("kids-quiz", "مسابقة جزء عم للأطفال", "مسابقة الأطفال", "أكمل الآية ومن أي سورة، من نص المصحف", Icons.Outlined.Quiz, ToolGroup.Hadith, true, "kids-quiz"),
-            SiteTool("group-khatma", "الختمة الجماعية", "الختمة الجماعية", "وزع الأجزاء على المجموعة برابط واحد", Icons.Outlined.Groups, ToolGroup.Quran, true, "khatma"),
+            SiteTool("group-khatma", "الختمة الجماعية", "الختمة الجماعية", "وزع الأجزاء على المجموعة برسالة واحدة", Icons.Outlined.Groups, ToolGroup.Quran, true, "group-khatma"),
             SiteTool("qada-salah", "متتبع قضاء الصلوات", "قضاء الصلوات", "عداد لكل صلاة وخطة يومية", Icons.Outlined.Checklist, ToolGroup.Daily, true, "qada"),
             SiteTool("sawm-tracker", "متتبع الصيام", "متتبع الصيام", "قضاء رمضان والتطوع على تقويم هجري وميلادي", Icons.Outlined.DarkMode, ToolGroup.Daily, true, "sawm"),
             SiteTool("kaffarah", "حاسبة الكفارات", "الكفارات", "كفارة اليمين وفدية الصيام وكفارة رمضان مع الدليل", Icons.Outlined.Calculate, ToolGroup.Daily, true, "kaffarah"),
