@@ -288,7 +288,7 @@ private fun MediaShortcut(
 private fun HomeCreateBento(nav: NavHostController) {
     val b = LocalBrand.current
     val (videos, images) = rememberFeatured()
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         com.ayattla.app.ui.components.HomeHead("صناعة المحتوى", subtitle = "مقاطع وبطاقات وحالات جاهزة للنشر", icon = Icons.Outlined.AutoAwesome)
         MediaShortcut(
             "مقطع تلاوة بالفيديو", "تظليل الكلمة مع التلاوة وأكثر من ٣٠ قارئا، بخلفية فيديو حقيقية",
@@ -430,7 +430,7 @@ private fun HomeToolLauncher(nav: NavHostController) {
         ToolGroup.Daily to G(Icons.Outlined.WbSunny, Color(0xFFB0832F), Color(0xFF6B4A12)),
         ToolGroup.Hadith to G(Icons.Outlined.School, Color(0xFF6B3F8E), Color(0xFF3A1F55)),
     )
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         com.ayattla.app.ui.components.HomeHead("كل الأدوات", subtitle = "${SiteTool.all.size} أداة مجانية في ${ToolGroup.entries.size} أقسام", icon = Icons.Outlined.Apps)
         ToolGroup.entries.forEach { g ->
             val tools = SiteTool.all.filter { it.group == g }

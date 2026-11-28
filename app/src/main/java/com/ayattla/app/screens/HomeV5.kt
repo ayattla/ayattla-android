@@ -81,6 +81,7 @@ import androidx.compose.foundation.horizontalScroll
 import com.ayattla.app.ui.components.ToolTile
 import com.ayattla.app.ui.components.BrandButton
 import com.ayattla.app.ui.components.BtnKind
+import com.ayattla.app.ui.components.Surface
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -423,7 +424,7 @@ private fun ContinueStrip(nav: NavHostController) {
     val lr = prefs.lastRead?.split(":")?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 2 }
     val heard = remember(Recitation.current) { Recitation.lastListened(ctx) }
     val lastTool = remember { ToolUsage.top(ctx, 1).firstOrNull() }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("تابع من حيث توقفت")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ContinueCard(
@@ -442,7 +443,7 @@ private fun ContinueStrip(nav: NavHostController) {
             }
         }
         if (lastTool != null) Row(
-            Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { openTool(nav, ctx, lastTool) }.surface(b).padding(horizontal = 14.dp),
+            Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { openTool(nav, ctx, lastTool) }.surface(b, Surface.Tinted, 16.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
             IconTile(lastTool.icon, style = TileStyle.Accent(ToolAccent.color(lastTool.id, b.dark)), size = 34.dp)
@@ -455,7 +456,7 @@ private fun ContinueStrip(nav: NavHostController) {
 @Composable
 private fun ContinueCard(icon: ImageVector, tile: Int, title: String, line: String, modifier: Modifier, progress: Float? = null, onClick: () -> Unit) {
     val b = LocalBrand.current
-    Column(modifier.heightIn(min = 138.dp).pressable(onClick).surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.heightIn(min = 138.dp).pressable(onClick).surface(b, Surface.Tinted, 16.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         IconTile(icon, style = TileStyle.Gradient(tile), size = 40.dp)
         Text(title, style = MaterialTheme.typography.titleSmall, color = b.ink, textAlign = TextAlign.Center)
         Text(line, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal), color = b.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
@@ -476,9 +477,9 @@ private fun WirdCard(nav: NavHostController) {
     val plan = remember(prefs.khatma) { KhatmaPlan.decode(prefs.khatma) }
     LaunchedEffect(Unit) { Hifz.load(ctx) }
     val hifz = Hifz.plan
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("الورد والختمة")
-        Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val done = plan?.completedDays?.size ?: 0
             val total = plan?.days ?: 0
             val frac = if (total > 0) done.toFloat() / total else 0f
@@ -502,7 +503,7 @@ private fun WirdCard(nav: NavHostController) {
             }
         }
         if (hifz != null) Row(
-            Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { nav.navigate("hifz-plan") }.surface(b).padding(horizontal = 14.dp),
+            Modifier.fillMaxWidth().heightIn(min = 54.dp).pressable { nav.navigate("hifz-plan") }.surface(b, Surface.Tinted, 16.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
             Text("الحفظ: ${Hifz.memorisedAyat()} آية · مراجعات اليوم ${Hifz.due().size}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = b.ink, textAlign = TextAlign.Center)
@@ -540,10 +541,10 @@ private fun JourneyHomeCard(nav: NavHostController) {
     val days = j.days
     val streak = remember(days) { j.streak() }
     val today = j.day()
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("رحلتي مع القرآن", "التفاصيل") { nav.navigate("journey") }
         Row(
-            Modifier.fillMaxWidth().surface(b).clickable { nav.navigate("journey") }.padding(16.dp),
+            Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).clickable { nav.navigate("journey") }.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             GoalRing(today.pages.size, j.goal, 78, b.primaryInk, b.tint, b.green)
@@ -569,7 +570,7 @@ private fun AzkarStatus(nav: NavHostController) {
     val today = LocalDate.now().toString()
     val cats = remember { listOf("الصباح", "المساء").mapNotNull { w -> content.azkarCategories.firstOrNull { "أذكار $w" == it.title || w in it.title } } }
     val morning = LocalTime.now().hour < 14
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("أذكار اليوم", "الكل") { nav.goTab("azkar") }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             cats.forEachIndexed { i, c ->
@@ -581,7 +582,7 @@ private fun AzkarStatus(nav: NavHostController) {
                 Column(
                     Modifier.weight(1f).pressable { nav.navigate(Routes.azkar(c.id)) }
                         .then(if (now) Modifier.border(1.5.dp, b.accent.copy(alpha = 0.7f), RoundedCornerShape(Radius.card)) else Modifier)
-                        .surface(b).padding(14.dp),
+                        .surface(b, Surface.Tinted, 16.dp).padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     IconTile(if (i == 0) Icons.Outlined.WbSunny else Icons.Outlined.NightsStay, style = TileStyle.Gradient(if (i == 0) 2 else 4), size = 40.dp)
@@ -632,9 +633,9 @@ private fun DailyQuiz() {
     var picked by remember(day, extra) { mutableStateOf(if (extra == 0) sp.getInt("pick.$day", -1).takeIf { it >= 0 } else null) }
     var score by remember { mutableIntStateOf(sp.getInt("score", 0)) }
     var total by remember { mutableIntStateOf(sp.getInt("total", 0)) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("مسابقة اليوم")
-        Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.Quiz, null, tint = b.goldInk, modifier = Modifier.size(18.dp))
                 Text("من أي سورة هذه الآية؟", style = MaterialTheme.typography.titleSmall, color = b.goldInk)
@@ -686,9 +687,9 @@ private fun MyTools(nav: NavHostController, pinned: List<String>) {
         (suggested + ToolUsage.top(ctx, 8)).distinctBy { it.id }
     }
     val list = (fav + top).distinctBy { it.id }.take(8)
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle(if (fav.isNotEmpty()) "أدواتي المفضلة" else "اختصاراتك", "كل الأدوات") { nav.goTab("more") }
-        Column(Modifier.fillMaxWidth().surface(b).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             list.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     row.forEach { t ->
@@ -739,9 +740,9 @@ private fun ForYou(nav: NavHostController) {
             listOf("mushaf", "azkar", "prayer-times", "listen", "qibla", "tasbih", "hadith", "khatma")
         ids.distinct().mapNotNull { SiteTool.byIdOrNull(it) }.take(7)
     }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("اختصاراتك", "تعديل") { nav.navigate("welcome-edit") }
-        Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             (tools.map { it as Any } + "all").chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth()) {
                     row.forEach { item ->
@@ -780,11 +781,11 @@ private fun NameOfTheDay(nav: NavHostController) {
     val names = LocalContent.current.library.asma
     if (names.isEmpty()) return
     val (_, name) = remember { names[(LocalDate.now().toEpochDay() % names.size).toInt()] }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("اسم الله اليوم", "كل الأسماء") { nav.navigate("asma") }
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card))
-                .background(Brush.linearGradient(listOf(b.goldSoft, b.surface))).border(1.dp, b.accent.copy(alpha = 0.35f), RoundedCornerShape(Radius.card))
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                .background(Brush.linearGradient(listOf(b.goldSoft, b.surface2))).border(1.dp, b.accent.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
                 .padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -819,9 +820,9 @@ private fun QuranDuaOfTheDay(nav: NavHostController) {
     val text = remember(r) { runCatching { content.ayat(r.s, r.a, r.b).joinToString(" ") { it.text } }.getOrDefault("") }
     if (text.isEmpty()) return
     val where = "سورة ${content.surah(r.s).shortName} · " + if (r.a == r.b) "الآية ${r.a}" else "الآيات ${r.a}-${r.b}"
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("دعاء من القرآن", "كل الأدعية") { nav.navigate("duas") }
-        Column(Modifier.fillMaxWidth().surface(b).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(text, fontFamily = Fonts.quran, fontSize = 21.sp, lineHeight = 42.sp, color = b.ink, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             Text(where, style = MaterialTheme.typography.labelLarge, color = b.goldInk, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -846,7 +847,7 @@ private fun NextOccasion(nav: NavHostController) {
             }.minByOrNull { it.second }
     }
     val friday = today.dayOfWeek == java.time.DayOfWeek.FRIDAY
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("المناسبات")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (next != null) {
@@ -863,7 +864,7 @@ private fun NextOccasion(nav: NavHostController) {
                 }
             }
             Column(
-                Modifier.weight(1f).pressable { nav.navigate(if (friday) Routes.reader(18, 1) else "sawm") }.surface(b).padding(14.dp),
+                Modifier.weight(1f).pressable { nav.navigate(if (friday) Routes.reader(18, 1) else "sawm") }.surface(b, Surface.Tinted, 16.dp).padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(if (friday) "يوم الجمعة" else "صيام التطوع", style = MaterialTheme.typography.titleMedium, color = b.ink)
@@ -904,7 +905,7 @@ private fun HomeCustomizeSheet(
             Text("إعادة الترتيب الافتراضي", style = MaterialTheme.typography.labelLarge, color = b.goldInk,
                 modifier = Modifier.align(Alignment.CenterHorizontally).clip(CircleShape).clickable(onClick = onReset).padding(10.dp))
             Text("الأقسام", style = MaterialTheme.typography.labelLarge, color = b.muted)
-            Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 4.dp)) {
+            Column(Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(vertical = 4.dp)) {
                 layout.forEachIndexed { i, (s, on) ->
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Switch(on, { v -> onChange(layout.toMutableList().also { it[i] = s to v }, pinned) }, colors = SwitchDefaults.colors(checkedTrackColor = b.green))
@@ -941,9 +942,9 @@ private fun PrayerTracker() {
     val five = listOf(Prayer.Fajr, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha)
     fun key(d: LocalDate) = "d.$d"
     var done by remember { mutableStateOf(sp.getStringSet(key(today), emptySet()).orEmpty()) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("صلواتي اليوم")
-        Column(Modifier.fillMaxWidth().surface(b).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 five.forEach { p ->
                     val on = p.name in done
@@ -996,9 +997,9 @@ private fun MuslimServices(nav: NavHostController) {
         S("الزكاة", Icons.Outlined.Calculate, 0, "zakat"),
         S("الأطفال", Icons.Outlined.ChildCare, 1, "kids"),
     )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("الوصول السريع", "كل الأدوات") { nav.goTab("more") }
-        Column(Modifier.fillMaxWidth().surface(b).padding(vertical = 14.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             items.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth()) {
                     row.forEach { s ->
@@ -1029,10 +1030,10 @@ private fun QuickDhikr(nav: NavHostController) {
     var phrase by remember { mutableStateOf(phrases.first()) }
     var count by remember(phrase) { mutableIntStateOf(prefs.tasbihCount(phrase)) }
     val pulse by animateFloatAsState(if (count % 2 == 0) 1f else 0.97f, tween(120), label = "dhikr")
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().surface(b).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CenteredTitle("الذكر السريع", "المسبحة") { nav.navigate("tasbih") }
         Row(
-            Modifier.fillMaxWidth().surface(b).padding(14.dp),
+            Modifier.fillMaxWidth().surface(b, Surface.Tinted, 16.dp).padding(14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Box(
